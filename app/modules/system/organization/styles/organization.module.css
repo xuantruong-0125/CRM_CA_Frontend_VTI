@@ -1,0 +1,140 @@
+@import url('https://fonts.googleapis.com/css2?family=Genos:wght@200;400;600&family=Manjari:wght@100;400;700&family=Manrope:wght@200;400;600&display=swap');
+
+.container {
+  display: flex;
+  height: 100vh;
+  /* full màn hình */
+  width: 100%;
+}
+
+/* phần nội dung bên phải */
+.content {
+  flex: 1;
+  padding: 20px;
+  overflow-y: auto;
+  /* scroll nếu dài */
+  background: #f5f6fa;
+}
+
+.title {
+  margin-bottom: 16px;
+  background-color: rgb(21, 0, 211);
+  padding: 10px;
+  padding-left: 25px;
+  border-radius: 10px;
+  text-align: left;
+}
+
+/* FORM */
+.form {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+/* mỗi group */
+.formGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+/* label */
+.label {
+  font-size: 17px;
+  padding-left: 2px;
+  font-weight: bolder;
+  color: #000000;
+  text-align: left;
+  font-family: Manrope;
+}
+
+.form input,
+.form select {
+  padding: 8px;
+  border: 1px solid #5b5959;
+  border-radius: 4px;
+  background-color: #ffffff;
+  color: #000;
+  font-family: Manrope;
+  font-size: 16px;
+
+}
+
+.submit_btn {
+  background-color: rgb(0, 164, 22) !important;
+  border-radius: 5px;
+  font-weight: bolder !important;
+  width: 160px;
+  margin-top: 32px;
+  height: 42px;
+  border: none;
+  font-family: Manrope;
+  font-size: medium;
+}
+
+
+/* TREE */
+.treeContainer {
+  border: 1px solid #dcdcdc;
+  padding: 15px;
+  padding-left: 10px;
+  border-radius: 8px;
+  background: #f7f9fb;
+  overflow: hidden;
+}
+
+/* container của node */
+.treeItem {
+  display: flex;
+  padding: 10px 12px;
+  margin-bottom: 8px;
+  border-radius: 8px;
+  color: rgb(255, 255, 255);
+  width: 100%;
+  box-sizing: border-box;
+  font-size: 17px;
+}
+
+/* bên trái (indent nằm ở đây) */
+.left {
+  display: flex;
+  text-align: left;
+  gap: 8px;
+  flex: 1;
+}
+
+/* icon expand */
+.expandIcon {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  width: 16px;
+}
+
+/* text */
+.nodeName {
+  flex: 1;
+}
+
+/* input edit */
+.editInput {
+  flex: 1;
+}
+
+/* actions bên phải */
+.actions {
+  display: flex;
+  gap: 10px;
+  min-width: 70px;
+  justify-content: flex-end;
+}
+
+/* icon */
+.icon {
+  cursor: pointer;
+}
+
+.icon:hover {
+  opacity: 0.7;
+}
