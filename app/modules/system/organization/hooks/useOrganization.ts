@@ -22,7 +22,7 @@ export const useOrganization = () => {
 
   const create = async (payload: OrganizationPayload) => {
     await createOrganization(payload);
-    toast.success('Tạo thành công');
+    toast.success('Thêm mới thành công');
     fetchData();
   };
 
@@ -34,7 +34,7 @@ export const useOrganization = () => {
 
   const remove = async (id: number) => {
     await deleteOrganization(id);
-    toast.success('Xóa thành công');
+    // toast.success('Xóa thành công');
     fetchData();
   };
 

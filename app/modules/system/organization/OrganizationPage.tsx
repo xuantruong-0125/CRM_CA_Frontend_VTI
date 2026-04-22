@@ -51,6 +51,18 @@ export default function OrganizationPage() {
       return;
     }
 
+    if (form.name.length > 50) {
+      toast.warning("Tên không được quá 50 ký tự");
+      return;
+    }
+
+    const regex = /^[a-zA-Z0-9À-ỹ\s]+$/;
+
+    if (!regex.test(form.name)) {
+      toast.warning("Tên không được chứa ký tự đặc biệt");
+      return;
+    }
+
     await create(form);
 
     setForm({

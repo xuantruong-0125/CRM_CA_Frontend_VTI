@@ -1,20 +1,17 @@
 @import url('https://fonts.googleapis.com/css2?family=Genos:wght@200;400;600&family=Manjari:wght@100;400;700&family=Manrope:wght@200;400;600&display=swap');
 
-.container {
+/* .container {
   display: flex;
   height: 100vh;
-  /* full màn hình */
   width: 100%;
 }
-
-/* phần nội dung bên phải */
 .content {
   flex: 1;
   padding: 20px;
   overflow-y: auto;
-  /* scroll nếu dài */
+  /* scroll nếu dài 
   background: #f5f6fa;
-}
+} */
 
 .title {
   margin-bottom: 16px;
@@ -23,6 +20,8 @@
   padding-left: 25px;
   border-radius: 10px;
   text-align: left;
+  font-weight: bolder;
+  font-size: larger;
 }
 
 /* FORM */
@@ -120,6 +119,10 @@
 /* input edit */
 .editInput {
   flex: 1;
+  padding-left: 10px;
+  background-color: #8c8c8c;
+  border-radius: 5px;
+  width: 500px;
 }
 
 /* actions bên phải */
