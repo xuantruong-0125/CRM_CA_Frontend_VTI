@@ -9,7 +9,7 @@ import { priceApi } from "./api/price.api";
 import { ImageUploader } from "./components/shared/ImageUploader";
 import { useCategories } from "./hooks/useCategories";
 import { CategoryComboBox } from "./components/shared/CategoryComboBox";
-import { Info, DollarSign, Save, XCircle, AlertCircle, CheckCircle2, HelpCircle } from "lucide-react";
+import { Info, DollarSign, Save, XCircle, AlertCircle, HelpCircle, Keyboard } from "lucide-react";
 
 interface ProductDetailPageProps {
   initialData?: Product | null;
@@ -55,7 +55,6 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({ initialDat
   const [error, setError] = useState<string | null>(null);
   const [validationErrors, setValidationErrors] = useState<ValidationErrors>({});
 
-  // Final Price calculation (Base * (1 + Tax/100))
   const finalPrice = useMemo(() => {
     const base = Number(priceData.basePrice) || 0;
     const tax = Number(priceData.taxRate) || 0;
@@ -77,7 +76,34 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({ initialDat
     }
   }, [initialData]);
 
-  // Real-time validation logic
+  // Shortcut handling
+  useEffect(() => {
+    const handleGlobalKeyDown = (e: KeyboardEvent) => {
+      // Ctrl + S: Save
+      if ((e.ctrlKey || e.metaKey) && e.key === "s") {
+        e.preventDefault();
+        handleSubmit(new Event("submit") as any);
+      }
+      // Escape: Cancel
+      if (e.key === "Escape") {
+        router.push("/products");
+      }
+      // Alt + 1: Information Tab
+      if (e.altKey && e.key === "1") {
+        e.preventDefault();
+        setActiveTab("information");
+      }
+      // Alt + 2: Price Tab
+      if (e.altKey && e.key === "2") {
+        e.preventDefault();
+        setActiveTab("price");
+      }
+    };
+
+    window.addEventListener("keydown", handleGlobalKeyDown);
+    return () => window.removeEventListener("keydown", handleGlobalKeyDown);
+  }, [formData, priceData, isLoading]); // Re-bind when state changes to have fresh data in closure if needed
+
   const validateField = (name: string, value: any) => {
     let err = "";
     switch (name) {
@@ -170,6 +196,7 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({ initialDat
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
+    // Enter to move to next field logic
     if (e.key === "Enter" && e.target instanceof HTMLInputElement) {
       e.preventDefault();
       const form = e.currentTarget;
@@ -198,9 +225,10 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({ initialDat
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    // Validate all fields before submission
+    e?.preventDefault?.();
+    if (isLoading) return;
+
+    // Validate all fields
     const errs: ValidationErrors = {};
     errs.name = validateField("name", formData.name);
     errs.skuCode = validateField("skuCode", formData.skuCode);
@@ -240,13 +268,10 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({ initialDat
         effectiveTo: priceData.effectiveTo ? `${priceData.effectiveTo}T23:59:59` : null,
       };
 
-      let product: Product;
       if (isEditMode && initialData?.id) {
-        product = await productApi.updateProduct(initialData.id, submissionData);
+        await productApi.updateProduct(initialData.id, submissionData);
       } else {
-        // Unique SKU check (simulation - in real app this would be an API call)
-        // For now we let the backend return 400 if SKU exists, which we catch below
-        product = await productApi.createProduct(submissionData);
+        const product = await productApi.createProduct(submissionData);
         if (priceData.basePrice > 0) {
           await priceApi.createPrice({
             basePrice: priceData.basePrice,
@@ -269,10 +294,20 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({ initialDat
     <div className="max-w-5xl mx-auto pb-10 px-4" onKeyDown={handleKeyDown}>
       {/* Header / Action Bar */}
       <div className="flex items-center justify-between mb-6 bg-white p-4 rounded-[5px] border border-slate-200 shadow-sm">
-        <div className="flex items-center gap-2 text-xs font-bold text-slate-400 uppercase tracking-widest">
-          <span className="hover:text-sky-600 cursor-pointer transition-colors" onClick={() => router.push("/products")}>Quản lý sản phẩm</span>
-          <span>/</span>
-          <span className="text-slate-600">{isEditMode ? "Chỉnh sửa" : "Thêm mới"}</span>
+        <div className="flex flex-col">
+          <div className="flex items-center gap-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-0.5">
+            <span className="hover:text-sky-600 cursor-pointer transition-colors" onClick={() => router.push("/products")}>Quản lý sản phẩm</span>
+            <span>/</span>
+            <span className="text-slate-600">{isEditMode ? "Chỉnh sửa" : "Thêm mới"}</span>
+          </div>
+          <div className="flex items-center gap-4">
+             <div className="flex items-center gap-1.5 text-[10px] text-slate-400">
+                <kbd className="px-1.5 py-0.5 bg-slate-100 border border-slate-200 rounded text-slate-500 font-bold">Ctrl + S</kbd> Lưu
+             </div>
+             <div className="flex items-center gap-1.5 text-[10px] text-slate-400">
+                <kbd className="px-1.5 py-0.5 bg-slate-100 border border-slate-200 rounded text-slate-500 font-bold">Esc</kbd> Hủy
+             </div>
+          </div>
         </div>
         <div className="flex gap-3">
           <button
@@ -294,7 +329,7 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({ initialDat
       </div>
 
       <div className="bg-white border border-slate-200 rounded-[5px] shadow-sm overflow-hidden mb-6">
-        {/* Basic Information Section */}
+        {/* Main inputs section */}
         <div className="p-8">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
             <div className="lg:col-span-9 space-y-5">
@@ -349,6 +384,7 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({ initialDat
             >
               <Info size={16} />
               Thông tin chung
+              <span className="ml-2 text-[10px] text-slate-400 bg-slate-100 px-1 rounded">Alt+1</span>
             </button>
             <button
               onClick={() => setActiveTab("price")}
@@ -360,6 +396,7 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({ initialDat
             >
               <DollarSign size={16} />
               Cấu hình giá
+              <span className="ml-2 text-[10px] text-slate-400 bg-slate-100 px-1 rounded">Alt+2</span>
             </button>
           </div>
 
@@ -444,7 +481,6 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({ initialDat
                     </div>
                   </div>
 
-                  {/* Dynamic Final Price Display */}
                   <div className="p-4 bg-sky-50 rounded-[5px] border border-sky-100 flex items-center justify-between">
                     <div className="flex items-center gap-2 text-sky-700 font-bold text-sm">
                       <DollarSign size={16} />
@@ -500,6 +536,30 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({ initialDat
         </div>
       </div>
 
+      {/* Shortcut Info Footer */}
+      <div className="flex items-center gap-6 px-4 py-3 bg-slate-50 rounded-[5px] border border-slate-200">
+        <div className="flex items-center gap-2 text-[10px] font-bold text-slate-500 uppercase tracking-widest">
+          <Keyboard size={14} className="text-slate-400" />
+          Phím tắt hệ thống:
+        </div>
+        <div className="flex gap-6">
+          <div className="flex items-center gap-1.5 text-[11px] text-slate-600">
+            <kbd className="px-1.5 py-0.5 bg-white border border-slate-200 rounded shadow-sm font-bold text-sky-600">Ctrl + S</kbd> Lưu nhanh
+          </div>
+          <div className="flex items-center gap-1.5 text-[11px] text-slate-600">
+            <kbd className="px-1.5 py-0.5 bg-white border border-slate-200 rounded shadow-sm font-bold text-rose-500">Esc</kbd> Hủy bỏ
+          </div>
+          <div className="flex items-center gap-1.5 text-[11px] text-slate-600">
+            <kbd className="px-1.5 py-0.5 bg-white border border-slate-200 rounded shadow-sm font-bold text-slate-700">Alt + 1</kbd> Thông tin
+          </div>
+          <div className="flex items-center gap-1.5 text-[11px] text-slate-600">
+            <kbd className="px-1.5 py-0.5 bg-white border border-slate-200 rounded shadow-sm font-bold text-slate-700">Alt + 2</kbd> Định giá
+          </div>
+          <div className="flex items-center gap-1.5 text-[11px] text-slate-600">
+            <kbd className="px-1.5 py-0.5 bg-white border border-slate-200 rounded shadow-sm font-bold text-slate-700">Enter</kbd> Chuyển ô
+          </div>
+        </div>
+      </div>
     </div>
   );
 };

@@ -45,7 +45,7 @@ export const TableToolbar: React.FC<TableToolbarProps> = ({
   onFilterReset,
   onSettings,
   onCreate,
-  createLabel = "Thêm",
+  createLabel = "Thêm (Alt+N)",
   placeholder = "Tìm kiếm...",
   selectedCount = 0,
   onClearSelection,
@@ -182,7 +182,7 @@ export const TableToolbar: React.FC<TableToolbarProps> = ({
           {onCreate && (
             <button
               onClick={onCreate}
-              className="flex items-center gap-2 px-4 h-9 bg-sky-600 hover:bg-sky-700 text-white text-[13px] font-bold rounded-md transition-all active:scale-95 shadow-md shadow-sky-100 ml-1"
+              className="flex items-center gap-2 px-4 h-9 bg-sky-600 hover:bg-sky-700 text-white text-[13px] font-bold rounded-md transition-all active:scale-95 shadow-md shadow-sky-100 ml-1 whitespace-nowrap"
             >
               <Package size={17} />
               <span>{createLabel}</span>
