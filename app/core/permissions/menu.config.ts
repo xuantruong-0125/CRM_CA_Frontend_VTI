@@ -1,4 +1,4 @@
-import { Building2, ShieldCheck, Menu, Users, Layers, Package, Banknote } from "lucide-react";
+import { Building2, ShieldCheck, Menu, Users, Layers, Package, Banknote, Contact2 } from "lucide-react";
 
 export const MENU_CONFIG = [
     {
@@ -49,6 +49,13 @@ export const MENU_CONFIG = [
         label: "Quản lý giá",
         path: "/prices",
         icon: Banknote,
+        roles: ["ADMIN", "IT"],
+    },
+    {
+        key: "contact",
+        label: "Quản lý liên hệ",
+        path: "/contacts",
+        icon: Contact2,
         roles: ["ADMIN", "IT"],
     },
 ];

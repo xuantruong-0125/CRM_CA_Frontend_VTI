@@ -36,6 +36,12 @@ interface TableToolbarProps {
   onColumnToggle?: (columnId: string) => void;
   onImport?: () => void;
   onExport?: (format: "csv" | "xlsx" | "json") => void;
+  FilterComponent?: React.FC<{
+    onClose: () => void;
+    onApply: (filters: any) => void;
+    onReset: () => void;
+    initialFilters?: any;
+  }>;
 }
 
 export const TableToolbar: React.FC<TableToolbarProps> = ({
@@ -55,6 +61,7 @@ export const TableToolbar: React.FC<TableToolbarProps> = ({
   onColumnToggle = () => {},
   onImport,
   onExport,
+  FilterComponent = FilterPopover,
 }) => {
   const isSelectedMode = selectedCount > 0;
   const [isFilterOpen, setIsFilterOpen] = React.useState(false);
@@ -145,7 +152,7 @@ export const TableToolbar: React.FC<TableToolbarProps> = ({
             </button>
 
             {isFilterOpen && (
-              <FilterPopover
+              <FilterComponent
                 onClose={() => setIsFilterOpen(false)}
                 onApply={handleApplyFilters}
                 onReset={handleResetFilters}
