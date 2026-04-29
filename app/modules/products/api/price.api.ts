@@ -26,4 +26,9 @@ export const priceApi = {
     const response = await apiClient.put<ApiResponse<Price>>(`/api/v1/prices/${id}`, data);
     return response.data.data;
   },
+
+  createPrice: async (data: CreatePriceRequest): Promise<Price> => {
+    const response = await apiClient.post<ApiResponse<Price>>('/api/v1/prices', data);
+    return response.data.data;
+  },
 };

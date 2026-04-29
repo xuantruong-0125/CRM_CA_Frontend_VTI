@@ -1,68 +1,73 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { UploadCloud, X } from "lucide-react";
-import axios from "axios";
 
 interface ImageUploaderProps {
-  value?: string;
-  onChange: (url: string) => void;
+  value?: string; // Current image URL (from DB or preview)
+  onChange: (file: File | null) => void; // Pass the selected file back
+  onClear: () => void;
 }
 
-export const ImageUploader: React.FC<ImageUploaderProps> = ({ value, onChange }) => {
-  const [isUploading, setIsUploading] = useState(false);
+export const ImageUploader: React.FC<ImageUploaderProps> = ({ value, onChange, onClear }) => {
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
-  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  useEffect(() => {
+    // If value is a URL (starts with http or /), use it as preview
+    if (value && (value.startsWith("http") || value.startsWith("/"))) {
+      setPreviewUrl(value);
+    } else {
+      setPreviewUrl(null);
+    }
+  }, [value]);
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    setIsUploading(true);
-    try {
-      const formData = new FormData();
-      formData.append("file", file);
+    // Create local preview
+    const objectUrl = URL.createObjectURL(file);
+    setPreviewUrl(objectUrl);
+    
+    // Pass file back to parent
+    onChange(file);
+  };
 
-      // Gọi API Spring Boot upload
-      const res = await axios.post("http://localhost:8080/api/v1/upload", formData, {
-        headers: { "Content-Type": "multipart/form-data" },
-      });
-
-      // Giả định backend trả về { data: { url: "..." } } hoặc URL trực tiếp
-      const url = res.data?.data?.url || res.data?.url || res.data;
-      if (typeof url === "string") {
-        onChange(url);
-      } else {
-        // Fallback mockup nếu API chưa hoạt động
-        onChange(URL.createObjectURL(file));
-      }
-    } catch (error) {
-      console.error("Upload failed", error);
-      // Fallback cho mục đích demo UI
-      onChange(URL.createObjectURL(file));
-    } finally {
-      setIsUploading(false);
-    }
+  const handleRemove = () => {
+    setPreviewUrl(null);
+    onClear();
   };
 
   return (
-    <div className="bg-white border border-slate-200 rounded-md p-4 shadow-sm flex flex-col items-center justify-center min-h-[200px]">
-      {value ? (
-        <div className="relative group w-full flex justify-center">
-          <img src={value} alt="Uploaded" className="max-h-48 rounded object-contain" />
+    <div className="relative w-full h-full group">
+      {previewUrl ? (
+        <div className="w-full h-full flex items-center justify-center bg-white">
+          <img 
+            src={previewUrl} 
+            alt="Preview" 
+            className="w-full h-full object-cover rounded-[5px]" 
+          />
           <button
             type="button"
-            onClick={() => onChange("")}
-            className="absolute top-1 right-1 p-1 bg-rose-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity shadow-sm"
+            onClick={handleRemove}
+            className="absolute top-1 right-1 p-1 bg-white/80 hover:bg-rose-500 text-rose-500 hover:text-white rounded-full shadow-sm transition-all z-20 border border-slate-200"
           >
             <X size={14} />
           </button>
+          
+          {/* Overlay for re-uploading */}
+          <label className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center cursor-pointer rounded-[5px] z-10">
+             <div className="bg-white/90 p-2 rounded-full shadow-sm">
+                <UploadCloud className="text-sky-600" size={20} />
+             </div>
+             <input type="file" className="hidden" accept="image/*" onChange={handleFileChange} />
+          </label>
         </div>
       ) : (
-        <label className="flex flex-col items-center justify-center w-full h-full border-2 border-dashed border-slate-300 rounded cursor-pointer hover:border-sky-500 hover:bg-slate-50 transition-colors p-6 text-center">
-          <UploadCloud className="text-slate-400 mb-2" size={32} />
-          <span className="text-sm font-medium text-slate-700">Tải ảnh lên</span>
-          <span className="text-xs text-slate-500 mt-1">PNG, JPG, GIF up to 5MB</span>
+        <label className="flex flex-col items-center justify-center w-full h-full cursor-pointer hover:bg-slate-100 transition-colors text-center p-2 rounded-[5px]">
+          <UploadCloud className="text-slate-400 mb-1" size={24} />
+          <span className="text-[10px] font-bold text-slate-500 uppercase tracking-tight">Tải ảnh</span>
           <input type="file" className="hidden" accept="image/*" onChange={handleFileChange} />
-          {isUploading && <div className="mt-2 text-xs text-sky-600 font-medium">Đang tải...</div>}
         </label>
       )}
     </div>
