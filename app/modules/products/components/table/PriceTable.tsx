@@ -23,6 +23,8 @@ interface PriceTableProps {
   onPageSizeChange: (size: number) => void;
   onRefresh: () => void;
   onDeleteSelected?: (ids: number[]) => void;
+  rowSelection: Record<string, boolean>;
+  onRowSelectionChange: (selection: any) => void;
 }
 
 const priceSchema = z.object({
@@ -40,6 +42,8 @@ export const PriceTable: React.FC<PriceTableProps> = ({
   onPageSizeChange,
   onRefresh,
   onDeleteSelected,
+  rowSelection,
+  onRowSelectionChange,
 }) => {
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editValues, setEditValues] = useState<{ basePrice: string; taxRate: string }>({
@@ -48,7 +52,6 @@ export const PriceTable: React.FC<PriceTableProps> = ({
   });
   const [errors, setErrors] = useState<{ basePrice?: string; taxRate?: string }>({});
   const [isSaving, setIsSaving] = useState(false);
-  const [rowSelection, setRowSelection] = useState({});
 
   const startEdit = (price: Price) => {
     setEditingId(price.id);
@@ -102,7 +105,7 @@ export const PriceTable: React.FC<PriceTableProps> = ({
       {
         id: "select",
         header: ({ table }) => (
-          <div className="px-1 flex items-center justify-center">
+          <div className="flex items-center justify-center w-full h-full">
             <IndeterminateCheckbox
               {...{
                 checked: table.getIsAllPageRowsSelected(),
@@ -119,12 +122,12 @@ export const PriceTable: React.FC<PriceTableProps> = ({
           </div>
         ),
         cell: ({ row }) => (
-          <div className="px-1 flex items-center justify-center">
+          <div className="flex items-center justify-center w-full h-full">
             <IndeterminateCheckbox
               {...{
                 checked: row.getIsSelected(),
                 disabled: !row.getCanSelect(),
-                indeterminate: row.getIsSomeSelected(),
+                indeterminate: row.getIsSelected() ? false : row.getIsSomeSelected(),
                 onChange: row.getToggleSelectedHandler(),
               }}
             />
@@ -247,34 +250,13 @@ export const PriceTable: React.FC<PriceTableProps> = ({
       rowSelection,
     },
     enableRowSelection: true,
-    onRowSelectionChange: setRowSelection,
+    onRowSelectionChange,
     getCoreRowModel: getCoreRowModel(),
     columnResizeMode: "onChange" as ColumnResizeMode,
   });
 
-  const selectedRows = table.getSelectedRowModel().flatRows;
-
   return (
     <div className="space-y-3">
-      {selectedRows.length > 0 && onDeleteSelected && (
-        <div className="flex items-center justify-between px-4 py-2 bg-sky-50 border border-sky-100 rounded-md animate-in fade-in slide-in-from-top-1">
-          <span className="text-xs font-medium text-sky-800">
-            Đang chọn {selectedRows.length} mục giá
-          </span>
-          <button
-            onClick={() => {
-              const ids = selectedRows.map(r => r.original.id);
-              onDeleteSelected(ids);
-              setRowSelection({});
-            }}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-white bg-rose-500 hover:bg-rose-600 rounded transition-colors shadow-sm"
-          >
-            <Trash size={14} />
-            Xóa mục đã chọn
-          </button>
-        </div>
-      )}
-
       <div className="w-full overflow-x-auto bg-white border border-slate-200 rounded-md shadow-sm">
         <table
           className="min-w-full text-xs text-left table-fixed border-separate border-spacing-0"
@@ -286,14 +268,18 @@ export const PriceTable: React.FC<PriceTableProps> = ({
                 {headerGroup.headers.map((header) => (
                   <th
                     key={header.id}
-                    className="relative py-2 px-3 font-semibold select-none group overflow-hidden border-r border-transparent hover:border-slate-300 transition-colors"
+                    className="relative py-1.5 px-2 font-semibold select-none group text-xs overflow-hidden border-r border-transparent hover:border-slate-200 transition-colors"
                     style={{ width: header.getSize() }}
                   >
-                    <div className="truncate pr-2" title={typeof header.column.columnDef.header === 'string' ? header.column.columnDef.header : undefined}>
-                      {header.isPlaceholder
-                        ? null
-                        : flexRender(header.column.columnDef.header, header.getContext())}
-                    </div>
+                    {header.id === "select" ? (
+                      flexRender(header.column.columnDef.header, header.getContext())
+                    ) : (
+                      <div className="truncate pr-2" title={typeof header.column.columnDef.header === 'string' ? header.column.columnDef.header : undefined}>
+                        {header.isPlaceholder
+                          ? null
+                          : flexRender(header.column.columnDef.header, header.getContext())}
+                      </div>
+                    )}
                     
                     <div
                       onMouseDown={header.getResizeHandler()}
@@ -314,7 +300,7 @@ export const PriceTable: React.FC<PriceTableProps> = ({
                   {row.getVisibleCells().map((cell) => (
                     <td
                       key={cell.id}
-                      className="py-1.5 px-3 overflow-hidden"
+                      className="py-1.5 px-2 overflow-hidden"
                       style={{ width: cell.column.getSize() }}
                     >
                       {flexRender(cell.column.columnDef.cell, cell.getContext())}
@@ -344,4 +330,5 @@ export const PriceTable: React.FC<PriceTableProps> = ({
     </div>
   );
 };
+
 

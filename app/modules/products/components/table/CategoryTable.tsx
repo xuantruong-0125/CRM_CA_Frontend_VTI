@@ -22,6 +22,8 @@ interface CategoryTableProps {
   onEdit: (id: number) => void;
   onDelete: (id: number) => void;
   onDeleteSelected?: (ids: number[]) => void;
+  rowSelection: Record<string, boolean>;
+  onRowSelectionChange: (selection: any) => void;
 }
 
 export const CategoryTable: React.FC<CategoryTableProps> = ({
@@ -35,21 +37,20 @@ export const CategoryTable: React.FC<CategoryTableProps> = ({
   onEdit,
   onDelete,
   onDeleteSelected,
+  rowSelection,
+  onRowSelectionChange,
 }) => {
-  const [rowSelection, setRowSelection] = useState({});
-
   const columns = useMemo<ColumnDef<Category>[]>(
     () => [
       {
         id: "select",
         header: ({ table }) => (
-          <div className="px-1 flex items-center justify-center">
+          <div className="flex items-center justify-center w-full h-full">
             <IndeterminateCheckbox
               {...{
                 checked: table.getIsAllPageRowsSelected(),
                 indeterminate: table.getIsSomePageRowsSelected(),
                 onChange: (e) => {
-                  // Custom logic: if indeterminate, deselect all
                   if (table.getIsSomePageRowsSelected()) {
                     table.toggleAllPageRowsSelected(false);
                   } else {
@@ -61,7 +62,7 @@ export const CategoryTable: React.FC<CategoryTableProps> = ({
           </div>
         ),
         cell: ({ row }) => (
-          <div className="px-1 flex items-center justify-center">
+          <div className="flex items-center justify-center w-full h-full">
             <IndeterminateCheckbox
               {...{
                 checked: row.getIsSelected(),
@@ -152,34 +153,13 @@ export const CategoryTable: React.FC<CategoryTableProps> = ({
       rowSelection,
     },
     enableRowSelection: true,
-    onRowSelectionChange: setRowSelection,
+    onRowSelectionChange,
     getCoreRowModel: getCoreRowModel(),
     columnResizeMode: "onChange" as ColumnResizeMode,
   });
 
-  const selectedRows = table.getSelectedRowModel().flatRows;
-
   return (
     <div className="space-y-3">
-      {selectedRows.length > 0 && onDeleteSelected && (
-        <div className="flex items-center justify-between px-4 py-2 bg-sky-50 border border-sky-100 rounded-md animate-in fade-in slide-in-from-top-1">
-          <span className="text-xs font-medium text-sky-800">
-            Đang chọn {selectedRows.length} danh mục
-          </span>
-          <button
-            onClick={() => {
-              const ids = selectedRows.map(r => r.original.id);
-              onDeleteSelected(ids);
-              setRowSelection({});
-            }}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-white bg-rose-500 hover:bg-rose-600 rounded transition-colors shadow-sm"
-          >
-            <Trash size={14} />
-            Xóa mục đã chọn
-          </button>
-        </div>
-      )}
-
       <div className="w-full overflow-x-auto bg-white border border-slate-200 rounded-md shadow-sm">
         <table
           className="min-w-full text-xs text-left table-fixed border-separate border-spacing-0"
@@ -194,11 +174,15 @@ export const CategoryTable: React.FC<CategoryTableProps> = ({
                     className="relative py-1.5 px-2 font-semibold select-none group text-xs overflow-hidden border-r border-transparent hover:border-slate-200 transition-colors"
                     style={{ width: header.getSize() }}
                   >
-                    <div className="truncate pr-2" title={typeof header.column.columnDef.header === 'string' ? header.column.columnDef.header : undefined}>
-                      {header.isPlaceholder
-                        ? null
-                        : flexRender(header.column.columnDef.header, header.getContext())}
-                    </div>
+                    {header.id === "select" ? (
+                      flexRender(header.column.columnDef.header, header.getContext())
+                    ) : (
+                      <div className="truncate pr-2" title={typeof header.column.columnDef.header === 'string' ? header.column.columnDef.header : undefined}>
+                        {header.isPlaceholder
+                          ? null
+                          : flexRender(header.column.columnDef.header, header.getContext())}
+                      </div>
+                    )}
                     
                     <div
                       onMouseDown={header.getResizeHandler()}
@@ -255,5 +239,6 @@ export const CategoryTable: React.FC<CategoryTableProps> = ({
     </div>
   );
 };
+
 
 
