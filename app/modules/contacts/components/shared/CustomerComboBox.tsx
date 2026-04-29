@@ -58,7 +58,7 @@ export const CustomerComboBox: React.FC<CustomerComboBoxProps> = ({
         onClick={() => setIsOpen(!isOpen)}
         className="w-full flex items-center justify-between px-3 py-2 text-sm border border-slate-300 rounded-[5px] bg-white hover:border-slate-400 focus:ring-1 focus:ring-sky-500 transition-all text-slate-900"
       >
-        <span className={selectedCustomer ? "text-slate-900" : "text-slate-400"}>
+        <span className={`truncate flex-1 text-left pr-2 ${selectedCustomer ? "text-slate-900" : "text-slate-400"}`}>
           {selectedCustomer ? `${selectedCustomer.customerCode} - ${selectedCustomer.name}` : "-- Chọn khách hàng --"}
         </span>
         <ChevronDown size={16} className={`text-slate-400 transition-transform ${isOpen ? "rotate-180" : ""}`} />

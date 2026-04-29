@@ -62,35 +62,6 @@ export const ContactFilterPopover: React.FC<ContactFilterPopoverProps> = ({
           </div>
         </div>
 
-        {/* Is Active Filter */}
-        <div>
-          <label className="block text-[10px] font-bold text-slate-400 mb-2 uppercase tracking-widest">
-            Trạng thái hoạt động
-          </label>
-          <div className="grid grid-cols-2 gap-2">
-            <button
-              onClick={() => handleChange("isActive", true)}
-              className={`flex items-center justify-center gap-1.5 px-3 py-2 rounded-md text-[12px] font-bold border transition-all ${
-                filters.isActive === true
-                  ? "bg-emerald-600 border-emerald-600 text-white shadow-md"
-                  : "bg-white border-slate-200 text-slate-600 hover:border-emerald-300 hover:text-emerald-600"
-              }`}
-            >
-              <CheckCircle2 size={14} />
-              Đang hoạt động
-            </button>
-            <button
-              onClick={() => handleChange("isActive", false)}
-              className={`flex items-center justify-center gap-1.5 px-3 py-2 rounded-md text-[12px] font-bold border transition-all ${
-                filters.isActive === false
-                  ? "bg-rose-600 border-rose-600 text-white shadow-md"
-                  : "bg-white border-slate-200 text-slate-600 hover:border-rose-300 hover:text-rose-600"
-              }`}
-            >
-              Ngừng hoạt động
-            </button>
-          </div>
-        </div>
       </div>
 
       <div className="flex items-center gap-2 mt-6 pt-4 border-t border-slate-50">

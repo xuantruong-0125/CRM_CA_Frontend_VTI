@@ -35,7 +35,6 @@ export const ContactPage = () => {
     phone: true,
     email: true,
     isPrimary: true,
-    isActive: true,
   });
 
   const contactColumns = [
@@ -45,7 +44,6 @@ export const ContactPage = () => {
     { id: "phone", label: "Số điện thoại" },
     { id: "email", label: "Email" },
     { id: "isPrimary", label: "Loại liên hệ" },
-    { id: "isActive", label: "Trạng thái" },
   ];
 
   const { data, isLoading, isError, mutate } = useContacts(keyword, pageIndex + 1, pageSize, filters);

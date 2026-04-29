@@ -146,27 +146,6 @@ export const ContactTable: React.FC<ContactTableProps> = ({
         },
       },
       {
-        id: "isActive",
-        header: "Trạng thái",
-        size: 120,
-        accessorFn: (row: any) => row.isActive !== undefined ? row.isActive : row.active,
-        cell: (info) => {
-          const isActive = info.getValue() as boolean;
-          return (
-            <span
-              className={`inline-flex items-center px-2 py-0.5 rounded-[4px] text-[10px] font-bold ${
-                isActive 
-                  ? "bg-emerald-50 text-emerald-700 border border-emerald-200" 
-                  : "bg-rose-50 text-rose-700 border border-rose-200"
-              }`}
-            >
-              <div className={`w-1.5 h-1.5 rounded-full mr-1.5 ${isActive ? "bg-emerald-500" : "bg-rose-500"}`} />
-              {isActive ? "ĐANG HOẠT ĐỘNG" : "NGỪNG HOẠT ĐỘNG"}
-            </span>
-          );
-        },
-      },
-      {
         id: "actions",
         header: "Thao tác",
         size: 100,
