@@ -14,14 +14,61 @@ export const ProductPage = () => {
   const [pageSize, setPageSize] = useState(20);
   const [keyword, setKeyword] = useState("");
   const [rowSelection, setRowSelection] = useState({});
+  const [filters, setFilters] = useState<any>({});
+  const [columnVisibility, setColumnVisibility] = useState<Record<string, boolean>>({
+    imageUrl: false,
+    skuCode: true,
+    name: true,
+    categoryName: true,
+    finalPrice: true,
+    isActive: true,
+    createdAt: true,
+    updatedAt: false,
+  });
 
-  const { data, isLoading, isError, mutate } = useSearchProducts(keyword, pageIndex, pageSize);
+  const productColumns = [
+    { id: "imageUrl", label: "Ảnh sản phẩm" },
+    { id: "skuCode", label: "SKU" },
+    { id: "name", label: "Tên sản phẩm" },
+    { id: "categoryName", label: "Danh mục" },
+    { id: "finalPrice", label: "Giá" },
+    { id: "isActive", label: "Trạng thái" },
+    { id: "createdAt", label: "Ngày tạo" },
+    { id: "updatedAt", label: "Ngày cập nhật" },
+  ];
+
+  const { data, isLoading, isError, mutate } = useSearchProducts(keyword, pageIndex, pageSize, filters);
+
+  const handleColumnToggle = (columnId: string) => {
+    setColumnVisibility(prev => ({
+      ...prev,
+      [columnId]: !prev[columnId]
+    }));
+  };
+
+  const handleImport = () => {
+    alert("Chức năng Import dữ liệu sẽ được triển khai sớm!");
+  };
+
+  const handleExport = (format: string) => {
+    alert(`Đang xuất dữ liệu định dạng ${format.toUpperCase()}...`);
+  };
 
   const selectedCount = Object.keys(rowSelection).length;
 
   const handleSearch = (value: string) => {
     setKeyword(value);
     setPageIndex(0); // Reset to first page on search
+  };
+
+  const handleApplyFilters = (newFilters: any) => {
+    setFilters(newFilters);
+    setPageIndex(0);
+  };
+
+  const handleResetFilters = () => {
+    setFilters({});
+    setPageIndex(0);
   };
 
   const handleEdit = (id: number) => {
@@ -72,12 +119,20 @@ export const ProductPage = () => {
       <TableToolbar
         title="Quản lý sản phẩm"
         onSearch={handleSearch}
+        onFilterApply={handleApplyFilters}
+        onFilterReset={handleResetFilters}
         onCreate={() => router.push("/products/create")}
         createLabel="Thêm"
         placeholder="Tìm kiếm sản phẩm..."
         selectedCount={selectedCount}
         onClearSelection={handleClearSelection}
         onDeleteSelected={performDeleteSelected}
+        // Settings props
+        columns={productColumns}
+        visibleColumns={columnVisibility}
+        onColumnToggle={handleColumnToggle}
+        onImport={handleImport}
+        onExport={handleExport}
       />
 
       {isLoading ? (
@@ -97,6 +152,7 @@ export const ProductPage = () => {
           onDelete={handleDelete}
           rowSelection={rowSelection}
           onRowSelectionChange={setRowSelection}
+          columnVisibility={columnVisibility}
         />
       )}
     </div>

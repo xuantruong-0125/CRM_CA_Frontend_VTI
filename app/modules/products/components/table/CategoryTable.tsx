@@ -24,6 +24,7 @@ interface CategoryTableProps {
   onDeleteSelected?: (ids: number[]) => void;
   rowSelection: Record<string, boolean>;
   onRowSelectionChange: (selection: any) => void;
+  columnVisibility?: Record<string, boolean>;
 }
 
 export const CategoryTable: React.FC<CategoryTableProps> = ({
@@ -39,6 +40,7 @@ export const CategoryTable: React.FC<CategoryTableProps> = ({
   onDeleteSelected,
   rowSelection,
   onRowSelectionChange,
+  columnVisibility = {},
 }) => {
   const columns = useMemo<ColumnDef<Category>[]>(
     () => [
@@ -75,11 +77,6 @@ export const CategoryTable: React.FC<CategoryTableProps> = ({
         ),
         size: 40,
         minSize: 40,
-      },
-      {
-        accessorKey: "id",
-        header: "ID",
-        size: 60,
       },
       {
         accessorKey: "name",
@@ -119,6 +116,36 @@ export const CategoryTable: React.FC<CategoryTableProps> = ({
         },
       },
       {
+        accessorKey: "createdAt",
+        header: "Ngày tạo",
+        size: 150,
+        cell: (info) => {
+          const dateStr = info.getValue() as string;
+          if (!dateStr) return "-";
+          const date = new Date(dateStr);
+          return (
+            <div className="text-slate-500 text-[11px]">
+              {date.toLocaleDateString("vi-VN")} {date.toLocaleTimeString("vi-VN", { hour: '2-digit', minute: '2-digit' })}
+            </div>
+          );
+        },
+      },
+      {
+        accessorKey: "updatedAt",
+        header: "Ngày cập nhật",
+        size: 150,
+        cell: (info) => {
+          const dateStr = info.getValue() as string;
+          if (!dateStr) return "-";
+          const date = new Date(dateStr);
+          return (
+            <div className="text-slate-500 text-[11px]">
+              {date.toLocaleDateString("vi-VN")} {date.toLocaleTimeString("vi-VN", { hour: '2-digit', minute: '2-digit' })}
+            </div>
+          );
+        },
+      },
+      {
         id: "actions",
         header: "Thao tác",
         size: 100,
@@ -151,6 +178,7 @@ export const CategoryTable: React.FC<CategoryTableProps> = ({
     columns,
     state: {
       rowSelection,
+      columnVisibility,
     },
     enableRowSelection: true,
     onRowSelectionChange,

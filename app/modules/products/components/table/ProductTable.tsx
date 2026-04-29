@@ -23,6 +23,7 @@ interface ProductTableProps {
   onDelete: (id: number) => void;
   rowSelection: Record<string, boolean>;
   onRowSelectionChange: (selection: any) => void;
+  columnVisibility?: Record<string, boolean>;
 }
 
 export const ProductTable: React.FC<ProductTableProps> = ({
@@ -37,6 +38,7 @@ export const ProductTable: React.FC<ProductTableProps> = ({
   onDelete,
   rowSelection,
   onRowSelectionChange,
+  columnVisibility = {},
 }) => {
   const columns = useMemo<ColumnDef<Product>[]>(
     () => [
@@ -75,18 +77,39 @@ export const ProductTable: React.FC<ProductTableProps> = ({
         minSize: 40,
       },
       {
-        accessorKey: "id",
-        header: "ID",
+        accessorKey: "imageUrl",
+        header: "Ảnh",
         size: 60,
+        cell: (info) => (
+          <div className="flex items-center justify-center w-10 h-10 rounded-md overflow-hidden bg-slate-100 border border-slate-200">
+            {info.getValue() ? (
+              <img
+                src={info.getValue() as string}
+                alt="Product"
+                className="w-full h-full object-cover"
+                onError={(e) => {
+                  (e.target as HTMLImageElement).src = "https://placehold.co/100x100?text=No+Image";
+                }}
+              />
+            ) : (
+              <div className="text-[10px] text-slate-400 font-bold uppercase">No Pic</div>
+            )}
+          </div>
+        ),
+      },
+      {
+        accessorKey: "skuCode",
+        header: "SKU",
+        size: 100,
+        cell: (info) => <div className="font-mono text-slate-600 uppercase">{info.getValue() as string}</div>,
       },
       {
         accessorKey: "name",
         header: "Tên sản phẩm",
         size: 250,
         cell: (info) => (
-          <div className="truncate" title={info.getValue() as string}>
-            <div className="font-semibold text-slate-800 truncate">{info.getValue() as string}</div>
-            <div className="text-[10px] text-slate-500 font-mono truncate">{info.row.original.skuCode}</div>
+          <div className="truncate font-semibold text-slate-800" title={info.getValue() as string}>
+            {info.getValue() as string}
           </div>
         ),
       },
@@ -97,10 +120,20 @@ export const ProductTable: React.FC<ProductTableProps> = ({
         cell: (info) => <div className="truncate text-slate-600">{info.getValue() as string}</div>,
       },
       {
-        accessorKey: "brand",
-        header: "Thương hiệu",
+        accessorKey: "finalPrice",
+        header: "Giá sản phẩm",
         size: 120,
-        cell: (info) => <div className="truncate text-slate-600">{info.getValue() as string}</div>,
+        cell: (info) => {
+          const price = info.getValue() as number;
+          return (
+            <div className="font-bold text-sky-600">
+              {new Intl.NumberFormat("vi-VN", {
+                style: "currency",
+                currency: "VND",
+              }).format(price || 0)}
+            </div>
+          );
+        },
       },
       {
         accessorKey: "isActive",
@@ -116,6 +149,36 @@ export const ProductTable: React.FC<ProductTableProps> = ({
             >
               {isActive ? "ACTIVE" : "INACTIVE"}
             </span>
+          );
+        },
+      },
+      {
+        accessorKey: "createdAt",
+        header: "Ngày tạo",
+        size: 150,
+        cell: (info) => {
+          const dateStr = info.getValue() as string;
+          if (!dateStr) return "-";
+          const date = new Date(dateStr);
+          return (
+            <div className="text-slate-500 text-[11px]">
+              {date.toLocaleDateString("vi-VN")} {date.toLocaleTimeString("vi-VN", { hour: '2-digit', minute: '2-digit' })}
+            </div>
+          );
+        },
+      },
+      {
+        accessorKey: "updatedAt",
+        header: "Ngày cập nhật",
+        size: 150,
+        cell: (info) => {
+          const dateStr = info.getValue() as string;
+          if (!dateStr) return "-";
+          const date = new Date(dateStr);
+          return (
+            <div className="text-slate-500 text-[11px]">
+              {date.toLocaleDateString("vi-VN")} {date.toLocaleTimeString("vi-VN", { hour: '2-digit', minute: '2-digit' })}
+            </div>
           );
         },
       },
@@ -152,6 +215,7 @@ export const ProductTable: React.FC<ProductTableProps> = ({
     columns,
     state: {
       rowSelection,
+      columnVisibility,
     },
     enableRowSelection: true,
     onRowSelectionChange,

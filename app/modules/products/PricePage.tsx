@@ -10,8 +10,40 @@ export const PricePage = () => {
   const [pageSize, setPageSize] = useState(20);
   const [keyword, setKeyword] = useState("");
   const [rowSelection, setRowSelection] = useState<Record<string, boolean>>({});
+  const [columnVisibility, setColumnVisibility] = useState<Record<string, boolean>>({
+    productName: true,
+    basePrice: true,
+    taxRate: true,
+    finalPrice: true,
+    createdAt: true,
+    updatedAt: false,
+  });
+
+  const priceColumns = [
+    { id: "productName", label: "Sản phẩm" },
+    { id: "basePrice", label: "Giá nhập" },
+    { id: "taxRate", label: "Thuế" },
+    { id: "finalPrice", label: "Giá bán" },
+    { id: "createdAt", label: "Ngày tạo" },
+    { id: "updatedAt", label: "Ngày cập nhật" },
+  ];
 
   const { data, isLoading, isError, mutate } = useSearchPrices(keyword, pageIndex, pageSize);
+
+  const handleColumnToggle = (columnId: string) => {
+    setColumnVisibility(prev => ({
+      ...prev,
+      [columnId]: !prev[columnId]
+    }));
+  };
+
+  const handleImport = () => {
+    alert("Chức năng Import giá sẽ được triển khai sớm!");
+  };
+
+  const handleExport = (format: string) => {
+    alert(`Đang xuất bảng giá định dạng ${format.toUpperCase()}...`);
+  };
 
   const selectedCount = Object.keys(rowSelection).length;
 
@@ -32,6 +64,12 @@ export const PricePage = () => {
         placeholder="Tìm kiếm theo sản phẩm..."
         selectedCount={selectedCount}
         onClearSelection={handleClearSelection}
+        // Settings props
+        columns={priceColumns}
+        visibleColumns={columnVisibility}
+        onColumnToggle={handleColumnToggle}
+        onImport={handleImport}
+        onExport={handleExport}
       />
 
       {isLoading ? (
@@ -50,6 +88,7 @@ export const PricePage = () => {
           onRefresh={mutate} 
           rowSelection={rowSelection}
           onRowSelectionChange={setRowSelection}
+          columnVisibility={columnVisibility}
         />
       )}
     </div>

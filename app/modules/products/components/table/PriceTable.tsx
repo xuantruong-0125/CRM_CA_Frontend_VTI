@@ -25,6 +25,7 @@ interface PriceTableProps {
   onDeleteSelected?: (ids: number[]) => void;
   rowSelection: Record<string, boolean>;
   onRowSelectionChange: (selection: any) => void;
+  columnVisibility?: Record<string, boolean>;
 }
 
 const priceSchema = z.object({
@@ -44,6 +45,7 @@ export const PriceTable: React.FC<PriceTableProps> = ({
   onDeleteSelected,
   rowSelection,
   onRowSelectionChange,
+  columnVisibility = {},
 }) => {
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editValues, setEditValues] = useState<{ basePrice: string; taxRate: string }>({
@@ -137,12 +139,6 @@ export const PriceTable: React.FC<PriceTableProps> = ({
         minSize: 40,
       },
       {
-        accessorKey: "id",
-        header: "ID",
-        size: 70,
-        minSize: 50,
-      },
-      {
         accessorKey: "productName",
         header: "Sản phẩm",
         size: 250,
@@ -214,6 +210,36 @@ export const PriceTable: React.FC<PriceTableProps> = ({
         ),
       },
       {
+        accessorKey: "createdAt",
+        header: "Ngày tạo",
+        size: 150,
+        cell: (info) => {
+          const dateStr = info.getValue() as string;
+          if (!dateStr) return "-";
+          const date = new Date(dateStr);
+          return (
+            <div className="text-slate-500 text-[11px]">
+              {date.toLocaleDateString("vi-VN")} {date.toLocaleTimeString("vi-VN", { hour: '2-digit', minute: '2-digit' })}
+            </div>
+          );
+        },
+      },
+      {
+        accessorKey: "updatedAt",
+        header: "Ngày cập nhật",
+        size: 150,
+        cell: (info) => {
+          const dateStr = info.getValue() as string;
+          if (!dateStr) return "-";
+          const date = new Date(dateStr);
+          return (
+            <div className="text-slate-500 text-[11px]">
+              {date.toLocaleDateString("vi-VN")} {date.toLocaleTimeString("vi-VN", { hour: '2-digit', minute: '2-digit' })}
+            </div>
+          );
+        },
+      },
+      {
         id: "actions",
         header: "Thao tác",
         size: 100,
@@ -248,6 +274,7 @@ export const PriceTable: React.FC<PriceTableProps> = ({
     columns,
     state: {
       rowSelection,
+      columnVisibility,
     },
     enableRowSelection: true,
     onRowSelectionChange,

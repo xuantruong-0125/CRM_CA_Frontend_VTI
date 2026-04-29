@@ -1,10 +1,18 @@
 import useSWR from 'swr';
 import { productApi } from '../api/product.api';
 
-export const useSearchProducts = (keyword?: string, page = 0, size = 15) => {
+export const useSearchProducts = (keyword?: string, page = 0, size = 15, filters: any = {}) => {
   const { data, error, isLoading, mutate } = useSWR(
-    `/api/v1/products/search?keyword=${keyword || ''}&page=${page}&size=${size}`,
-    () => productApi.searchProducts(keyword, page, size)
+    `/api/v1/products/search?keyword=${keyword || ""}&page=${page}&size=${size}&categoryId=${filters.categoryId || ""}&status=${filters.status || ""}&minPrice=${filters.minPrice || ""}&maxPrice=${filters.maxPrice || ""}`,
+    () => productApi.searchProducts(
+      keyword, 
+      page, 
+      size, 
+      filters.categoryId, 
+      filters.status, 
+      filters.minPrice, 
+      filters.maxPrice
+    )
   );
 
   return {

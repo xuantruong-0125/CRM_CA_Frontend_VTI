@@ -9,11 +9,19 @@ import {
   MoreVertical,
   ChevronDown,
 } from "lucide-react";
+import { FilterPopover } from "./FilterPopover";
+import { SettingsPopover } from "./SettingsPopover";
+
+interface ColumnOption {
+  id: string;
+  label: string;
+}
 
 interface TableToolbarProps {
   title?: string;
   onSearch: (value: string) => void;
-  onFilter?: () => void;
+  onFilterApply?: (filters: any) => void;
+  onFilterReset?: () => void;
   onSettings?: () => void;
   onCreate?: () => void;
   createLabel?: string;
@@ -22,12 +30,19 @@ interface TableToolbarProps {
   selectedCount?: number;
   onClearSelection?: () => void;
   onDeleteSelected?: () => void;
+  // Settings props
+  columns?: ColumnOption[];
+  visibleColumns?: Record<string, boolean>;
+  onColumnToggle?: (columnId: string) => void;
+  onImport?: () => void;
+  onExport?: (format: "csv" | "xlsx" | "json") => void;
 }
 
 export const TableToolbar: React.FC<TableToolbarProps> = ({
   title,
   onSearch,
-  onFilter,
+  onFilterApply,
+  onFilterReset,
   onSettings,
   onCreate,
   createLabel = "Thêm",
@@ -35,11 +50,31 @@ export const TableToolbar: React.FC<TableToolbarProps> = ({
   selectedCount = 0,
   onClearSelection,
   onDeleteSelected,
+  columns = [],
+  visibleColumns = {},
+  onColumnToggle = () => {},
+  onImport,
+  onExport,
 }) => {
   const isSelectedMode = selectedCount > 0;
+  const [isFilterOpen, setIsFilterOpen] = React.useState(false);
+  const [isSettingsOpen, setIsSettingsOpen] = React.useState(false);
+  const [currentFilters, setCurrentFilters] = React.useState<any>({});
+
+  const handleApplyFilters = (filters: any) => {
+    setCurrentFilters(filters);
+    setIsFilterOpen(false);
+    if (onFilterApply) onFilterApply(filters);
+  };
+
+  const handleResetFilters = () => {
+    setCurrentFilters({});
+    setIsFilterOpen(false);
+    if (onFilterReset) onFilterReset();
+  };
 
   return (
-    <div className="flex items-center gap-2 mb-4 bg-white p-2 rounded-lg border border-slate-200 shadow-sm overflow-hidden h-14">
+    <div className="flex items-center gap-2 mb-4 bg-white p-2 rounded-lg border border-slate-200 shadow-sm overflow-visible h-14 relative">
       {/* 1. Title Section (Left) */}
       {title && (
         <div className="flex items-center gap-1.5 px-3 mr-1 border-r border-slate-100 pr-4 cursor-pointer hover:bg-slate-50 h-full transition-colors group">
@@ -51,7 +86,7 @@ export const TableToolbar: React.FC<TableToolbarProps> = ({
       )}
 
       {/* Right Group: Selection, Search, Actions (Right Aligned) */}
-      <div className="flex items-center gap-3 ml-auto pr-1 flex-shrink-0">
+      <div className="flex items-center gap-3 ml-auto pr-1 flex-shrink-0 h-full">
         {/* 2. Selection Actions Bar */}
         {isSelectedMode && (
           <div className="flex items-center bg-sky-50 border border-sky-100 rounded-md px-1 py-1 h-9 animate-in fade-in slide-in-from-left-2 duration-200 flex-shrink-0">
@@ -95,22 +130,54 @@ export const TableToolbar: React.FC<TableToolbarProps> = ({
         </div>
 
         {/* 4. Utility Buttons */}
-        <div className="flex items-center gap-2">
-          <button
-            onClick={onFilter || (() => {})}
-            className="flex items-center justify-center w-9 h-9 text-slate-500 hover:text-sky-600 hover:bg-sky-50 border border-slate-200 rounded-md transition-all active:scale-95 shadow-sm bg-white"
-            title="Lọc"
-          >
-            <Filter size={17} />
-          </button>
+        <div className="flex items-center gap-2 h-full">
+          <div className="relative h-full flex items-center">
+            <button
+              onClick={() => setIsFilterOpen(!isFilterOpen)}
+              className={`flex items-center justify-center w-9 h-9 border rounded-md transition-all active:scale-95 shadow-sm ${
+                isFilterOpen || Object.keys(currentFilters).length > 0
+                  ? "bg-sky-50 border-sky-500 text-sky-600"
+                  : "bg-white border-slate-200 text-slate-500 hover:text-sky-600 hover:bg-sky-50"
+              }`}
+              title="Lọc"
+            >
+              <Filter size={17} />
+            </button>
+
+            {isFilterOpen && (
+              <FilterPopover
+                onClose={() => setIsFilterOpen(false)}
+                onApply={handleApplyFilters}
+                onReset={handleResetFilters}
+                initialFilters={currentFilters}
+              />
+            )}
+          </div>
           
-          <button
-            onClick={onSettings || (() => {})}
-            className="flex items-center justify-center w-9 h-9 text-slate-500 hover:text-sky-600 hover:bg-sky-50 border border-slate-200 rounded-md transition-all active:scale-95 shadow-sm bg-white"
-            title="Cài đặt"
-          >
-            <Settings2 size={17} />
-          </button>
+          <div className="relative h-full flex items-center">
+            <button
+              onClick={() => setIsSettingsOpen(!isSettingsOpen)}
+              className={`flex items-center justify-center w-9 h-9 border rounded-md transition-all active:scale-95 shadow-sm ${
+                isSettingsOpen
+                  ? "bg-sky-50 border-sky-500 text-sky-600"
+                  : "bg-white border-slate-200 text-slate-500 hover:text-sky-600 hover:bg-sky-50"
+              }`}
+              title="Cài đặt"
+            >
+              <Settings2 size={17} />
+            </button>
+
+            {isSettingsOpen && (
+              <SettingsPopover
+                onClose={() => setIsSettingsOpen(false)}
+                columns={columns}
+                visibleColumns={visibleColumns}
+                onColumnToggle={onColumnToggle}
+                onImport={onImport}
+                onExport={onExport}
+              />
+            )}
+          </div>
 
           {onCreate && (
             <button
@@ -126,7 +193,3 @@ export const TableToolbar: React.FC<TableToolbarProps> = ({
     </div>
   );
 };
-
-
-
-

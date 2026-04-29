@@ -20,9 +20,17 @@ export const productApi = {
     return response.data.data;
   },
 
-  searchProducts: async (keyword?: string, page = 0, size = 15): Promise<PageResponse<Product>> => {
+  searchProducts: async (
+    keyword?: string, 
+    page = 0, 
+    size = 15,
+    categoryId?: number,
+    status?: string,
+    minPrice?: number,
+    maxPrice?: number
+  ): Promise<PageResponse<Product>> => {
     const response = await apiClient.get<ApiResponse<PageResponse<Product>>>('/api/v1/products/search', {
-      params: { keyword, page, size }
+      params: { keyword, page, size, categoryId, status, minPrice, maxPrice }
     });
     return response.data.data;
   },
