@@ -9,15 +9,33 @@ import {
 import { Category } from "../../types/category.type";
 import { Edit, Trash2, Trash } from "lucide-react";
 import { IndeterminateCheckbox } from "../shared/IndeterminateCheckbox";
+import { Pagination } from "../shared/Pagination";
 
 interface CategoryTableProps {
   data: Category[];
+  totalCount: number;
+  totalPages: number;
+  pageIndex: number;
+  pageSize: number;
+  onPageChange: (page: number) => void;
+  onPageSizeChange: (size: number) => void;
   onEdit: (id: number) => void;
   onDelete: (id: number) => void;
   onDeleteSelected?: (ids: number[]) => void;
 }
 
-export const CategoryTable: React.FC<CategoryTableProps> = ({ data, onEdit, onDelete, onDeleteSelected }) => {
+export const CategoryTable: React.FC<CategoryTableProps> = ({
+  data,
+  totalCount,
+  totalPages,
+  pageIndex,
+  pageSize,
+  onPageChange,
+  onPageSizeChange,
+  onEdit,
+  onDelete,
+  onDeleteSelected,
+}) => {
   const [rowSelection, setRowSelection] = useState({});
 
   const columns = useMemo<ColumnDef<Category>[]>(
@@ -225,7 +243,17 @@ export const CategoryTable: React.FC<CategoryTableProps> = ({ data, onEdit, onDe
           </tbody>
         </table>
       </div>
+
+      <Pagination
+        currentPage={pageIndex + 1}
+        totalPages={totalPages}
+        pageSize={pageSize}
+        totalCount={totalCount}
+        onPageChange={(page) => onPageChange(page - 1)}
+        onPageSizeChange={onPageSizeChange}
+      />
     </div>
   );
 };
+
 

@@ -10,15 +10,33 @@ import { Product } from "../../types/product.type";
 import { Edit, Trash2, Trash } from "lucide-react";
 import { ProductTableRow } from "./ProductTableRow";
 import { IndeterminateCheckbox } from "../shared/IndeterminateCheckbox";
+import { Pagination } from "../shared/Pagination";
 
 interface ProductTableProps {
   data: Product[];
+  totalCount: number;
+  totalPages: number;
+  pageIndex: number;
+  pageSize: number;
+  onPageChange: (page: number) => void;
+  onPageSizeChange: (size: number) => void;
   onEdit: (id: number) => void;
   onDelete: (id: number) => void;
   onDeleteSelected?: (ids: number[]) => void;
 }
 
-export const ProductTable: React.FC<ProductTableProps> = ({ data, onEdit, onDelete, onDeleteSelected }) => {
+export const ProductTable: React.FC<ProductTableProps> = ({
+  data,
+  totalCount,
+  totalPages,
+  pageIndex,
+  pageSize,
+  onPageChange,
+  onPageSizeChange,
+  onEdit,
+  onDelete,
+  onDeleteSelected,
+}) => {
   const [rowSelection, setRowSelection] = useState({});
 
   const columns = useMemo<ColumnDef<Product>[]>(
@@ -235,7 +253,17 @@ export const ProductTable: React.FC<ProductTableProps> = ({ data, onEdit, onDele
           </tbody>
         </table>
       </div>
+
+      <Pagination
+        currentPage={pageIndex + 1}
+        totalPages={totalPages}
+        pageSize={pageSize}
+        totalCount={totalCount}
+        onPageChange={(page) => onPageChange(page - 1)}
+        onPageSizeChange={onPageSizeChange}
+      />
     </div>
   );
 };
+
 

@@ -1,5 +1,3 @@
-"use client";
-
 import React, { useState, useMemo } from "react";
 import { Price, UpdatePriceRequest } from "../../types/price.type";
 import { priceApi } from "../../api/price.api";
@@ -13,9 +11,16 @@ import {
   ColumnResizeMode,
 } from "@tanstack/react-table";
 import { IndeterminateCheckbox } from "../shared/IndeterminateCheckbox";
+import { Pagination } from "../shared/Pagination";
 
 interface PriceTableProps {
   data: Price[];
+  totalCount: number;
+  totalPages: number;
+  pageIndex: number;
+  pageSize: number;
+  onPageChange: (page: number) => void;
+  onPageSizeChange: (size: number) => void;
   onRefresh: () => void;
   onDeleteSelected?: (ids: number[]) => void;
 }
@@ -25,7 +30,17 @@ const priceSchema = z.object({
   taxRate: z.number().finite("Phải là số").min(0, "Không được âm").max(100, "Tối đa 100%"),
 });
 
-export const PriceTable: React.FC<PriceTableProps> = ({ data, onRefresh, onDeleteSelected }) => {
+export const PriceTable: React.FC<PriceTableProps> = ({
+  data,
+  totalCount,
+  totalPages,
+  pageIndex,
+  pageSize,
+  onPageChange,
+  onPageSizeChange,
+  onRefresh,
+  onDeleteSelected,
+}) => {
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editValues, setEditValues] = useState<{ basePrice: string; taxRate: string }>({
     basePrice: "0",
@@ -317,6 +332,16 @@ export const PriceTable: React.FC<PriceTableProps> = ({ data, onRefresh, onDelet
           </tbody>
         </table>
       </div>
+
+      <Pagination
+        currentPage={pageIndex + 1}
+        totalPages={totalPages}
+        pageSize={pageSize}
+        totalCount={totalCount}
+        onPageChange={(page) => onPageChange(page - 1)}
+        onPageSizeChange={onPageSizeChange}
+      />
     </div>
   );
 };
+

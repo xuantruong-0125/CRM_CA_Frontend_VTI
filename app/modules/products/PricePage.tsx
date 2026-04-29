@@ -1,11 +1,14 @@
 "use client";
-
-import React from "react";
+import React, { useState } from "react";
 import { PriceTable } from "./components/table/PriceTable";
 import { useSearchPrices } from "./hooks/usePrices";
 
 export const PricePage = () => {
-  const { data, isLoading, isError, mutate } = useSearchPrices("", 0, 15);
+  const [pageIndex, setPageIndex] = useState(0);
+  const [pageSize, setPageSize] = useState(20);
+  const [keyword, setKeyword] = useState("");
+
+  const { data, isLoading, isError, mutate } = useSearchPrices(keyword, pageIndex, pageSize);
 
   return (
     <div className="p-4 bg-slate-50 min-h-screen">
@@ -19,8 +22,18 @@ export const PricePage = () => {
       ) : isError ? (
         <div className="text-sm text-rose-500">Lỗi khi tải dữ liệu!</div>
       ) : (
-        <PriceTable data={data?.items || []} onRefresh={mutate} />
+        <PriceTable 
+          data={data?.items || []} 
+          totalCount={data?.totalItems || 0}
+          totalPages={data?.totalPages || 0}
+          pageIndex={pageIndex}
+          pageSize={pageSize}
+          onPageChange={setPageIndex}
+          onPageSizeChange={setPageSize}
+          onRefresh={mutate} 
+        />
       )}
     </div>
   );
 };
+

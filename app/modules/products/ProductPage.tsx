@@ -1,6 +1,5 @@
 "use client";
-
-import React from "react";
+import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Plus } from "lucide-react";
 import { ProductTable } from "./components/table/ProductTable";
@@ -9,8 +8,11 @@ import { productApi } from "./api/product.api";
 
 export const ProductPage = () => {
   const router = useRouter();
-  // Fetch products with a page size of 15 as requested
-  const { data, isLoading, isError, mutate } = useSearchProducts("", 0, 15);
+  const [pageIndex, setPageIndex] = useState(0);
+  const [pageSize, setPageSize] = useState(20);
+  const [keyword, setKeyword] = useState("");
+
+  const { data, isLoading, isError, mutate } = useSearchProducts(keyword, pageIndex, pageSize);
 
   const handleEdit = (id: number) => {
     router.push(`/products/edit/${id}`);
@@ -45,7 +47,7 @@ export const ProductPage = () => {
       <div className="flex items-center justify-between mb-4">
         <div>
           <h1 className="text-xl font-bold text-slate-800">Quản lý sản phẩm</h1>
-          <p className="text-xs text-slate-500 mt-1">Danh sách sản phẩm trung tâm (Hiển thị 15 dòng)</p>
+          <p className="text-xs text-slate-500 mt-1">Danh sách sản phẩm trung tâm</p>
         </div>
         <button
           onClick={() => router.push("/products/create")}
@@ -63,6 +65,12 @@ export const ProductPage = () => {
       ) : (
         <ProductTable 
           data={data?.items || []} 
+          totalCount={data?.totalItems || 0}
+          totalPages={data?.totalPages || 0}
+          pageIndex={pageIndex}
+          pageSize={pageSize}
+          onPageChange={setPageIndex}
+          onPageSizeChange={setPageSize}
           onEdit={handleEdit} 
           onDelete={handleDelete} 
           onDeleteSelected={handleDeleteSelected}
@@ -71,3 +79,4 @@ export const ProductPage = () => {
     </div>
   );
 };
+

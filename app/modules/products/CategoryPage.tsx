@@ -1,6 +1,5 @@
 "use client";
-
-import React from "react";
+import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Plus } from "lucide-react";
 import { CategoryTable } from "./components/table/CategoryTable";
@@ -9,8 +8,11 @@ import { categoryApi } from "./api/category.api";
 
 export const CategoryPage = () => {
   const router = useRouter();
-  // Call API for page 0, size 50 for now
-  const { data, isLoading, isError, mutate } = useSearchCategories("", 0, 50);
+  const [pageIndex, setPageIndex] = useState(0);
+  const [pageSize, setPageSize] = useState(20);
+  const [keyword, setKeyword] = useState("");
+
+  const { data, isLoading, isError, mutate } = useSearchCategories(keyword, pageIndex, pageSize);
 
   const handleEdit = (id: number) => {
     router.push(`/categories/edit/${id}`);
@@ -63,6 +65,12 @@ export const CategoryPage = () => {
       ) : (
         <CategoryTable 
           data={data?.items || []} 
+          totalCount={data?.totalItems || 0}
+          totalPages={data?.totalPages || 0}
+          pageIndex={pageIndex}
+          pageSize={pageSize}
+          onPageChange={setPageIndex}
+          onPageSizeChange={setPageSize}
           onEdit={handleEdit} 
           onDelete={handleDelete} 
           onDeleteSelected={handleDeleteSelected}
@@ -71,3 +79,4 @@ export const CategoryPage = () => {
     </div>
   );
 };
+
