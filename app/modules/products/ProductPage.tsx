@@ -7,6 +7,8 @@ import { ProductTable } from "./components/table/ProductTable";
 import { useSearchProducts } from "./hooks/useProducts";
 import { productApi } from "./api/product.api";
 import { TableToolbar } from "./components/shared/TableToolbar";
+import { ConfirmDialog } from "./components/shared/ConfirmDialog";
+import { useConfirm } from "./hooks/useConfirm";
 
 export const ProductPage = () => {
   const router = useRouter();
@@ -15,6 +17,15 @@ export const ProductPage = () => {
   const [keyword, setKeyword] = useState("");
   const [rowSelection, setRowSelection] = useState({});
   const [filters, setFilters] = useState<any>({});
+  const { 
+    isOpen: isConfirmOpen, 
+    isLoading: isConfirmLoading, 
+    options: confirmOptions, 
+    confirm: showConfirm, 
+    close: closeConfirm, 
+    handleConfirm 
+  } = useConfirm();
+
   const [columnVisibility, setColumnVisibility] = useState<Record<string, boolean>>({
     imageUrl: false,
     skuCode: true,
@@ -118,29 +129,37 @@ export const ProductPage = () => {
     router.push(`/products/edit/${id}`);
   };
 
-  const handleDelete = async (id: number) => {
-    if (confirm("Bạn có chắc chắn muốn xóa sản phẩm này?")) {
-      try {
-        await productApi.deleteProduct(id);
-        mutate();
-      } catch (error) {
-        console.error("Failed to delete product", error);
-        alert("Xóa thất bại!");
+  const handleDelete = (id: number) => {
+    showConfirm({
+      title: "Xác nhận xóa sản phẩm",
+      message: "Bạn có chắc chắn muốn xóa sản phẩm này? Hành động này không thể hoàn tác.",
+      onConfirm: async () => {
+        try {
+          await productApi.deleteProduct(id);
+          mutate();
+        } catch (error) {
+          console.error("Failed to delete product", error);
+          alert("Xóa thất bại!");
+        }
       }
-    }
+    });
   };
 
-  const handleDeleteSelected = async (ids: number[]) => {
-    if (confirm(`Bạn có chắc chắn muốn xóa ${ids.length} sản phẩm đã chọn?`)) {
-      try {
-        await Promise.all(ids.map(id => productApi.deleteProduct(id)));
-        setRowSelection({});
-        mutate();
-      } catch (error) {
-        console.error("Failed to delete multiple products", error);
-        alert("Xóa một số sản phẩm thất bại!");
+  const handleDeleteSelected = (ids: number[]) => {
+    showConfirm({
+      title: "Xác nhận xóa nhiều sản phẩm",
+      message: `Bạn có chắc chắn muốn xóa ${ids.length} sản phẩm đã chọn? Hành động này không thể hoàn tác.`,
+      onConfirm: async () => {
+        try {
+          await Promise.all(ids.map(id => productApi.deleteProduct(id)));
+          setRowSelection({});
+          mutate();
+        } catch (error) {
+          console.error("Failed to delete multiple products", error);
+          alert("Xóa một số sản phẩm thất bại!");
+        }
       }
-    }
+    });
   };
 
   const getSelectedIds = () => {
@@ -227,6 +246,15 @@ export const ProductPage = () => {
           </div>
         </div>
       </div>
+
+      <ConfirmDialog
+        isOpen={isConfirmOpen}
+        isLoading={isConfirmLoading}
+        title={confirmOptions.title}
+        message={confirmOptions.message}
+        onClose={closeConfirm}
+        onConfirm={handleConfirm}
+      />
     </div>
   );
 };

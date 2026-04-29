@@ -7,6 +7,8 @@ import { TableToolbar } from "./components/shared/TableToolbar";
 import { CategoryTable } from "./components/table/CategoryTable";
 import { useSearchCategories } from "./hooks/useCategories";
 import { categoryApi } from "./api/category.api";
+import { ConfirmDialog } from "./components/shared/ConfirmDialog";
+import { useConfirm } from "./hooks/useConfirm";
 
 export const CategoryPage = () => {
   const router = useRouter();
@@ -14,6 +16,15 @@ export const CategoryPage = () => {
   const [pageSize, setPageSize] = useState(20);
   const [keyword, setKeyword] = useState("");
   const [rowSelection, setRowSelection] = useState({});
+  const { 
+    isOpen: isConfirmOpen, 
+    isLoading: isConfirmLoading, 
+    options: confirmOptions, 
+    confirm: showConfirm, 
+    close: closeConfirm, 
+    handleConfirm 
+  } = useConfirm();
+
   const [columnVisibility, setColumnVisibility] = useState<Record<string, boolean>>({
     name: true,
     description: true,
@@ -98,29 +109,37 @@ export const CategoryPage = () => {
     router.push(`/categories/edit/${id}`);
   };
 
-  const handleDelete = async (id: number) => {
-    if (confirm("Bạn có chắc chắn muốn xóa danh mục này?")) {
-      try {
-        await categoryApi.deleteCategory(id);
-        mutate();
-      } catch (error) {
-        console.error("Failed to delete category", error);
-        alert("Xóa thất bại!");
+  const handleDelete = (id: number) => {
+    showConfirm({
+      title: "Xác nhận xóa danh mục",
+      message: "Bạn có chắc chắn muốn xóa danh mục này? Hành động này không thể hoàn tác.",
+      onConfirm: async () => {
+        try {
+          await categoryApi.deleteCategory(id);
+          mutate();
+        } catch (error) {
+          console.error("Failed to delete category", error);
+          alert("Xóa thất bại!");
+        }
       }
-    }
+    });
   };
 
-  const handleDeleteSelected = async (ids: number[]) => {
-    if (confirm(`Bạn có chắc chắn muốn xóa ${ids.length} danh mục đã chọn?`)) {
-      try {
-        await Promise.all(ids.map(id => categoryApi.deleteCategory(id)));
-        setRowSelection({});
-        mutate();
-      } catch (error) {
-        console.error("Failed to delete multiple categories", error);
-        alert("Xóa một số danh mục thất bại!");
+  const handleDeleteSelected = (ids: number[]) => {
+    showConfirm({
+      title: "Xác nhận xóa nhiều danh mục",
+      message: `Bạn có chắc chắn muốn xóa ${ids.length} danh mục đã chọn? Hành động này không thể hoàn tác.`,
+      onConfirm: async () => {
+        try {
+          await Promise.all(ids.map(id => categoryApi.deleteCategory(id)));
+          setRowSelection({});
+          mutate();
+        } catch (error) {
+          console.error("Failed to delete multiple categories", error);
+          alert("Xóa một số danh mục thất bại!");
+        }
       }
-    }
+    });
   };
 
   const getSelectedIds = () => {
@@ -205,6 +224,15 @@ export const CategoryPage = () => {
           </div>
         </div>
       </div>
+
+      <ConfirmDialog
+        isOpen={isConfirmOpen}
+        isLoading={isConfirmLoading}
+        title={confirmOptions.title}
+        message={confirmOptions.message}
+        onClose={closeConfirm}
+        onConfirm={handleConfirm}
+      />
     </div>
   );
 };
