@@ -6,13 +6,13 @@ import {
   ColumnDef,
   ColumnResizeMode,
 } from "@tanstack/react-table";
-import { Contact } from "../../types/contact.type";
-import { Edit, Trash2, User, Phone, Mail, MapPin } from "lucide-react";
+import { Customer } from "../../types/customer.type";
+import { Edit, Trash2, Building2, Phone, Mail, FileText, Hash } from "lucide-react";
 import { IndeterminateCheckbox } from "../../../products/components/shared/IndeterminateCheckbox";
 import { Pagination } from "../../../products/components/shared/Pagination";
 
-interface ContactTableProps {
-  data: Contact[];
+interface CustomerTableProps {
+  data: Customer[];
   totalCount: number;
   totalPages: number;
   pageIndex: number;
@@ -24,10 +24,9 @@ interface ContactTableProps {
   rowSelection: Record<string, boolean>;
   onRowSelectionChange: (selection: any) => void;
   columnVisibility?: Record<string, boolean>;
-  isDataMasked?: boolean;
 }
 
-export const ContactTable: React.FC<ContactTableProps> = ({
+export const CustomerTable: React.FC<CustomerTableProps> = ({
   data,
   totalCount,
   totalPages,
@@ -40,9 +39,8 @@ export const ContactTable: React.FC<ContactTableProps> = ({
   rowSelection,
   onRowSelectionChange,
   columnVisibility = {},
-  isDataMasked = false,
 }) => {
-  const columns = useMemo<ColumnDef<Contact>[]>(
+  const columns = useMemo<ColumnDef<Customer>[]>(
     () => [
       {
         id: "select",
@@ -79,13 +77,24 @@ export const ContactTable: React.FC<ContactTableProps> = ({
         minSize: 40,
       },
       {
-        accessorKey: "fullName",
-        header: "Họ và tên",
-        size: 200,
+        accessorKey: "customerCode",
+        header: "Mã khách hàng",
+        size: 130,
         cell: (info) => (
           <div className="flex items-center gap-2">
-            <div className="w-7 h-7 rounded-full bg-sky-100 flex items-center justify-center text-sky-600">
-              <User size={14} />
+            <Hash size={12} className="text-slate-400" />
+            <span className="font-medium text-slate-700">{info.getValue() as string}</span>
+          </div>
+        ),
+      },
+      {
+        accessorKey: "name",
+        header: "Tên khách hàng",
+        size: 250,
+        cell: (info) => (
+          <div className="flex items-center gap-2">
+            <div className="w-7 h-7 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600">
+              <Building2 size={14} />
             </div>
             <div className="truncate font-semibold text-slate-800" title={info.getValue() as string}>
               {info.getValue() as string}
@@ -94,75 +103,56 @@ export const ContactTable: React.FC<ContactTableProps> = ({
         ),
       },
       {
-        accessorKey: "position",
-        header: "Chức vụ",
-        size: 150,
-        cell: (info) => <div className="truncate text-slate-600">{info.getValue() as string || "-"}</div>,
-      },
-      {
-        accessorKey: "customerName",
-        header: "Khách hàng",
-        size: 200,
-        cell: (info) => <div className="truncate font-medium text-sky-700">{info.getValue() as string || "-"}</div>,
+        accessorKey: "type",
+        header: "Loại",
+        size: 80,
+        cell: (info) => {
+          const type = info.getValue() as string;
+          return (
+            <span
+              className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                type === 'B2B' 
+                  ? "bg-purple-100 text-purple-700 border border-purple-200" 
+                  : "bg-emerald-100 text-emerald-700 border border-emerald-200"
+              }`}
+            >
+              {type}
+            </span>
+          );
+        },
       },
       {
         accessorKey: "phone",
         header: "Số điện thoại",
         size: 130,
-        cell: (info) => {
-          const val = info.getValue() as string;
-          const displayVal = (isDataMasked && val) 
-            ? val.substring(0, 2) + val.substring(2).replace(/./g, 'x') 
-            : val;
-          return (
-            <div className="flex items-center gap-1.5 text-slate-600">
-              <Phone size={12} className="text-slate-400" />
-              {displayVal || "-"}
-            </div>
-          );
-        },
+        cell: (info) => (
+          <div className="flex items-center gap-1.5 text-slate-600">
+            <Phone size={12} className="text-slate-400" />
+            {info.getValue() as string || "-"}
+          </div>
+        ),
       },
       {
         accessorKey: "email",
         header: "Email",
         size: 200,
-        cell: (info) => {
-          const val = info.getValue() as string;
-          let displayVal = val;
-          if (isDataMasked && val && val.includes("@")) {
-            const [name, domain] = val.split("@");
-            const maskedName = name.length > 2 
-              ? name.substring(0, 2) + "***" 
-              : "***";
-            displayVal = `${maskedName}@${domain}`;
-          }
-          return (
-            <div className="flex items-center gap-1.5 text-slate-600 truncate">
-              <Mail size={12} className="text-slate-400 shrink-0" />
-              <span className="truncate">{displayVal || "-"}</span>
-            </div>
-          );
-        },
+        cell: (info) => (
+          <div className="flex items-center gap-1.5 text-slate-600 truncate">
+            <Mail size={12} className="text-slate-400 shrink-0" />
+            <span className="truncate">{info.getValue() as string || "-"}</span>
+          </div>
+        ),
       },
       {
-        id: "isPrimary",
-        header: "Loại liên hệ",
-        size: 120,
-        accessorFn: (row: any) => row.isPrimary !== undefined ? row.isPrimary : row.primary,
-        cell: (info) => {
-          const isPrimary = info.getValue() as boolean;
-          return (
-            <span
-              className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                isPrimary 
-                  ? "bg-sky-100 text-sky-700 border border-sky-200" 
-                  : "bg-slate-100 text-slate-500 border border-slate-200"
-              }`}
-            >
-              {isPrimary ? "LIÊN HỆ CHÍNH" : "LIÊN HỆ PHỤ"}
-            </span>
-          );
-        },
+        accessorKey: "taxCode",
+        header: "Mã số thuế",
+        size: 130,
+        cell: (info) => (
+          <div className="flex items-center gap-1.5 text-slate-600">
+            <FileText size={12} className="text-slate-400" />
+            {info.getValue() as string || "-"}
+          </div>
+        ),
       },
       {
         id: "actions",
@@ -189,7 +179,7 @@ export const ContactTable: React.FC<ContactTableProps> = ({
         ),
       },
     ],
-    [onEdit, onDelete, isDataMasked]
+    [onEdit, onDelete]
   );
 
   const table = useReactTable({

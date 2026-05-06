@@ -4,6 +4,9 @@
   color: white;
   height: 100vh;
   padding: 20px;
+  position: sticky;
+  top: 0;
+  flex-shrink: 0;
 }
 
 .logo {

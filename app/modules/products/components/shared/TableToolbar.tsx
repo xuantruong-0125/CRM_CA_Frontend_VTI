@@ -36,6 +36,8 @@ interface TableToolbarProps {
   onColumnToggle?: (columnId: string) => void;
   onImport?: () => void;
   onExport?: (format: "csv" | "xlsx" | "json") => void;
+  isDataMasked?: boolean;
+  onDataMaskToggle?: () => void;
   FilterComponent?: React.FC<{
     onClose: () => void;
     onApply: (filters: any) => void;
@@ -61,6 +63,8 @@ export const TableToolbar: React.FC<TableToolbarProps> = ({
   onColumnToggle = () => {},
   onImport,
   onExport,
+  isDataMasked,
+  onDataMaskToggle,
   FilterComponent = FilterPopover,
 }) => {
   const isSelectedMode = selectedCount > 0;
@@ -182,6 +186,8 @@ export const TableToolbar: React.FC<TableToolbarProps> = ({
                 onColumnToggle={onColumnToggle}
                 onImport={onImport}
                 onExport={onExport}
+                isDataMasked={isDataMasked}
+                onDataMaskToggle={onDataMaskToggle}
               />
             )}
           </div>

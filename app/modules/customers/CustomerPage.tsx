@@ -3,22 +3,21 @@
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Keyboard } from "lucide-react";
-import { ContactTable } from "./components/table/ContactTable";
-import { useContacts } from "./hooks/useContacts";
-import { contactApi } from "./api/contact.api";
+import { CustomerTable } from "./components/table/CustomerTable";
+import { useCustomers } from "./hooks/useCustomers";
+import { customerApi } from "./api/customer.api";
 import { TableToolbar } from "../products/components/shared/TableToolbar";
 import { ConfirmDialog } from "../products/components/shared/ConfirmDialog";
 import { useConfirm } from "../products/hooks/useConfirm";
-import { ContactFilterPopover } from "./components/shared/ContactFilterPopover";
+import { CustomerFilterPopover } from "./components/shared/CustomerFilterPopover";
 
-export const ContactPage = () => {
+export const CustomerPage = () => {
   const router = useRouter();
   const [pageIndex, setPageIndex] = useState(0);
   const [pageSize, setPageSize] = useState(20);
   const [keyword, setKeyword] = useState("");
   const [rowSelection, setRowSelection] = useState({});
   const [filters, setFilters] = useState<any>({});
-  const [isDataMasked, setIsDataMasked] = useState(false);
   
   const { 
     isOpen: isConfirmOpen, 
@@ -30,24 +29,24 @@ export const ContactPage = () => {
   } = useConfirm();
 
   const [columnVisibility, setColumnVisibility] = useState<Record<string, boolean>>({
-    fullName: true,
-    position: true,
-    customerName: true,
+    customerCode: true,
+    name: true,
+    type: true,
     phone: true,
     email: true,
-    isPrimary: true,
+    taxCode: true,
   });
 
-  const contactColumns = [
-    { id: "fullName", label: "Họ và tên" },
-    { id: "position", label: "Chức vụ" },
-    { id: "customerName", label: "Khách hàng" },
+  const customerColumns = [
+    { id: "customerCode", label: "Mã khách hàng" },
+    { id: "name", label: "Tên khách hàng" },
+    { id: "type", label: "Loại" },
     { id: "phone", label: "Số điện thoại" },
     { id: "email", label: "Email" },
-    { id: "isPrimary", label: "Loại liên hệ" },
+    { id: "taxCode", label: "Mã số thuế" },
   ];
 
-  const { data, isLoading, isError, mutate } = useContacts(keyword, pageIndex + 1, pageSize, filters);
+  const { data, isLoading, isError, mutate } = useCustomers(keyword, pageIndex + 1, pageSize, filters);
 
   // Global Keyboard Shortcuts
   useEffect(() => {
@@ -59,7 +58,7 @@ export const ContactPage = () => {
 
       if (e.altKey && e.key === "n") {
         e.preventDefault();
-        router.push("/contacts/create");
+        router.push("/customers/create");
       }
 
       if (e.altKey && e.key === "r") {
@@ -103,19 +102,19 @@ export const ContactPage = () => {
   };
 
   const handleEdit = (id: number) => {
-    router.push(`/contacts/edit/${id}`);
+    router.push(`/customers/edit/${id}`);
   };
 
   const handleDelete = (id: number) => {
     showConfirm({
-      title: "Xác nhận xóa liên hệ",
-      message: "Bạn có chắc chắn muốn xóa liên hệ này? Hành động này không thể hoàn tác.",
+      title: "Xác nhận xóa khách hàng",
+      message: "Bạn có chắc chắn muốn xóa khách hàng này? Hành động này không thể hoàn tác.",
       onConfirm: async () => {
         try {
-          await contactApi.deleteContact(id);
+          await customerApi.deleteCustomer(id);
           mutate();
         } catch (error) {
-          console.error("Failed to delete contact", error);
+          console.error("Failed to delete customer", error);
         }
       }
     });
@@ -123,15 +122,15 @@ export const ContactPage = () => {
 
   const handleDeleteSelected = (ids: number[]) => {
     showConfirm({
-      title: "Xác nhận xóa nhiều liên hệ",
-      message: `Bạn có chắc chắn muốn xóa ${ids.length} liên hệ đã chọn?`,
+      title: "Xác nhận xóa nhiều khách hàng",
+      message: `Bạn có chắc chắn muốn xóa ${ids.length} khách hàng đã chọn?`,
       onConfirm: async () => {
         try {
-          await contactApi.bulkDeleteContacts(ids);
+          await customerApi.bulkDeleteCustomers(ids);
           setRowSelection({});
           mutate();
         } catch (error) {
-          console.error("Failed to delete multiple contacts", error);
+          console.error("Failed to delete multiple customers", error);
         }
       }
     });
@@ -139,29 +138,32 @@ export const ContactPage = () => {
 
   const getSelectedIds = () => {
     return Object.keys(rowSelection).map(index => {
-      return data?.items[parseInt(index)].id;
+        const items = data?.items || [];
+        return items[parseInt(index)]?.id;
     }).filter(id => id !== undefined) as number[];
   };
+
+  const tableData = data?.items || [];
+  const totalItems = data?.totalItems || 0;
+  const totalPages = data?.totalPages || 0;
 
   return (
     <div className="p-4 bg-slate-50 min-h-screen">
       <TableToolbar
-        title="Quản lý liên hệ"
+        title="Quản lý khách hàng"
         onSearch={handleSearch}
         onFilterApply={handleApplyFilters}
         onFilterReset={handleResetFilters}
-        FilterComponent={ContactFilterPopover}
-        onCreate={() => router.push("/contacts/create")}
+        FilterComponent={CustomerFilterPopover}
+        onCreate={() => router.push("/customers/create")}
         createLabel="Thêm (Alt+N)"
-        placeholder="Tìm kiếm liên hệ..."
+        placeholder="Tìm kiếm khách hàng..."
         selectedCount={Object.keys(rowSelection).length}
         onClearSelection={() => setRowSelection({})}
         onDeleteSelected={() => handleDeleteSelected(getSelectedIds())}
-        columns={contactColumns}
+        columns={customerColumns}
         visibleColumns={columnVisibility}
         onColumnToggle={handleColumnToggle}
-        isDataMasked={isDataMasked}
-        onDataMaskToggle={() => setIsDataMasked(!isDataMasked)}
       />
 
       <div className="relative">
@@ -170,10 +172,10 @@ export const ContactPage = () => {
         ) : isError ? (
           <div className="text-sm text-rose-500 py-10 text-center bg-white rounded-lg border border-slate-200">Lỗi khi tải dữ liệu!</div>
         ) : (
-          <ContactTable 
-            data={data?.items || []} 
-            totalCount={data?.totalItems || 0}
-            totalPages={data?.totalPages || 0}
+          <CustomerTable 
+            data={tableData} 
+            totalCount={totalItems}
+            totalPages={totalPages}
             pageIndex={pageIndex}
             pageSize={pageSize}
             onPageChange={setPageIndex}
@@ -183,7 +185,6 @@ export const ContactPage = () => {
             rowSelection={rowSelection}
             onRowSelectionChange={setRowSelection}
             columnVisibility={columnVisibility}
-            isDataMasked={isDataMasked}
           />
         )}
       </div>

@@ -13,6 +13,8 @@ interface SettingsPopoverProps {
   onColumnToggle: (columnId: string) => void;
   onImport?: () => void;
   onExport?: (format: "csv" | "xlsx" | "json") => void;
+  isDataMasked?: boolean;
+  onDataMaskToggle?: () => void;
 }
 
 export const SettingsPopover: React.FC<SettingsPopoverProps> = ({
@@ -22,6 +24,8 @@ export const SettingsPopover: React.FC<SettingsPopoverProps> = ({
   onColumnToggle,
   onImport,
   onExport,
+  isDataMasked,
+  onDataMaskToggle,
 }) => {
   return (
     <div className="absolute top-full right-0 mt-2 w-72 bg-white border border-slate-200 rounded-xl shadow-2xl z-[100] animate-in fade-in slide-in-from-top-2 duration-200 overflow-hidden">
@@ -69,9 +73,26 @@ export const SettingsPopover: React.FC<SettingsPopoverProps> = ({
 
         {/* Actions */}
         <div className="pt-4 border-t border-slate-100 space-y-3">
-          <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-widest">
-            Dữ liệu
-          </label>
+          <div className="flex items-center justify-between">
+            <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-widest">
+              Dữ liệu
+            </label>
+            {onDataMaskToggle && (
+              <label className="flex items-center gap-2 cursor-pointer group">
+                <span className="text-[11px] font-semibold text-slate-500 group-hover:text-slate-700">Mã hóa bảo mật</span>
+                <div className="relative inline-block w-8 h-4">
+                  <input 
+                    type="checkbox" 
+                    className="sr-only" 
+                    checked={isDataMasked || false} 
+                    onChange={onDataMaskToggle} 
+                  />
+                  <div className={`block w-8 h-4 rounded-full transition-colors ${isDataMasked ? 'bg-sky-500' : 'bg-slate-300'}`}></div>
+                  <div className={`absolute left-1 top-1 bg-white w-2 h-2 rounded-full transition-transform ${isDataMasked ? 'translate-x-4' : ''}`}></div>
+                </div>
+              </label>
+            )}
+          </div>
           
           <div className="grid grid-cols-2 gap-2">
             <button
