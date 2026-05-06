@@ -1,3 +1,5 @@
+import { Contact } from "../../contacts/types/contact.type";
+
 export interface Customer {
   id: number;
   parentId: number | null;
@@ -20,7 +22,7 @@ export interface Customer {
   createdAt: string;
   updatedAt: string;
   deletedAt: string | null;
-  contacts?: any[]; // For simplicity, using any or importing Contact later
+  contacts?: Contact[];
 }
 
 export interface CreateCustomerRequest {
