@@ -20,6 +20,7 @@ export interface Customer {
   createdAt: string;
   updatedAt: string;
   deletedAt: string | null;
+  contacts?: any[]; // For simplicity, using any or importing Contact later
 }
 
 export interface CreateCustomerRequest {
