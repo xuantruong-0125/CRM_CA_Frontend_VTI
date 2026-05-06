@@ -11,22 +11,11 @@ const apiClient = axios.create({
 
 export const customerApi = {
   getCustomers: async (keyword = '', type = '', page = 1, size = 10): Promise<PageResponse<Customer>> => {
-    const response = await apiClient.get<ApiResponse<Customer[]>>('/api/v1/customers', {
+    const response = await apiClient.get<ApiResponse<PageResponse<Customer>>>('/api/v1/customers', {
       params: { keyword, type, page, size }
     });
     
-    // If backend doesn't support pagination yet, we wrap it
-    const data = response.data.data;
-    if (Array.isArray(data)) {
-        return {
-            items: data,
-            totalItems: data.length,
-            totalPages: 1,
-            size: data.length,
-            page: 1
-        };
-    }
-    return data as any;
+    return response.data.data;
   },
 
   getCustomerById: async (id: number): Promise<Customer> => {

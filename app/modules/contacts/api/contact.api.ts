@@ -43,8 +43,8 @@ export const contactApi = {
 
 export const customerApi = {
   getCustomers: async (): Promise<Customer[]> => {
-    const response = await apiClient.get<ApiResponse<Customer[]>>('/api/v1/customers');
-    return response.data.data;
+    const response = await apiClient.get<ApiResponse<PageResponse<Customer>>>('/api/v1/customers');
+    return response.data.data.items;
   },
   
   createCustomer: async (data: Partial<Customer>): Promise<Customer> => {
