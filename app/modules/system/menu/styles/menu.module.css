@@ -5,15 +5,16 @@
   height: 100%vh;
 }
 
+/* TITLE */
 .title {
   margin-bottom: 16px;
   background-color: rgb(21, 0, 211);
-  padding: 10px;
-  padding-left: 25px;
+  padding: 10px 20px;
   border-radius: 10px;
   text-align: left;
-  font-weight: bolder;
+  font-weight: bold;
   font-size: larger;
+  color: white;
 }
 
 /* FORM */
@@ -51,78 +52,73 @@
   font-size: 16px;
 }
 
+
 .form input:focus,
 .form select:focus {
   outline: none;
   border-color: #4a6cf7;
 }
 
-.submit_btn {
-  background-color: rgb(0, 164, 22) !important;
-  border-radius: 5px;
-  font-weight: bolder !important;
-  width: 160px;
-  margin-top: 32px;
-  height: 42px;
+/* BUTTON */
+.form button {
+  background-color: rgb(0, 164, 22);
+  border-radius: 6px;
+  font-weight: bold;
+  padding: 0 16px;
+  height: 38px;
   border: none;
-  font-family: Manrope;
-  font-size: medium;
+  color: white;
+  cursor: pointer;
 }
 
+.form button:hover {
+  opacity: 0.9;
+}
 
 .formActions {
-  display: flex;
-  gap: 10px;
+    display: flex;
+    gap: 10px;
 }
 
-.cancel_Btn {
-  background-color: #575757 !important;
-  border-radius: 5px;
-  font-weight: bolder !important;
-  width: 70px;
-  margin-top: 32px;
-  height: 42px;
-  border: none;
-  font-family: Manrope;
-  font-size: medium;
+.cancelBtn {
+    background-color: #575757 !important;
+    color: #ffffff !important;
+    border: 1px solid #ccc;
 }
 
-.cancel_Btn:hover {
-  background-color: #a6a6a6 !important;
+.cancelBtn:hover {
+    background-color: #e0e0e0;
 }
-
 
 /* TREE */
 .treeContainer {
   border: 1px solid #dcdcdc;
-  padding: 15px;
-  padding-left: 10px;
+  padding: 12px;
   border-radius: 8px;
   background: #f7f9fb;
-  overflow: hidden;
 }
 
-/* container của node */
+/* NODE */
 .treeItem {
   display: flex;
-  padding: 10px 12px;
-  margin-bottom: 8px;
-  border-radius: 8px;
-  color: rgb(255, 255, 255);
-  width: 100%;
-  box-sizing: border-box;
-  font-size: 17px;
+  padding: 8px 12px;
+  margin-bottom: 6px;
+  border-radius: 6px;
+  background: #0e5eff;
+  border: 1px solid #e5e7eb;
+  align-items: center;
+  font-size: 15px;
 }
 
-/* bên trái (indent nằm ở đây) */
+/* LEFT */
 .left {
   display: flex;
-  text-align: left;
-  gap: 8px;
+  align-items: center;
+  gap: 6px;
   flex: 1;
 }
 
-/* icon expand */
+/* EXPAND ICON */
 .expandIcon {
   display: flex;
   align-items: center;
@@ -130,34 +126,31 @@
   width: 16px;
 }
 
-/* text */
+/* TEXT */
 .nodeName {
   flex: 1;
 }
 
-/* input edit */
+/* INPUT EDIT */
 .editInput {
   flex: 1;
-  padding-left: 10px;
-  background-color: #8c8c8c;
-  border-radius: 5px;
-  width: 500px;
+  padding: 4px 8px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
 }
 
-/* actions bên phải */
+/* ACTIONS */
 .actions {
   display: flex;
-  gap: 10px;
-  min-width: 70px;
-  justify-content: flex-end;
+  gap: 8px;
 }
 
-/* icon */
-.icon {
+/* ICON */
+.actions svg {
   cursor: pointer;
 }
 
-.icon:hover {
+.actions svg:hover {
   opacity: 0.7;
 }
 
@@ -166,38 +159,46 @@
 
 /* dấu * bắt buộc */
 .required {
-  color: red;
-  margin-left: 4px;
+    color: red;
+    margin-left: 4px;
 }
 
 /* box ghi chú */
 .noteBox {
-  margin-top: 16px;
-  padding: 12px 16px;
-  border: 1px solid #dfe3e8;
-  border-radius: 6px;
-  background-color: #f9fafb;
-  font-size: 14px;
-  color: #333;
+    margin-top: 16px;
+    padding: 12px 16px;
+    border: 1px solid #dfe3e8;
+    border-radius: 6px;
+    background-color: #f9fafb;
+    font-size: 14px;
+    color: #333;
 }
 
 /* tiêu đề */
 .noteTitle {
-  font-weight: 600;
-  margin-bottom: 8px;
+    font-weight: 600;
+    margin-bottom: 8px;
 }
 
 /* list */
 .noteBox ul {
-  padding-left: 18px;
-  margin: 0;
+    padding-left: 18px;
+    margin: 0;
 }
 
 .noteBox li {
-  margin-bottom: 4px;
-  line-height: 1.5;
+    margin-bottom: 4px;
+    line-height: 1.5;
 }
 
+
+
+
+/* container action button */
+.actions {
+    display: flex;
+    gap: 8px;
+}
 
 /* base icon */
 .icon {
@@ -209,11 +210,11 @@
 
 /* edit */
 .editIcon {
-    color: #a7f1fd;
+    color: #4b4b4b;
 }
 
 .editIcon:hover {
-    color: #ffffff;
+    color: #575757;
     transform: scale(1.15);
 }
 
@@ -225,4 +226,9 @@
 .deleteIcon:hover {
     color: #b71c1c;
     transform: scale(1.15);
+}
+
+
+.activeItem {
+  background-color: #a3a3a3 !important;
 }

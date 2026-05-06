@@ -1,0 +1,92 @@
+@import url('https://fonts.googleapis.com/css2?family=Genos:wght@200;400;600&family=Manjari:wght@100;400;700&family=Manrope:wght@200;400;600&display=swap');
+/* OVERLAY */
+.permission-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+/* MODAL BOX */
+.permission-modal-content {
+    background: #fff;
+    width: 600px;
+    max-height: 80vh;
+    border-radius: 10px;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    color: black;
+    font-family: Manrope;
+}
+
+/* TITLE */
+.permission-title {
+    margin-bottom: 10px;
+    font-weight: bold;
+}
+
+/* HEADER */
+.permission-header {
+    display: flex;
+    align-items: center;
+    padding: 8px 10px;
+    border-bottom: 2px solid #eee;
+    font-weight: 600;
+}
+
+.permission-header span {
+    width: 60px;
+    text-align: center;
+}
+
+.col-menu {
+    width: 60%;
+    text-align: left;
+    margin-right: 130px;
+}
+
+.col-check {
+    display: flex;
+    flex: 1;
+    justify-content: flex-start;
+    gap: 18px;
+}
+
+/* TREE SCROLL */
+.permission-tree {
+    overflow-y: auto;
+    max-height: 400px;
+    margin-top: 8px;
+}
+
+/* FOOTER */
+.permission-actions-footer {
+    margin-top: 12px;
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+}
+
+/* BUTTON */
+.btn-save {
+    background: #1677ff;
+    color: white;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+.btn-close {
+    background: #ccc;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+}

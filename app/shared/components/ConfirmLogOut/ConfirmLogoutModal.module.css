@@ -1,0 +1,74 @@
+/* nền mờ */
+.overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.4);
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    z-index: 999;
+}
+
+/* box modal */
+.modal {
+    background: rgb(8, 1, 66);
+    padding: 20px;
+    padding-top: 0;
+    border-radius: 10px;
+    width: 320px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+}
+
+/* title */
+.title {
+    margin-bottom: 10px;
+    color: aliceblue;
+    padding-bottom: 8px;
+    font-weight: bold;
+    text-align: center;
+    padding-top: 10px;
+    border-bottom: 1px solid #ccc;
+}
+
+/* message */
+.message {
+    font-size: 15px;
+    margin-bottom: 15px;
+    color: aliceblue;
+
+}
+
+/* actions */
+.actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+}
+
+/* button cancel */
+.cancelBtn {
+    padding: 8px 12px;
+    border: 1px solid #ccc;
+    background: rgb(62, 62, 62);
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+/* button delete */
+.deleteBtn {
+    padding: 8px 12px;
+    border: 1px solid #ccc;
+    background: #ef4444;
+    color: white;
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+.deleteBtn:hover {
+    opacity: 0.9;
+}
