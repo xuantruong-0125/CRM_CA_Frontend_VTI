@@ -39,23 +39,29 @@ export default function LoginPage() {
                     </p>
                 )}
 
-                <input
-                    type="text"
-                    name="username"
-                    placeholder="Tên đăng nhập"
-                    value={formData.username}
-                    onChange={handleChange}
-                    required
-                />
+                <div className={styles.formGroup}>
+                    <label htmlFor="username">Tên đăng nhập</label>
+                    <input
+                        id="username"
+                        type="text"
+                        name="username"
+                        value={formData.username}
+                        onChange={handleChange}
+                        required
+                    />
+                </div>
 
-                <input
-                    type="password"
-                    name="password"
-                    placeholder="Mật khẩu"
-                    value={formData.password}
-                    onChange={handleChange}
-                    required
-                />
+                <div className={styles.formGroup}>
+                    <label htmlFor="password">Mật khẩu</label>
+                    <input
+                        id="password"
+                        type="password"
+                        name="password"
+                        value={formData.password}
+                        onChange={handleChange}
+                        required
+                    />
+                </div>
 
                 <button type="submit" disabled={loading}>
                     {loading ? "Đang đăng nhập..." : "Đăng nhập"}
