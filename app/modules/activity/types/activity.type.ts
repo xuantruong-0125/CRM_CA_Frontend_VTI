@@ -1,6 +1,6 @@
 // src/modules/activity/types/activity.type.ts
 
-export type ActivityType = 'CALL' | 'EMAIL' | 'MEETING' | 'TASK'; // Có thể mở rộng thêm
+export type ActivityType = 'CALL' | 'EMAIL' | 'MEETING' ; 
 export type ActivityStatus = 'PLANNED' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELED';
 export type RelatedToType = 'OPPORTUNITY' | 'QUOTE' | 'CONTACT' | 'ACCOUNT';
 
@@ -23,6 +23,9 @@ export interface IActivity {
   endDate?: string | null;
   outcome?: string | null;
   completedAt?: string | null;
+
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface IActivityPayload {

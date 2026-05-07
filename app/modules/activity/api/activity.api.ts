@@ -37,9 +37,17 @@ export const activityApi = {
 
     // 3. Thêm Ghi chú (Note) cho Activity đó
     addNote: async (activityId: number, content: string) => {
-        // Đường dẫn này mình lấy theo file code cũ của bạn: /activities/view/{id}/add-note
-        // Backend Spring Boot của bạn có thể đang map endpoint như thế này
-        const response = await axios.post(`${BASE_URL}/view/${activityId}/add-note`, { content });
+        // Gom dữ liệu thành payload chuẩn mà NoteController (Spring Boot) đang chờ
+        const payload = {
+            content: content,
+            notableType: "Activity", // Rất quan trọng để DB phân biệt đây là note của module nào
+            notableId: activityId,
+            isPrivate: false
+        };
+
+        // Bắn thẳng qua NoteController (đổi đường dẫn từ BASE_URL sang đường dẫn của Notes)
+
+        const response = await axios.post('http://localhost:8080/api/v1/notes', payload);
         return response.data;
     },
 

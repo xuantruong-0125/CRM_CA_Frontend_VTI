@@ -8,14 +8,16 @@ import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 
 
 
-const getActivityTypeLabel = (type: string) => {
-    switch (type) {
-        case 'CALL': return 'Cuộc gọi với khách';
-        case 'MEETING': return 'Cuộc gặp';
-        case 'EMAIL': return 'Email chung';
-        case 'EMAIL_QUOTE': return 'Email Báo giá';
-        case 'EMAIL_TRANS': return 'Email Giao dịch';
-        default: return type; // Nếu không khớp cái nào thì hiện nguyên bản
+const getActivityTypeLabel = (type: string | number) => {
+    // Ép kiểu về chuỗi để so sánh cho chuẩn xác
+    const typeStr = String(type);
+    switch (typeStr) {
+        case '1': case 'CALL': return 'Cuộc gọi với khách';
+        case '2': case 'MEETING': return 'Cuộc gặp';
+        case '3': case 'EMAIL': return 'Email chung';
+        case '4': case 'EMAIL_QUOTE': return 'Email Báo giá';
+        case '5': case 'EMAIL_TRANS': return 'Email Giao dịch';
+        default: return typeStr;
     }
 };
 
@@ -25,6 +27,7 @@ const ActivityPage = () => {
     const router = useRouter();
     const pathname = usePathname();
     const searchParams = useSearchParams();
+    const [sortConfig, setSortConfig] = useState({ key: 'startDate', direction: 'desc' });
 
 
     //State tạm thời cho các ô nhập liệu trên thanh Filter
@@ -37,8 +40,7 @@ const ActivityPage = () => {
         relatedToType: '',
         fromDate: '',
         toDate: ''
-
-
+        , page: '0'
     });
 
 
@@ -58,9 +60,6 @@ const ActivityPage = () => {
 
         fetchUsers();
     }, []); // Mảng rỗng [] nghĩa là chỉ gọi 1 lần khi load trang
-
-
-    
 
     // Hàm xử lý khi gõ/chọn
     const handleInputChange = (e: any) => {
@@ -94,6 +93,8 @@ const ActivityPage = () => {
                 params.set(key, value.toString());
             }
         });
+        // ÉP LUÔN LUÔN VỀ TRANG 0 KHI LỌC MỚI
+        params.set('page', '0');
 
         // Cập nhật URL: ví dụ /activity?status=PLANNED&type=CALL
         router.push(`${pathname}?${params.toString()}`);
@@ -103,13 +104,22 @@ const ActivityPage = () => {
     const handleReset = () => {
         const emptyFilters = {
             search: '', status: '', activityType: '', performedBy: '',
-            relatedToId: '', relatedToType: '', fromDate: '', toDate: ''
+            relatedToId: '', relatedToType: '', fromDate: '', toDate: '', page: '0'
         };
         setLocalFilters(emptyFilters);
 
         // Đưa URL về trạng thái nguyên bản (không còn dấu ?)
         router.push(pathname);
     };
+    // Hàm chuyển trang
+    const handlePageChange = (newPage: number) => {
+        const params = new URLSearchParams(searchParams.toString());
+        params.set('page', newPage.toString());
+
+        // Đẩy lên URL -> useEffect sẽ tự bắt và gọi API mới
+        router.push(`${pathname}?${params.toString()}`);
+    };
+
 
     // State để quản lý danh sách các checkbox được chọn
     const [selectedIds, setSelectedIds] = useState<number[]>([]);
@@ -168,7 +178,8 @@ const ActivityPage = () => {
             relatedToId: params.relatedToId || '',
             relatedToType: params.relatedToType || '',
             fromDate: params.fromDate || '',
-            toDate: params.toDate || ''
+            toDate: params.toDate || '',
+            page: params.page || '0'
         });
 
         // 3. Gọi API với đúng những gì đang có trên thanh địa chỉ
@@ -176,216 +187,352 @@ const ActivityPage = () => {
 
     }, [searchParams]);
 
+    // 1. State tạm để lưu số trang người dùng đang gõ vào ô input
+    const [jumpPage, setJumpPage] = useState('');
+
+    // 2. Đồng bộ số trang hiện tại vào ô input khi trang vừa load hoặc đổi trang
+    useEffect(() => {
+        setJumpPage((Number(localFilters.page) + 1).toString());
+    }, [localFilters.page]);
+
+    // 3. Hàm xử lý khi người dùng gõ xong và bấm Enter
+    const handleJumpPage = (e: React.KeyboardEvent<HTMLInputElement>) => {
+        if (e.key === 'Enter') {
+            let targetPage = parseInt(jumpPage, 10);
+            const maxPage = activities.totalPages || 1;
+
+            // Bắt lỗi: Nếu gõ chữ bậy bạ, gõ số < 1 hoặc lớn hơn tổng số trang
+            if (isNaN(targetPage) || targetPage < 1) {
+                targetPage = 1;
+            } else if (targetPage > maxPage) {
+                targetPage = maxPage;
+            }
+
+            // Cập nhật lại ô input cho chuẩn (lỡ họ nhập sai)
+            setJumpPage(targetPage.toString());
+
+            // Gọi hàm chuyển trang (nhớ trừ 1 vì Backend đếm từ số 0)
+            handlePageChange(targetPage - 1);
+        }
+    };
+    // Hàm chuyển đổi trạng thái nhanh (Tự động gọi API luôn)
+    const handleStatusQuickFilter = (newStatus: string) => {
+        // 1. Cập nhật giao diện nút cho nó sáng lên
+        setLocalFilters({ ...localFilters, status: newStatus });
+
+        // 2. Đẩy ngay lên URL để kích hoạt API
+        const params = new URLSearchParams(searchParams.toString());
+
+        if (newStatus === '') {
+            params.delete('status'); // Nếu chọn "Tất cả" thì xóa tham số status cho sạch URL
+        } else {
+            params.set('status', newStatus);
+        }
+
+        params.set('page', '0'); // Bấm lọc mới thì luôn về trang đầu
+        router.push(`${pathname}?${params.toString()}`);
+    };
+    const handleSort = (key: string) => {
+        let direction = 'asc';
+
+        // Nếu đang chọn đúng cột đó rồi thì đảo chiều, nếu chọn cột mới thì mặc định là asc
+        if (sortConfig.key === key && sortConfig.direction === 'asc') {
+            direction = 'desc';
+        }
+
+        const newConfig = { key, direction };
+        setSortConfig(newConfig);
+
+        // Gọi lại hàm fetch dữ liệu với tham số sắp xếp mới
+        // Ví dụ: fetchActivities(currentPage, pageSize, `${key},${direction}`);
+    };
+
+
+
+
 
 
     if (isLoading) return <div className="p-4 text-center">Đang tải dữ liệu...</div>;
     if (error) return <div className="p-4 text-danger">Lỗi: {error}</div>;
-
     return (
         <div className="container-fluid py-4 bg-light min-vh-100">
-            <div className="card shadow-sm">
-                <div className="card-body">
-                    {/* HEADER TITTLE & BUTTONS */}
-                    <div className="d-flex justify-content-between align-items-center mb-3">
-                        <div className="d-flex align-items-center gap-3">
-                            <h5 className="text-uppercase text-secondary mb-0">TẤT CẢ HOẠT ĐỘNG</h5>
-                            <button className="btn btn-success btn-sm">
-                                <Link href="/activity/create" className="btn btn-success btn-sm">
-                                    <i className="fa-solid fa-plus"></i> Thêm mới
-                                </Link>
-                            </button>
+            <div className="card shadow-sm border-0 rounded-3">
+                <div className="card-body p-4">
 
-                            {/* Nút xóa sẽ hiện ra khi có ít nhất 1 checkbox được chọn */}
+                    {/* HEADER TITLE & QUẢN LÝ TRẠNG THÁI */}
+                    <div className="d-flex justify-content-between align-items-center mb-4">
+                        {/* BÊN TRÁI: Tiêu đề và Nút hành động */}
+                        <div className="d-flex align-items-center gap-3">
+                            <h5 className="text-uppercase text-dark mb-0 fw-bold" style={{ letterSpacing: '0.5px' }}>
+                                <i className="fa-solid fa-list-check text-primary me-2"></i>Tất cả hoạt động
+                            </h5>
+                            <Link href="/activity/create" className="btn btn-primary btn-sm rounded-pill px-3 shadow-sm fw-medium">
+                                <i className="fa-solid fa-plus me-1"></i> Thêm mới
+                            </Link>
+
                             {selectedIds.length > 0 && (
-                                <button
-                                    type="button"
-                                    className="btn btn-danger btn-sm"
-                                    onClick={handleDeleteMultiple}
-                                >
-                                    <i className="fa-solid fa-trash-can"></i> XÓA ĐÃ CHỌN ({selectedIds.length})
+                                <button type="button" className="btn btn-danger btn-sm rounded-pill px-3 shadow-sm fw-medium fade-in" onClick={handleDeleteMultiple}>
+                                    <i className="fa-solid fa-trash-can me-1"></i> Xóa ({selectedIds.length})
                                 </button>
                             )}
                         </div>
+
+                        {/* BÊN PHẢI: Nút Lọc Trạng Thái Nhanh */}
+                        <div className="d-flex align-items-center bg-light p-1 rounded-pill shadow-sm border" style={{ fontSize: '13px' }}>
+                            <span className="text-muted fw-medium ms-3 me-2">
+                                <i className="fa-solid fa-filter me-1"></i>Trạng thái:
+                            </span>
+
+                            <button
+                                type="button"
+                                onClick={() => handleStatusQuickFilter('')}
+                                className={`btn btn-sm rounded-pill px-3 py-1 ${localFilters.status === '' ? 'btn-secondary fw-bold shadow-sm' : 'btn-light text-muted border-0'}`}
+                            >
+                                Tất cả
+                            </button>
+
+                            <button
+                                type="button"
+                                onClick={() => handleStatusQuickFilter('0')}
+                                className={`btn btn-sm rounded-pill px-3 py-1 mx-1 ${localFilters.status === '0' ? 'btn-warning text-dark fw-bold shadow-sm' : 'btn-light text-muted border-0'}`}
+                            >
+                                <i className="fa-solid fa-spinner fa-spin me-1"></i>Chưa xong
+                            </button>
+
+                            <button
+                                type="button"
+                                onClick={() => handleStatusQuickFilter('1')}
+                                className={`btn btn-sm rounded-pill px-3 py-1 ${localFilters.status === '1' ? 'btn-success fw-bold shadow-sm text-white' : 'btn-light text-muted border-0'}`}
+                            >
+                                <i className="fa-solid fa-check-double me-1"></i>Đã xong
+                            </button>
+                        </div>
                     </div>
 
-                    {/* /* PHẦN FORM LỌC */}
-                    <div className="mb-4 bg-light p-3 border rounded">
-                        <div className="row g-2 mb-2">
-                            <div className="col-md-3">
-                                <input
-                                    type="text"
-                                    name="search" // Phải khớp với tên trong state
-                                    className="form-control"
-                                    placeholder="Tìm theo chủ đề..."
-                                    value={localFilters.search}
-                                    onChange={handleInputChange}
-                                />                            </div>
-                            <div className="col-md-2">
-                                <select name="status" className="form-select"
-                                    value={localFilters.status} onChange={handleInputChange}>
-                                    <option value="">- Trạng thái -</option>
-                                    <option value="1">Đã hoàn thành</option>
-                                    <option value="0">Chưa hoàn thành</option>
-                                </select>
-                            </div>
-                            <div className="col-md-2">
-                                <select name="activityType" className="form-select"
-                                    value={localFilters.activityType} onChange={handleInputChange}>
-                                    <option value="">- Loại -</option>
-                                    <option value="CALL">Cuộc gọi với khách</option>
-                                    <option value="MEETING">Cuộc gặp</option>
-                                    <option value="EMAIL">Email</option>
+                    {/* KHUNG BỘ LỌC DỮ LIỆU (ĐẦY ĐỦ) */}
+                    <div className="d-flex flex-wrap align-items-end gap-3 mb-4 p-3 bg-light border rounded">
+
+                        {/* 1. Ô Tìm kiếm */}
+                        <div className="flex-grow-1" style={{ minWidth: '200px' }}>
+                            <label className="form-label small text-muted mb-1">Tìm kiếm</label>
+                            <input
+                                type="text"
+                                className="form-control"
+                                placeholder="Tên hoạt động..."
+                                name="search"
+                                value={localFilters.search}
+                                onChange={handleInputChange}
+                            />
+                        </div>
+
+
+
+                        {/* 3. BỔ SUNG: Ô Lọc Loại hoạt động */}
+                        <div style={{ minWidth: '140px' }}>
+                            <label className="form-label small text-muted mb-1">Loại hoạt động</label>
+                            <select name="activityType" className="form-select" id="floatingType" value={localFilters.activityType} onChange={handleInputChange}>
+                                <option value="">- Tất cả -</option>
+                                <option value="CALL">Cuộc gọi với khách</option>
+                                <option value="MEETING">Cuộc gặp</option>
+                                <optgroup label="Email">
                                     <option value="EMAIL_QUOTE">Email Báo giá</option>
                                     <option value="EMAIL_TRANS">Email Giao dịch</option>
-                                </select>
-                            </div>
-                            <div className="col-md-3">
-                                <select name="relatedToId" className="form-select"
-                                    value={localFilters.relatedToId} onChange={handleInputChange}>
-                                    <option value="">- Tất cả Khách hàng -</option>
-                                </select>
-                            </div>
-                            <div className="col-md-2">
-                                <select name="performedBy" className="form-select"
-                                    value={localFilters.performedBy} onChange={handleInputChange}>
-                                    <option value="">- Tất cả Nhân viên -</option>
-                                    {users.map(user => (
-                                        <option key={user.id} value={user.id}>
-                                            {user.fullName}
-                                        </option>
-                                    ))}
-                                </select>
-                            </div>
+                                </optgroup>
+                            </select>
                         </div>
-                        <div className="row g-2">
-                            <div className="col-md-2">
-                                <input
-                                    type="date"
-                                    name="fromDate"
-                                    className="form-control"
-                                    title="Từ ngày"
-                                    value={localFilters.fromDate}
-                                    onChange={handleInputChange}
-                                />
-                            </div>
-                            <div className="col-md-2">
-                                <input
-                                    type="date"
-                                    name="toDate"
-                                    className="form-control"
-                                    title="Đến ngày"
-                                    value={localFilters.toDate}
-                                    onChange={handleInputChange}
-                                />
-                            </div>
-                            <div className="col-md-1 d-flex gap-1">
-                                {/* NÚT LỌC */}
-                                <button onClick={handleApplyFilter} type="button" className="btn btn-primary w-100" title="Lọc dữ liệu">
-                                    <i className="fa-solid fa-filter"></i>
-                                </button>
-                                {/* NÚT RESET */}
-                                <button onClick={handleReset} type="button" className="btn btn-secondary w-100" title="Xóa bộ lọc" >
-                                    <i className="fa-solid fa-rotate-right"></i>
-                                </button>
-                            </div>
+
+                        {/* 4. Ô Chọn Khách hàng */}
+                        <div style={{ minWidth: '180px' }}>
+                            <label className="form-label small text-muted mb-1">Khách hàng</label>
+                            <select className="form-select" name="relatedToId" value={localFilters.relatedToId} onChange={handleInputChange}>
+                                <option value="">-- Chọn khách hàng --</option>
+                                <option value="1">Công ty A</option>
+                                <option value="2">Anh Nguyễn Văn B</option>
+                            </select>
                         </div>
+
+                        {/* 5. BỔ SUNG: Ô Người thực hiện (Phụ trách) */}
+                        <div style={{ minWidth: '160px' }}>
+                            <label className="form-label small text-muted mb-1">Người thực hiện</label>
+                            <select
+                                className="form-select"
+                                name="performedBy"
+                                value={localFilters.performedBy}
+                                onChange={handleInputChange}
+                            >
+                                <option value="">-- Tất cả nhân sự --</option>
+
+                                {/* Lặp qua mảng users lấy từ API để tự động tạo các option */}
+                                {users.map(user => (
+                                    <option key={user.id} value={user.id}>
+                                        {user.fullName || user.name || user.username} {/* Đề phòng trường hợp API trả về tên field khác */}
+                                    </option>
+                                ))}
+
+                            </select>
+                        </div>
+
+                        {/* 6. BỔ SUNG: Ô Từ ngày */}
+                        <div style={{ minWidth: '140px' }}>
+                            <label className="form-label small text-muted mb-1">Từ ngày</label>
+                            <input
+                                type="date"
+                                className="form-control"
+                                name="fromDate"
+                                value={localFilters.fromDate}
+                                onChange={handleInputChange}
+                            />
+                        </div>
+
+                        {/* 7. BỔ SUNG: Ô Đến ngày */}
+                        <div style={{ minWidth: '140px' }}>
+                            <label className="form-label small text-muted mb-1">Đến ngày</label>
+                            <input
+                                type="date"
+                                className="form-control"
+                                name="toDate"
+                                value={localFilters.toDate}
+                                onChange={handleInputChange}
+                            />
+                        </div>
+
+                        {/* 8. NÚT THAO TÁC */}
+                        <div className="d-flex gap-2">
+                            <button className="btn btn-primary" onClick={handleApplyFilter}>
+                                <i className="fa-solid fa-filter me-1"></i> Lọc
+                            </button>
+                            <button className="btn btn-outline-secondary" onClick={handleReset} title="Xóa bộ lọc">
+                                <i className="fa-solid fa-rotate-right"></i>
+                            </button>
+                        </div>
+
                     </div>
 
-                    {/* TABLE DATA */}
-                    <div className="table-responsive">
-                        {/* Thêm chút style inline cho header giống CSS cũ của bạn */}
-                        <table className="table table-hover table-bordered">
-                            <thead style={{ backgroundColor: '#6c757d', color: 'white' }}>
+                    {/* TABLE DATA (STYLE MỚI GIỐNG TASK) */}
+                    <div className="table-responsive shadow-sm rounded-3 bg-white border border-light">
+                        <table className="table table-hover align-middle mb-0" style={{ fontSize: '14px' }}>
+                            <thead className="table-light text-muted" style={{ borderBottom: '2px solid #dee2e6' }}>
                                 <tr>
-                                    <th className="text-center align-middle" style={{ width: '3%', backgroundColor: '#6c757d', color: 'white' }}>
-                                        <input
-                                            type="checkbox"
-                                            onChange={handleSelectAll}
-                                            checked={
-                                                activities.content?.length > 0 &&
-                                                selectedIds.length === activities.content?.length
-                                            }
-                                        />
+                                    <th className="fw-semibold px-3 py-3" style={{ width: '4%' }}>
+                                        <input className="form-check-input shadow-sm cursor-pointer m-0" type="checkbox" onChange={handleSelectAll} title="Chọn tất cả" />
                                     </th>
-                                    <th className="text-center align-middle" style={{ width: '5%', backgroundColor: '#6c757d', color: 'white' }}>
-                                        <i className="fa-solid fa-filter"></i>
+                                    <th className="fw-semibold py-3" style={{ width: '22%' }}>Chủ đề</th>
+                                    <th
+                                        className="fw-semibold py-3"
+                                        style={{ width: '13%', cursor: 'pointer', userSelect: 'none' }}
+                                        onClick={() => handleSort('startDate')}
+                                    >
+                                        <div className="d-flex align-items-center">
+                                            Thời gian
+                                            <span className="ms-2 d-flex flex-column" style={{ fontSize: '10px', lineHeight: '1' }}>
+                                                {/* Mũi tên lên (Tăng dần) - Xanh lên khi được chọn */}
+                                                <i className={`fa-solid fa-caret-up ${sortConfig.key === 'startDate' && sortConfig.direction === 'asc' ? 'text-primary' : 'text-muted'}`}></i>
+                                                {/* Mũi tên xuống (Giảm dần) - Xanh lên khi được chọn */}
+                                                <i className={`fa-solid fa-caret-down ${sortConfig.key === 'startDate' && sortConfig.direction === 'desc' ? 'text-primary' : 'text-muted'}`}></i>
+                                            </span>
+                                        </div>
                                     </th>
-                                    <th style={{ width: '15%', backgroundColor: '#6c757d', color: 'white' }}>Chủ đề</th>
-                                    <th style={{ width: '12%', backgroundColor: '#6c757d', color: 'white' }}>Ngày bắt đầu</th>
-                                    <th className="text-center align-middle" style={{ width: '10%', backgroundColor: '#6c757d', color: 'white' }}>Đã hoàn thành</th>
-                                    <th className="text-center align-middle" style={{ width: '8%', backgroundColor: '#6c757d', color: 'white' }}>Quan trọng</th>
-                                    <th style={{ width: '22%', backgroundColor: '#6c757d', color: 'white' }}>Mô tả</th>
-                                    <th style={{ width: '12%', backgroundColor: '#6c757d', color: 'white' }}>Đã chỉ định cho</th>
-                                    <th style={{ width: '13%', backgroundColor: '#6c757d', color: 'white' }}>Liên quan tới</th>
-                                    <th className="text-center align-middle" style={{ width: '5%', backgroundColor: '#6c757d', color: 'white' }}>Chi tiết</th>
+
+                                    <th className="fw-semibold py-3 text-center" style={{ width: '10%' }}>Trạng thái</th>
+                                    <th className="fw-semibold py-3 text-center" style={{ width: '8%' }}>Quan trọng</th>
+                                    <th className="fw-semibold py-3" style={{ width: '18%' }}>Nội dung</th>
+                                    <th className="fw-semibold py-3" style={{ width: '12%' }}>Phụ trách</th>
+                                    <th className="fw-semibold text-center py-3" style={{ width: '13%' }}>Hành động</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {!activities.content || activities.content.length === 0 ? (
                                     <tr>
-                                        <td colSpan={10} className="text-center text-muted py-3">Không có dữ liệu hoạt động nào.</td>
+                                        <td colSpan={8} className="text-center text-muted py-5">
+                                            <i className="fa-regular fa-folder-open fs-1 mb-3"></i>
+                                            <p className="mb-0">Không có dữ liệu hoạt động nào.</p>
+                                        </td>
                                     </tr>
                                 ) : (
                                     activities.content.map((act: any) => (
-                                        <tr key={act.id}>
-                                            <td className="text-center align-middle">
+                                        <tr key={act.id} className="transition-all" style={{ cursor: 'pointer' }}>
+
+                                            {/* Cột 1: Checkbox */}
+                                            <td className="px-3" onClick={(e) => e.stopPropagation()}>
                                                 <input
+                                                    className="form-check-input shadow-sm cursor-pointer m-0"
                                                     type="checkbox"
                                                     checked={selectedIds.includes(act.id)}
                                                     onChange={() => handleSelectRow(act.id)}
                                                 />
                                             </td>
-                                            <td className="text-center align-middle">
-                                                <Link
-                                                    href={`/activity/edit/${act.id}`}
-                                                    className="btn btn-link text-secondary p-0 border-0"
-                                                    title="Chỉnh sửa hoạt động"
-                                                >
-                                                    <i className="fa-solid fa-pen"></i>
-                                                </Link>
-                                            </td>
-                                            <td className="align-middle" style={{ fontSize: '13px' }}>{act.subject}</td>
-                                            <td className="align-middle" style={{ fontSize: '13px' }}>
-                                                {new Date(act.startDate).toLocaleString('vi-VN', { dateStyle: 'short', timeStyle: 'short' })}
+
+                                            {/* Cột 2: Chủ đề */}
+                                            <td>
+                                                <div className="fw-bold text-dark text-truncate" style={{ maxWidth: '200px' }} title={act.subject}>
+                                                    {act.subject}
+                                                </div>
+                                                <div className="text-muted small">ID: #{act.id}</div>
                                             </td>
 
-                                            {/* Xử lý hiển thị Trạng thái */}
-                                            <td className="text-center align-middle fs-5">
+                                            {/* Cột 3: Thời gian */}
+                                            <td>
+                                                <div className="small text-muted fw-medium">
+                                                    <i className="fa-regular fa-calendar me-1"></i>
+                                                    {new Date(act.startDate).toLocaleDateString('vi-VN')}
+                                                </div>
+                                                <div className="small text-muted">
+                                                    <i className="fa-regular fa-clock me-1"></i>
+                                                    {new Date(act.startDate).toLocaleTimeString('vi-VN', { timeStyle: 'short' })}
+                                                </div>
+                                            </td>
+
+                                            {/* Cột 4: Trạng thái (Dùng Badge đẹp) */}
+                                            <td className="text-center">
                                                 {act.status === 'COMPLETED' ? (
-                                                    // Nếu đã hoàn thành -> Hiện dấu Tick xanh lá cực đẹp
-                                                    <i className="fa-solid fa-circle-check text-success" title="Đã hoàn thành"></i>
+                                                    <span className="badge bg-success-subtle text-success border border-success-subtle px-2 py-1">
+                                                        <i className="fa-solid fa-check-double me-1"></i>Đã xong
+                                                    </span>
                                                 ) : (
-                                                    // Nếu chưa hoàn thành -> Hiện hình tròn xám nhạt (hoặc dấu gạch ngang)
-                                                    <i className="fa-regular fa-circle text-muted" title="Chưa hoàn thành"></i>
+                                                    <span className="badge bg-warning-subtle text-warning border border-warning-subtle px-2 py-1">
+                                                        <i className="fa-solid fa-spinner fa-spin me-1"></i>Chưa xong
+                                                    </span>
                                                 )}
                                             </td>
 
-                                            {/* Xử lý hiển thị Quan trọng */}
-                                            <td className="text-center align-middle">
+                                            {/* Cột 5: Quan trọng */}
+                                            <td className="text-center">
                                                 {act.important ? (
-                                                    <span className="text-danger"><i className="fa-regular fa-square-check"></i></span>
+                                                    <span className="text-danger fs-5" title="Quan trọng"><i className="fa-solid fa-check circle"></i></span>
                                                 ) : (
-                                                    <span className="text-muted"><i className="fa-regular fa-square"></i></span>
+                                                    <span className="text-muted fs-5" title="Bình thường">
+                                                        {/* <i className="fa-regular fa-circle"></i> */}
+                                                    </span>
                                                 )}
                                             </td>
 
-                                            <td className="align-middle" style={{ fontSize: '13px' }}>{act.description}</td>
-                                            <td className="text-primary align-middle" style={{ fontSize: '13px' }}>nhanvien_{act.performedBy?.name}</td>
-
-                                            <td className="text-info align-middle" style={{ fontSize: '13px' }}>
-                                                <strong>Đối tượng {act.relatedToId}</strong><br />
-                                                <small className="text-muted">({act.relatedToType})</small>
+                                            {/* Cột 6: Nội dung */}
+                                            <td>
+                                                <div className="text-muted text-truncate" style={{ maxWidth: '180px', fontSize: '13px' }} title={act.description}>
+                                                    {act.description || <span className="fst-italic">Không có nội dung</span>}
+                                                </div>
                                             </td>
 
-                                            <td className="text-center align-middle">
-                                                <Link
-                                                    href={`/activity/${act.id}`}
-                                                    className="btn btn-sm btn-outline-info rounded-circle fw-bold d-inline-flex justify-content-center align-items-center"
-                                                    title="Xem chi tiết"
-                                                    style={{ width: '28px', height: '28px', padding: 0, textDecoration: 'none' }}
-                                                >
-                                                    i
-                                                </Link>
+                                            {/* Cột 7: Phụ trách */}
+                                            <td>
+                                                <div className="fw-medium text-primary small mb-1">
+                                                    <i className="fa-regular fa-circle-user me-1"></i> {act.performedBy?.name || 'Chưa gán'}
+                                                </div>
+                                                {/* <div className="text-muted small" style={{ fontSize: '11px' }}>
+                                                    <i className="fa-regular fa-building me-1"></i> Đối tượng ID: {act.relatedToId}
+                                                </div> */}
+                                            </td>
+
+                                            {/* Cột 8: Hành động (Sửa / Xem) */}
+                                            <td className="text-center" onClick={(e) => e.stopPropagation()}>
+                                                <div className="d-flex justify-content-center gap-2">
+                                                    <Link href={`/activity/edit/${act.id}`} className="btn btn-sm btn-light border text-warning shadow-sm" title="Chỉnh sửa">
+                                                        <i className="fa-solid fa-pen-to-square"></i>
+                                                    </Link>
+                                                    <Link href={`/activity/${act.id}`} className="btn btn-sm btn-outline-info rounded-pill px-3 shadow-sm fw-medium" title="Xem chi tiết">
+                                                        Xem <i className="fa-solid fa-arrow-right ms-1 text-sm"></i>
+                                                    </Link>
+                                                </div>
                                             </td>
                                         </tr>
                                     ))
@@ -393,6 +540,60 @@ const ActivityPage = () => {
                             </tbody>
                         </table>
                     </div>
+
+                    {/* THANH PHÂN TRANG */}
+                    <div className="d-flex flex-column flex-md-row justify-content-between align-items-center mt-4 pb-2">
+                        <div className="text-muted mb-3 mb-md-0" style={{ fontSize: '13px' }}>
+                            Hiển thị <strong className="text-primary">{activities.content?.length || 0}</strong> trên tổng số <strong className="text-dark">{activities.totalElements?.toLocaleString('vi-VN') || 0}</strong> hoạt động
+                        </div>
+
+                        <div className="d-flex align-items-center gap-3">
+                            <nav aria-label="Page navigation">
+                                <ul className="pagination pagination-sm mb-0 gap-1 shadow-sm">
+                                    <li className={`page-item ${Number(localFilters.page) === 0 ? 'disabled' : ''}`}>
+                                        <button className="page-link rounded-circle border-0 text-secondary" onClick={() => handlePageChange(0)}>
+                                            <i className="fa-solid fa-angles-left"></i>
+                                        </button>
+                                    </li>
+                                    <li className={`page-item ${Number(localFilters.page) === 0 ? 'disabled' : ''}`}>
+                                        <button className="page-link rounded-circle border-0 text-secondary" onClick={() => handlePageChange(Number(localFilters.page) - 1)}>
+                                            <i className="fa-solid fa-chevron-left"></i>
+                                        </button>
+                                    </li>
+                                    <li className="page-item disabled">
+                                        <span className="page-link border-0 bg-transparent text-dark fw-bold">
+                                            Trang {Number(localFilters.page) + 1} / {activities.totalPages || 1}
+                                        </span>
+                                    </li>
+                                    <li className={`page-item ${Number(localFilters.page) >= (activities.totalPages - 1) ? 'disabled' : ''}`}>
+                                        <button className="page-link rounded-circle border-0 text-secondary" onClick={() => handlePageChange(Number(localFilters.page) + 1)}>
+                                            <i className="fa-solid fa-chevron-right"></i>
+                                        </button>
+                                    </li>
+                                    <li className={`page-item ${Number(localFilters.page) >= (activities.totalPages - 1) ? 'disabled' : ''}`}>
+                                        <button className="page-link rounded-circle border-0 text-secondary" onClick={() => handlePageChange(activities.totalPages - 1)}>
+                                            <i className="fa-solid fa-angles-right"></i>
+                                        </button>
+                                    </li>
+                                </ul>
+                            </nav>
+
+                            <div className="d-flex align-items-center gap-2 ms-2">
+                                <span className="small text-muted">Đến trang:</span>
+                                <input
+                                    type="number"
+                                    className="form-control form-control-sm text-center shadow-sm"
+                                    style={{ width: '60px', borderRadius: '8px' }}
+                                    value={jumpPage}
+                                    onChange={(e) => setJumpPage(e.target.value)}
+                                    onKeyDown={handleJumpPage}
+                                    min="1"
+                                    max={activities.totalPages || 1}
+                                />
+                            </div>
+                        </div>
+                    </div>
+
                 </div>
             </div>
         </div>
