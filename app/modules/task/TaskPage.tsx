@@ -1,9 +1,18 @@
 "use client";
-
+import CreateTaskModal from './CreateTaskModal';
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 // import { useTask } from './hooks/useTask';
+
+interface ITaskFilter {
+    page: number;
+    size: number;
+    subject?: string; // Trong ảnh mình thấy Duy dùng biến subject để search
+    status?: string;
+    priority?: string;
+}
 
 const TaskPage = () => {
 
@@ -12,14 +21,26 @@ const TaskPage = () => {
     const [totalPages, setTotalPages] = useState(0);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const router = useRouter();
+    // Lưu trữ danh sách ID các công việc đang được tích chọn
+    const [selectedTaskIds, setSelectedTaskIds] = useState<number[]>([]);
 
-    const [filters, setFilters] = useState({
-        subject: '',
-        status: '',
-        priority: '',
-        page: 0,
-        size: 10
+    const [showCreateModal, setShowCreateModal] = useState(false);
+
+    const [filters, setFilters] = useState<ITaskFilter>(() => {
+        // 1. Kiểm tra xem có đang chạy trên trình duyệt không (tránh lỗi Next.js SSR)
+        if (typeof window !== 'undefined') {
+            const savedFilters = sessionStorage.getItem('taskFilters');
+            if (savedFilters) {
+                return JSON.parse(savedFilters); // Lấy bộ lọc cũ ra dùng lại
+            }
+        }
+        // 2. Nếu chưa có gì thì trả về giá trị mặc định
+        return { page: 0, size: 10, subject: '', status: '', priority: '' };
     });
+    useEffect(() => {
+        sessionStorage.setItem('taskFilters', JSON.stringify(filters));
+    }, [filters]);
 
     const fetchTasks = async () => {
         try {
@@ -107,6 +128,54 @@ const TaskPage = () => {
         return date.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
     };
 
+    // 1. Hàm xử lý khi bấm vào Checkbox "Chọn tất cả" ở trên cùng
+    const handleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.checked) {
+            // Nếu tích vào thì lấy toàn bộ ID của các task hiện tại trên trang
+            const allIds = tasks.map((task: any) => task.id);
+            setSelectedTaskIds(allIds);
+        } else {
+            // Bỏ tích thì xóa sạch mảng
+            setSelectedTaskIds([]);
+        }
+    };
+
+    // 2. Hàm xử lý khi bấm vào từng Checkbox ở mỗi dòng
+    const handleSelectOne = (taskId: number) => {
+        setSelectedTaskIds((prev) => {
+            // Nếu ID đã có trong mảng thì gỡ ra, nếu chưa có thì thêm vào
+            if (prev.includes(taskId)) {
+                return prev.filter((id) => id !== taskId);
+            } else {
+                return [...prev, taskId];
+            }
+        });
+    };
+
+    // 3. Hàm xử lý khi bấm nút "Xóa" màu đỏ
+    const handleDeleteSelected = async () => {
+        if (!window.confirm(`Bạn có chắc chắn muốn xóa ${selectedTaskIds.length} công việc đã chọn không?`)) return;
+
+        try {
+            // Dùng Promise.all để gọi API xóa nhiều ID cùng lúc chạy song song
+            await Promise.all(
+                selectedTaskIds.map((id) => axios.delete(`http://localhost:8080/api/v1/tasks/${id}`))
+            );
+
+            alert("Đã xóa thành công!");
+
+            // Cập nhật lại UI: Lọc bỏ những task đã xóa ra khỏi màn hình ngay lập tức
+            setTasks((prevTasks: any[]) => prevTasks.filter((task) => !selectedTaskIds.includes(task.id)));
+
+            // Trả mảng chọn về rỗng để ẩn nút Xóa
+            setSelectedTaskIds([]);
+
+        } catch (error) {
+            console.error("Lỗi xóa nhiều task:", error);
+            alert("Có lỗi xảy ra khi xóa. Vui lòng thử lại!");
+        }
+    };
+
 
     return (
         <div className="container-fluid py-4 bg-light min-vh-100">
@@ -117,10 +186,24 @@ const TaskPage = () => {
                         <i className="fa-solid fa-list-check me-2"></i>QUẢN LÝ CÔNG VIỆC
                     </h5>
                     <div>
-                        <button className="btn btn-success btn-sm rounded-pill px-3 shadow-sm">
+                        <button
+                            className="btn btn-success btn-sm rounded-pill px-3 shadow-sm"
+                            onClick={() => setShowCreateModal(true)} // Bấm vào là bật Form
+                        >
                             <i className="fa-solid fa-plus me-1"></i> Giao việc mới
                         </button>
                     </div>
+                    <div>
+                        {selectedTaskIds.length > 0 && (
+                            <button
+                                className="btn btn-danger btn-sm rounded-pill px-3 shadow-sm fw-medium slide-in"
+                                onClick={handleDeleteSelected}
+                            >
+                                <i className="fa-solid fa-trash-can me-1"></i> Xóa ({selectedTaskIds.length})
+                            </button>
+                        )}
+                    </div>
+
                 </div>
 
             </div>
@@ -221,7 +304,13 @@ const TaskPage = () => {
                         <tr>
                             <th className="fw-semibold px-3 py-3" style={{ width: '8%' }}>
                                 <div className="d-flex align-items-center gap-2">
-                                    <input className="form-check-input shadow-sm cursor-pointer m-0" type="checkbox" title="Chọn tất cả" />
+                                    <input
+                                        className="form-check-input shadow-sm cursor-pointer m-0"
+                                        type="checkbox"
+                                        title="Chọn tất cả"
+                                        checked={tasks.length > 0 && selectedTaskIds.length === tasks.length}
+                                        onChange={handleSelectAll}
+                                    />
                                 </div>
                             </th>
                             <th className="fw-semibold py-3" style={{ width: '22    %' }}>Chủ đề công việc</th>
@@ -251,6 +340,8 @@ const TaskPage = () => {
                                                 className="form-check-input shadow-sm cursor-pointer m-0"
                                                 type="checkbox"
                                                 value={task.id}
+                                                checked={selectedTaskIds.includes(task.id)}
+                                                onChange={() => handleSelectOne(task.id)}
                                             />
                                             {/* Dùng thẻ Link nếu Duy đã làm trang Edit, tạm thời dùng button */}
                                             <button className="btn btn-sm btn-light border text-warning shadow-sm" title="Chỉnh sửa nhanh">
@@ -327,7 +418,17 @@ const TaskPage = () => {
 
                                     {/* CỘT CUỐI: XEM CHI TIẾT */}
                                     <td className="text-center">
-                                        <button className="btn btn-sm btn-outline-info rounded-pill px-3 shadow-sm fw-medium" title="Xem chi tiết công việc">
+                                        <button
+                                            className="btn btn-sm btn-outline-info rounded-pill px-3 shadow-sm fw-medium"
+                                            title="Xem chi tiết công việc"
+                                            onClick={(e) => {
+                                                e.stopPropagation(); // Rất quan trọng: Ngăn click lan ra thẻ <tr>
+
+                                                // Sửa '/tasks/' thành tên thư mục chứa trang detail của Duy
+                                                // Ví dụ nếu Duy để trong folder /app/activity/[id]/page.tsx thì đổi thành /activity/
+                                                router.push(`/task/${task.id}`);
+                                            }}
+                                        >
                                             Xem <i className="fa-solid fa-arrow-right ms-1 text-sm"></i>
                                         </button>
                                     </td>
@@ -407,6 +508,16 @@ const TaskPage = () => {
                     </div>
                 </div>
             </div>
+            {/* Nhúng Modal Thêm Task */}
+            <CreateTaskModal
+                show={showCreateModal}
+                onClose={() => setShowCreateModal(false)}
+                onSuccess={() => {
+                    // Hàm load lại dữ liệu bảng của Duy (ví dụ: fetchTasks())
+                    // Nếu anh em mình dùng filters, có thể set lại page về 0 để load trang đầu
+                    setFilters({ ...filters, page: 0 });
+                }}
+            />
         </div>
     );
 };
