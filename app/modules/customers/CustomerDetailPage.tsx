@@ -6,9 +6,9 @@ import { Customer, CreateCustomerRequest } from "./types/customer.type";
 import { customerApi } from "./api/customer.api";
 import { CreateContactRequest } from "../contacts/types/contact.type";
 import { contactApi } from "../contacts/api/contact.api";
-import { 
-  Info, Save, XCircle, AlertCircle, Keyboard, Building2, User, Phone, 
-  Mail, Globe, Calendar, Briefcase, Plus, Trash2, UserPlus 
+import {
+  Info, Save, XCircle, AlertCircle, Keyboard, Building2, User, Phone,
+  Mail, Globe, Calendar, Briefcase, Plus, Trash2, UserPlus
 } from "lucide-react";
 
 interface CustomerDetailPageProps {
@@ -28,9 +28,9 @@ interface ValidationErrors {
 
 export const CustomerDetailPage: React.FC<CustomerDetailPageProps> = ({ initialData, isEditMode = false }) => {
   const router = useRouter();
-  
+
   const [activeTab, setActiveTab] = useState<TabType>("general");
-  
+
   const [formData, setFormData] = useState<CreateCustomerRequest>({
     customerCode: "",
     name: "",
@@ -49,6 +49,7 @@ export const CustomerDetailPage: React.FC<CustomerDetailPageProps> = ({ initialD
   });
 
   const [contacts, setContacts] = useState<CreateContactRequest[]>([]);
+  const [contactValidationErrors, setContactValidationErrors] = useState<Record<number, any>>({});
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [validationErrors, setValidationErrors] = useState<ValidationErrors>({});
@@ -71,7 +72,7 @@ export const CustomerDetailPage: React.FC<CustomerDetailPageProps> = ({ initialD
         tierId: initialData.tierId || null,
         assignedTo: initialData.assignedTo || null,
       });
-      
+
       if (initialData.contacts) {
         setContacts(initialData.contacts.map(c => ({
           fullName: c.fullName || "",
@@ -116,14 +117,14 @@ export const CustomerDetailPage: React.FC<CustomerDetailPageProps> = ({ initialD
     const { name, value } = e.target;
     const numericFields = ["sourceId", "statusId", "tierId", "assignedTo"];
     let finalValue: any = value;
-    
+
     if (numericFields.includes(name)) {
       finalValue = value === "" ? null : Number(value);
     }
 
-    setFormData((prev) => ({ 
-      ...prev, 
-      [name]: finalValue 
+    setFormData((prev) => ({
+      ...prev,
+      [name]: finalValue
     }));
     validateField(name, value);
   };
@@ -145,36 +146,72 @@ export const CustomerDetailPage: React.FC<CustomerDetailPageProps> = ({ initialD
 
   const removeContact = (index: number) => {
     setContacts(prev => prev.filter((_, i) => i !== index));
+    setContactValidationErrors(prev => {
+      const updated = { ...prev };
+      delete updated[index];
+      return updated;
+    });
   };
 
   const handleContactChange = (index: number, field: keyof CreateContactRequest, value: any) => {
     setContacts(prev => {
       const updated = [...prev];
       updated[index] = { ...updated[index], [field]: value };
-      
+
       // If setting a primary contact, unset others
       if (field === "isPrimary" && value === true) {
         return updated.map((c, i) => i === index ? c : { ...c, isPrimary: false });
       }
-      
+
       return updated;
     });
+
+    // Clear error when user types
+    if (contactValidationErrors[index]?.[field]) {
+      setContactValidationErrors(prev => {
+        const row = { ...prev[index] };
+        delete row[field];
+        return { ...prev, [index]: row };
+      });
+    }
   };
 
   const handleSubmit = async (e?: React.FormEvent) => {
     e?.preventDefault?.();
     if (isLoading) return;
 
+    // Validate customer info
     const errs: ValidationErrors = {};
     errs.name = validateField("name", formData.name);
     errs.customerCode = validateField("customerCode", formData.customerCode);
     errs.email = validateField("email", formData.email);
     errs.phone = validateField("phone", formData.phone);
-    
-    const hasErrors = Object.values(errs).some(v => v !== "");
-    if (hasErrors) {
+
+    const hasCustomerErrors = Object.values(errs).some(v => v !== "");
+
+    // Validate contacts
+    const contactErrs: Record<number, any> = {};
+    contacts.forEach((contact, index) => {
+      const rowErrs: any = {};
+      if (!contact.fullName || !contact.fullName.trim()) rowErrs.fullName = "Bắt buộc";
+      if (contact.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(contact.email)) rowErrs.email = "Sai định dạng";
+      if (contact.phone && !/^[0-9+\- ]+$/.test(contact.phone)) rowErrs.phone = "Sai định dạng";
+      if (Object.keys(rowErrs).length > 0) contactErrs[index] = rowErrs;
+    });
+
+    const hasContactErrors = Object.keys(contactErrs).length > 0;
+
+    if (hasCustomerErrors || hasContactErrors) {
       setValidationErrors(errs);
-      setError("Vui lòng sửa các lỗi nhập liệu bên dưới!");
+      setContactValidationErrors(contactErrs);
+
+      if (hasCustomerErrors && activeTab !== "general") {
+        setActiveTab("general");
+      } else if (hasContactErrors && !hasCustomerErrors) {
+        setActiveTab("contact");
+      }
+
+      setError("Vui lòng sửa các lỗi nhập liệu!");
       return;
     }
 
@@ -194,11 +231,9 @@ export const CustomerDetailPage: React.FC<CustomerDetailPageProps> = ({ initialD
         newCustomer = await customerApi.createCustomer(submissionData);
       }
 
-      // Handle contacts
-      // Note: Backend doesn't support bulk create in customer request, so we do it separately
-      // For a better UX, we should ideally have a bulk API.
+
       if (!isEditMode && contacts.length > 0) {
-        const contactPromises = contacts.map(contact => 
+        const contactPromises = contacts.map(contact =>
           contactApi.createContact({ ...contact, customerId: newCustomer.id })
         );
         await Promise.all(contactPromises);
@@ -263,12 +298,12 @@ export const CustomerDetailPage: React.FC<CustomerDetailPageProps> = ({ initialD
             <span className="text-slate-600">{isEditMode ? "Chỉnh sửa" : "Thêm mới"}</span>
           </div>
           <div className="flex items-center gap-4">
-             <div className="flex items-center gap-1.5 text-[10px] text-slate-400">
-                <kbd className="px-1.5 py-0.5 bg-slate-100 border border-slate-200 rounded text-slate-500 font-bold">Ctrl + S</kbd> Lưu
-             </div>
-             <div className="flex items-center gap-1.5 text-[10px] text-slate-400">
-                <kbd className="px-1.5 py-0.5 bg-slate-100 border border-slate-200 rounded text-slate-500 font-bold">Esc</kbd> Hủy
-             </div>
+            <div className="flex items-center gap-1.5 text-[10px] text-slate-400">
+              <kbd className="px-1.5 py-0.5 bg-slate-100 border border-slate-200 rounded text-slate-500 font-bold">Ctrl + S</kbd> Lưu
+            </div>
+            <div className="flex items-center gap-1.5 text-[10px] text-slate-400">
+              <kbd className="px-1.5 py-0.5 bg-slate-100 border border-slate-200 rounded text-slate-500 font-bold">Esc</kbd> Hủy
+            </div>
           </div>
         </div>
         <div className="flex gap-3">
@@ -327,8 +362,8 @@ export const CustomerDetailPage: React.FC<CustomerDetailPageProps> = ({ initialD
             <button
               onClick={() => setActiveTab("general")}
               className={`px-6 py-3 text-sm font-bold transition-all flex items-center gap-2 rounded-t-[5px] border-t border-x ${activeTab === "general"
-                  ? "text-sky-600 border-slate-200 bg-white"
-                  : "text-slate-500 border-transparent hover:text-slate-700 hover:bg-slate-100"
+                ? "text-sky-600 border-slate-200 bg-white"
+                : "text-slate-500 border-transparent hover:text-slate-700 hover:bg-slate-100"
                 }`}
             >
               <Info size={16} />
@@ -338,8 +373,8 @@ export const CustomerDetailPage: React.FC<CustomerDetailPageProps> = ({ initialD
             <button
               onClick={() => setActiveTab("contact")}
               className={`px-6 py-3 text-sm font-bold transition-all flex items-center gap-2 rounded-t-[5px] border-t border-x ${activeTab === "contact"
-                  ? "text-sky-600 border-slate-200 bg-white"
-                  : "text-slate-500 border-transparent hover:text-slate-700 hover:bg-slate-100"
+                ? "text-sky-600 border-slate-200 bg-white"
+                : "text-slate-500 border-transparent hover:text-slate-700 hover:bg-slate-100"
                 }`}
             >
               <UserPlus size={16} />
@@ -349,8 +384,8 @@ export const CustomerDetailPage: React.FC<CustomerDetailPageProps> = ({ initialD
             <button
               onClick={() => setActiveTab("business")}
               className={`px-6 py-3 text-sm font-bold transition-all flex items-center gap-2 rounded-t-[5px] border-t border-x ${activeTab === "business"
-                  ? "text-sky-600 border-slate-200 bg-white"
-                  : "text-slate-500 border-transparent hover:text-slate-700 hover:bg-slate-100"
+                ? "text-sky-600 border-slate-200 bg-white"
+                : "text-slate-500 border-transparent hover:text-slate-700 hover:bg-slate-100"
                 }`}
             >
               <Briefcase size={16} />
@@ -498,8 +533,12 @@ export const CustomerDetailPage: React.FC<CustomerDetailPageProps> = ({ initialD
                               <input
                                 value={contact.fullName}
                                 onChange={(e) => handleContactChange(index, "fullName", e.target.value)}
-                                className="w-full px-2 py-1 border border-transparent group-hover:border-slate-200 rounded focus:border-sky-500 outline-none bg-transparent text-slate-900 font-medium"
+                                className={`w-full px-2 py-1 border rounded focus:ring-1 focus:ring-sky-500 outline-none bg-transparent text-slate-900 font-medium transition-all ${contactValidationErrors[index]?.fullName
+                                    ? "border-red-400 bg-red-50 focus:border-red-500 focus:ring-red-500/20"
+                                    : "border-transparent group-hover:border-slate-200 focus:border-sky-500"
+                                  }`}
                                 placeholder="Họ và tên..."
+                                title={contactValidationErrors[index]?.fullName}
                               />
                             </td>
                             <td className="px-3 py-2">
@@ -514,16 +553,24 @@ export const CustomerDetailPage: React.FC<CustomerDetailPageProps> = ({ initialD
                               <input
                                 value={contact.phone}
                                 onChange={(e) => handleContactChange(index, "phone", e.target.value)}
-                                className="w-full px-2 py-1 border border-transparent group-hover:border-slate-200 rounded focus:border-sky-500 outline-none bg-transparent text-slate-900 font-medium"
+                                className={`w-full px-2 py-1 border rounded focus:ring-1 focus:ring-sky-500 outline-none bg-transparent text-slate-900 font-medium transition-all ${contactValidationErrors[index]?.phone
+                                    ? "border-red-400 bg-red-50 focus:border-red-500 focus:ring-red-500/20"
+                                    : "border-transparent group-hover:border-slate-200 focus:border-sky-500"
+                                  }`}
                                 placeholder="Số ĐT..."
+                                title={contactValidationErrors[index]?.phone}
                               />
                             </td>
                             <td className="px-3 py-2">
                               <input
                                 value={contact.email}
                                 onChange={(e) => handleContactChange(index, "email", e.target.value)}
-                                className="w-full px-2 py-1 border border-transparent group-hover:border-slate-200 rounded focus:border-sky-500 outline-none bg-transparent text-slate-900 font-medium"
+                                className={`w-full px-2 py-1 border rounded focus:ring-1 focus:ring-sky-500 outline-none bg-transparent text-slate-900 font-medium transition-all ${contactValidationErrors[index]?.email
+                                    ? "border-red-400 bg-red-50 focus:border-red-500 focus:ring-red-500/20"
+                                    : "border-transparent group-hover:border-slate-200 focus:border-sky-500"
+                                  }`}
                                 placeholder="Email..."
+                                title={contactValidationErrors[index]?.email}
                               />
                             </td>
                             <td className="px-3 py-2 text-center">
@@ -575,7 +622,7 @@ export const CustomerDetailPage: React.FC<CustomerDetailPageProps> = ({ initialD
                       className="w-full px-3 py-2 text-sm border border-slate-300 rounded-[5px] focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 outline-none text-slate-900 h-[38px]"
                     />
                   </div>
-                  
+
                   <div className="flex flex-col gap-2">
                     <label className="text-sm font-bold text-slate-700">Nguồn khách hàng</label>
                     <select
