@@ -19,6 +19,17 @@ const MOCK_DEALS = [
     { id: 301, name: "Triển khai CRM cho ABC (Cơ hội)" }
 ];
 
+// Dữ liệu giả mô phỏng: Mỗi ID Khách hàng sẽ chứa một mảng các Người liên hệ (Contact)
+const MOCK_CONTACTS: Record<number, { id: number, name: string }[]> = {
+    201: [ // Nếu chọn Chị Lan - Đại lý cấp 1 (ID: 201)
+        { id: 1, name: "Anh Tú - Trợ lý chị Lan" },
+        { id: 2, name: "Chị Hoa - Kế toán" }
+    ],
+    202: [ // Nếu chọn Công ty Cổ phần XYZ (ID: 202)
+        { id: 3, name: "Nguyễn Văn Giám Đốc" },
+        { id: 4, name: "Trần Trưởng Phòng IT" }
+    ]
+};
 interface CreateTaskModalProps {
     show: boolean;
     onClose: () => void;
@@ -38,7 +49,8 @@ const CreateTaskModal: React.FC<CreateTaskModalProps> = ({ show, onClose, onSucc
         priority: "NORMAL",
         assignedTo: "", // Chuỗi tạm, khi gửi sẽ ép sang số
         relatedToType: "LEAD", // Mặc định là LEAD
-        relatedToId: "" // Chuỗi tạm, khi gửi sẽ ép sang số
+        relatedToId: "", // Chuỗi tạm, khi gửi sẽ ép sang số
+        contactId: ""
     });
 
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -62,9 +74,13 @@ const CreateTaskModal: React.FC<CreateTaskModalProps> = ({ show, onClose, onSucc
     // Hàm xử lý khi gõ vào ô input
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
         const { name, value } = e.target;
-        // Nếu thay đổi Loại đối tượng, thì phải xóa trắng ID cũ đi
         if (name === 'relatedToType') {
-            setFormData({ ...formData, relatedToType: value, relatedToId: "" });
+            // Đổi Loại đối tượng -> Xóa ID đối tượng và Xóa luôn Contact
+            setFormData({ ...formData, relatedToType: value, relatedToId: "", contactId: "" });
+        } else if (name === 'relatedToId') {
+            // Đổi Khách hàng cụ thể -> Xóa Contact của Khách hàng cũ đi
+            setFormData({ ...formData, relatedToId: value, contactId: "" });
+
         } else {
             setFormData({ ...formData, [name]: value });
         }
@@ -97,6 +113,7 @@ const CreateTaskModal: React.FC<CreateTaskModalProps> = ({ show, onClose, onSucc
                 ...formData,
                 assignedTo: formData.assignedTo ? Number(formData.assignedTo) : null,
                 relatedToId: formData.relatedToId ? Number(formData.relatedToId) : null,
+                contactId: formData.contactId ? Number(formData.contactId) : null,
             };
 
             await axios.post('http://localhost:8080/api/v1/tasks', payload);
@@ -106,7 +123,7 @@ const CreateTaskModal: React.FC<CreateTaskModalProps> = ({ show, onClose, onSucc
             // Reset form
             setFormData({
                 subject: "", description: "", startDate: "", dueDate: "",
-                priority: "NORMAL", assignedTo: "", relatedToType: "LEAD", relatedToId: ""
+                priority: "NORMAL", assignedTo: "", relatedToType: "LEAD", relatedToId: "", contactId: ""
             });
 
             onSuccess(); // Báo cho TaskPage load lại bảng
@@ -211,6 +228,26 @@ const CreateTaskModal: React.FC<CreateTaskModalProps> = ({ show, onClose, onSucc
                                     ))}
                                 </select>
                             </div>
+                            {/* CHỈ HIỆN DROPDOWN CONTACT KHI: Loại = CUSTOMER và Đã chọn Khách hàng */}
+                            {formData.relatedToType === 'CUSTOMER' && formData.relatedToId && (
+                                <div className="col-md-12 mt-3 p-3 bg-info-subtle border border-info-subtle rounded">
+                                    <label className="form-label small fw-semibold text-info-emphasis mb-1">
+                                        <i className="fa-regular fa-address-book me-1"></i> Liên hệ trực tiếp với ai? (Tùy chọn)
+                                    </label>
+                                    <select
+                                        className="form-select shadow-sm cursor-pointer border-info text-info-emphasis"
+                                        name="contactId"
+                                        value={formData.contactId}
+                                        onChange={handleChange}
+                                    >
+                                        <option value="">-- Không cần liên hệ cụ thể --</option>
+                                        {/* Tự động map danh sách Contact dựa theo ID Khách hàng đang chọn */}
+                                        {(MOCK_CONTACTS[Number(formData.relatedToId)] || []).map(contact => (
+                                            <option key={contact.id} value={contact.id}>{contact.name}</option>
+                                        ))}
+                                    </select>
+                                </div>
+                            )}
 
                             <div className="col-12">
                                 <label className="form-label small fw-semibold text-muted">Mô tả chi tiết</label>

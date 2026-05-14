@@ -9,7 +9,7 @@ import Link from 'next/link';
 interface ITaskFilter {
     page: number;
     size: number;
-    subject?: string; // Trong ảnh mình thấy Duy dùng biến subject để search
+    subject?: string;
     status?: string;
     priority?: string;
 }
@@ -27,20 +27,33 @@ const TaskPage = () => {
 
     const [showCreateModal, setShowCreateModal] = useState(false);
 
-    const [filters, setFilters] = useState<ITaskFilter>(() => {
-        // 1. Kiểm tra xem có đang chạy trên trình duyệt không (tránh lỗi Next.js SSR)
-        if (typeof window !== 'undefined') {
-            const savedFilters = sessionStorage.getItem('taskFilters');
-            if (savedFilters) {
-                return JSON.parse(savedFilters); // Lấy bộ lọc cũ ra dùng lại
-            }
-        }
-        // 2. Nếu chưa có gì thì trả về giá trị mặc định
-        return { page: 0, size: 10, subject: '', status: '', priority: '' };
+    const [filters, setFilters] = useState<ITaskFilter>({
+        page: 0,
+        size: 10,
+        subject: '',
+        status: '',
+        priority: ''
     });
+
+    // Thêm 1 state để báo hiệu "Trình duyệt đã load xong chưa?"
+    const [isMounted, setIsMounted] = useState(false);
+
+    useEffect(() => {
+        // Đánh dấu là đã qua giai đoạn Server Render, bắt đầu chạy trên Client
+        setIsMounted(true);
+
+        // Giờ mới lấy data từ Session đắp vào
+        const savedFilters = sessionStorage.getItem('taskFilters');
+        if (savedFilters) {
+            setFilters(JSON.parse(savedFilters));
+        }
+    }, []);
+
+
     useEffect(() => {
         sessionStorage.setItem('taskFilters', JSON.stringify(filters));
     }, [filters]);
+
 
     const fetchTasks = async () => {
         try {
@@ -73,11 +86,14 @@ const TaskPage = () => {
         }
     };
 
-    // Lắng nghe mảng [filters]. Mỗi khi user gõ phím, đổi trang, đổi trạng thái...
-    // state filters thay đổi -> useEffect tự động gọi lại hàm fetchTasks.
     useEffect(() => {
-        fetchTasks();
-    }, [filters]);
+        // Chỉ lưu session và gọi API lấy Task khi UI đã Mount xong (tránh lỗi)
+        if (isMounted) {
+            sessionStorage.setItem('taskFilters', JSON.stringify(filters));
+            fetchTasks();
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [filters, isMounted]);
 
     // CÁC HÀM XỬ LÝ SỰ KIỆN (HANDLERS)
     const handleStatusChange = (newStatus: string) => {
@@ -97,7 +113,9 @@ const TaskPage = () => {
 
     //CÁC HÀM TIỆN ÍCH GIAO DIỆN (UI HELPERS)
     const getStatusBadge = (status: string) => {
-        switch (status) {
+
+        const safeStatus = status?.toUpperCase();
+        switch (safeStatus) {
             case 'NOT_STARTED':
                 return <span className="badge bg-secondary-subtle text-secondary border border-secondary-subtle px-2 py-1"><i className="fa-solid fa-pause me-1"></i>Chưa bắt đầu</span>;
             case 'IN_PROGRESS':
@@ -108,17 +126,42 @@ const TaskPage = () => {
                 return <span className="badge bg-dark-subtle text-dark border border-dark-subtle px-2 py-1"><i className="fa-solid fa-circle-pause me-1"></i>Tạm hoãn</span>;
             case 'COMPLETED':
                 return <span className="badge bg-success-subtle text-success border border-success-subtle px-2 py-1"><i className="fa-solid fa-check-double me-1"></i>Hoàn thành</span>;
+            case 'CANCELLED':
+                return <span className="badge bg-danger-subtle text-danger border border-danger-subtle px-2 py-1"><i className="fa-solid fa-ban me-1"></i>Đã hủy</span>;
             default:
-                return <span className="badge bg-light text-dark border px-2 py-1">{status}</span>;
+                return <span className="badge bg-light text-dark border px-2 py-1">{status || 'Chưa rõ'}</span>;
         }
     };
 
     const getPriorityBadge = (priority: string) => {
         switch (priority) {
             case 'HIGH': return <span className="text-danger fw-bold small"><i className="fa-solid fa-angles-up me-1"></i>Cao</span>;
-            case 'NORMAL': return <span className="text-primary fw-bold small"><i className="fa-solid fa-angle-up me-1"></i>Bình thường</span>;
+            case 'NORMAL':
+            case 'MEDIUM':
+                return <span className="text-primary fw-bold small"><i className="fa-solid fa-angle-up me-1"></i>Bình thường</span>;
             case 'LOW': return <span className="text-muted fw-bold small"><i className="fa-solid fa-angle-down me-1"></i>Thấp</span>;
+            case 'URGENT':
+                return <span className="text-danger fw-bold small"><i className="fa-solid fa-triangle-exclamation fa-beat-fade me-1"></i>Khẩn cấp</span>;
             default: return <span className="text-secondary small">{priority}</span>;
+        }
+    };
+
+    const getRelatedToBadge = (type: string, id: number | string) => {
+        if (!type || !id) return null;
+
+        const safeType = type.toUpperCase();
+        switch (safeType) {
+            case 'CUSTOMER':
+                return <span className="badge bg-info-subtle text-info border border-info-subtle px-2 py-1"><i className="fa-solid fa-building me-1"></i>Khách hàng #{id}</span>;
+            case 'LEAD':
+                return <span className="badge bg-warning-subtle text-warning border border-warning-subtle px-2 py-1"><i className="fa-solid fa-filter me-1"></i>Tiềm năng #{id}</span>;
+            case 'DEAL':
+            case 'OPPORTUNITY':
+                return <span className="badge bg-success-subtle text-success border border-success-subtle px-2 py-1"><i className="fa-solid fa-handshake me-1"></i>Cơ hội #{id}</span>;
+            case 'TICKET':
+                return <span className="badge bg-danger-subtle text-danger border border-danger-subtle px-2 py-1"><i className="fa-solid fa-ticket me-1"></i>Hỗ trợ #{id}</span>;
+            default:
+                return <span className="badge bg-light text-secondary border px-2 py-1"><i className="fa-solid fa-link me-1"></i>{type} #{id}</span>;
         }
     };
 
@@ -175,7 +218,6 @@ const TaskPage = () => {
             alert("Có lỗi xảy ra khi xóa. Vui lòng thử lại!");
         }
     };
-
 
     return (
         <div className="container-fluid py-4 bg-light min-vh-100">
@@ -253,6 +295,20 @@ const TaskPage = () => {
                                 </button>
                                 <button
                                     type="button"
+                                    className={`btn btn-sm rounded-pill px-3 py-1 ${filters.status === 'WAITING' ? 'btn-warning fw-bold shadow-sm text-dark' : 'btn-light text-muted border-0'}`}
+                                    onClick={() => setFilters({ ...filters, status: 'WAITING', page: 0 })}
+                                >
+                                    Đang chờ
+                                </button>
+                                <button
+                                    type="button"
+                                    className={`btn btn-sm rounded-pill px-3 py-1 ${filters.status === 'DEFERRED' ? 'btn-dark fw-bold shadow-sm text-white' : 'btn-light text-muted border-0'}`}
+                                    onClick={() => setFilters({ ...filters, status: 'DEFERRED', page: 0 })}
+                                >
+                                    Tạm hoãn
+                                </button>
+                                <button
+                                    type="button"
                                     className={`btn btn-sm rounded-pill px-3 py-1 ms-1 ${filters.status === 'COMPLETED' ? 'btn-success fw-bold shadow-sm text-white' : 'btn-light text-muted border-0'}`}
                                     onClick={() => setFilters({ ...filters, status: 'COMPLETED', page: 0 })}
                                 >
@@ -269,6 +325,7 @@ const TaskPage = () => {
                                 onChange={(e) => setFilters({ ...filters, priority: e.target.value, page: 0 })} // Bắt sự kiện khi chọn
                             >
                                 <option value="">Độ ưu tiên</option>
+                                <option value="URGENT">🚨 Khẩn cấp</option>
                                 <option value="HIGH">🔥 Cao</option>
                                 <option value="NORMAL">⚡ Bình thường</option>
                                 <option value="LOW">💤 Thấp</option>
@@ -313,11 +370,12 @@ const TaskPage = () => {
                                     />
                                 </div>
                             </th>
-                            <th className="fw-semibold py-3" style={{ width: '22    %' }}>Chủ đề công việc</th>
+                            <th className="fw-semibold py-3" style={{ width: '22%' }}>Chủ đề công việc</th>
                             <th className="fw-semibold py-3" style={{ width: '15%' }}>Trạng thái & Tiến độ</th>
                             <th className="fw-semibold py-3" style={{ width: '8%' }}>Ưu tiên</th>
                             <th className="fw-semibold py-3" style={{ width: '15%' }}>Thời hạn (Start - Due)</th>
-                            <th className="fw-semibold py-3" style={{ width: '15%' }}>Liên hệ</th>
+                            <th className="fw-semibold py-3" style={{ width: '12%' }}>Liên hệ</th>
+                            <th className="fw-semibold py-3" style={{ width: '12%' }}>Liên quan đến</th>
                             <th className="fw-semibold py-3" style={{ width: '10%' }}>Phân công cho</th>
                             <th className="fw-semibold text-center py-3" style={{ width: '7%' }}>Chi tiết</th>
                         </tr>
@@ -381,22 +439,27 @@ const TaskPage = () => {
                                         <div className="small text-muted mb-1"><span className="text-success"><i className="fa-solid fa-play me-1"></i></span> {formatShortDate(task.startDate)}</div>
                                         <div className="small text-muted fw-medium"><span className="text-danger"><i className="fa-solid fa-flag-checkered me-1"></i></span> {formatShortDate(task.dueDate)}</div>
                                     </td>
-                                    {/* CỘT 3: KHÁCH HÀNG */}
-                                    <td>
+                                    {/* CỘT 3: LIÊN HỆ (CONTACT) */}
+                                    <td className="align-middle">
                                         {task.contactName ? (
-                                            <div className="text-info fw-medium" style={{ fontSize: '13px' }}>
+                                            <div className="text-info fw-medium text-truncate" style={{ fontSize: '13px', maxWidth: '130px' }} title={task.contactName}>
                                                 <i className="fa-regular fa-address-book me-1"></i> {task.contactName}
                                             </div>
                                         ) : task.contactId ? (
-                                            <div className="text-info" style={{ fontSize: '13px' }}>
-                                                <i className="fa-regular fa-address-book me-1"></i> Liên hệ ID: {task.contactId}
-                                            </div>
-                                        ) : task.relatedToId ? (
-                                            <div className="text-muted" style={{ fontSize: '13px' }}>
-                                                <i className="fa-regular fa-building me-1"></i> Đối tượng ID: {task.relatedToId}
+                                            <div className="text-info fw-medium" style={{ fontSize: '13px' }}>
+                                                <i className="fa-regular fa-address-book me-1"></i> ID: {task.contactId}
                                             </div>
                                         ) : (
-                                            <span className="badge bg-light text-muted fw-normal border">Không đính kèm</span>
+                                            <span className="text-muted fst-italic small">---</span>
+                                        )}
+                                    </td>
+
+                                    {/* CỘT 4: LIÊN QUAN ĐẾN (RELATED TO) */}
+                                    <td className="align-middle">
+                                        {task.relatedToType && task.relatedToId ? (
+                                            <div>{getRelatedToBadge(task.relatedToType, task.relatedToId)}</div>
+                                        ) : (
+                                            <span className="text-muted fst-italic small">---</span>
                                         )}
                                     </td>
 
