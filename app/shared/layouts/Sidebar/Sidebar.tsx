@@ -1,4 +1,5 @@
 "use client";
+import React from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useEffect, useState } from "react";
 import Link from "next/link";
@@ -26,12 +27,10 @@ export default function Sidebar({
 
     useEffect(() => {
         setMounted(true);
-
-        // load lần đầu
         setUser(getCurrentUser());
 
         const handleStorage = () => {
-            setUser(getCurrentUser()); // 🔥 cập nhật lại khi có thay đổi
+            setUser(getCurrentUser());
         };
 
         window.addEventListener("storage", handleStorage);
@@ -41,16 +40,7 @@ export default function Sidebar({
         };
     }, []);
 
-    useEffect(() => {
-        setMounted(true);
-    }, []);
-
-    // Tránh lỗi Hydration
     if (!mounted || !user) {
-        return null;
-    }
-
-    if (!user) {
         return null;
     }
 
@@ -103,24 +93,34 @@ export default function Sidebar({
 
 
             {/* MENU */}
-
             <nav className={styles.menu}>
-                {menus.map((item) => {
-                    const Icon = item.icon;
-                    const isActive = pathname === item.path;
-
-                    return (
-                        <Link
-                            key={item.key}
-                            href={item.path}
-                            className={`${styles.menuItem} ${isActive ? styles.active : ""
-                                }`}
-                        >
-                            <Icon size={18} />
-                            {!collapsed && <span>{item.label}</span>}
-                        </Link>
-                    );
-                })}
+                {(() => {
+                    const rendered: React.ReactNode[] = [];
+                    let lastGroup: string | undefined = undefined;
+                    menus.forEach((item) => {
+                        const Icon = item.icon;
+                        const isActive = pathname === item.path || pathname.startsWith(item.path + "/");
+                        if (!collapsed && item.group && item.group !== lastGroup) {
+                            lastGroup = item.group;
+                            rendered.push(
+                                <div key={`group-${item.group}`} className={styles.groupLabel}>
+                                    {item.group}
+                                </div>
+                            );
+                        }
+                        rendered.push(
+                            <Link
+                                key={item.key}
+                                href={item.path}
+                                className={`${styles.menuItem} ${isActive ? styles.active : ""}`}
+                            >
+                                <Icon size={18} />
+                                {!collapsed && <span>{item.label}</span>}
+                            </Link>
+                        );
+                    });
+                    return rendered;
+                })()}
             </nav>
 
             {/* USER INFO */}
