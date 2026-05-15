@@ -4,12 +4,15 @@ import type {
   ConvertLeadRequest,
   ConvertLeadResponse,
   CreateLeadRequest,
+  CreateLeadActivityRequest,
+  CreateLeadMeetingRequest,
   LeadActivityResponse,
   LeadActivityStatisticsResponse,
   LeadListQuery,
   LeadPageResponse,
   LeadReferenceCatalogResponse,
   LeadResponse,
+  LeadMeetingTaskResponse,
   MetadataPageResponse,
   OrganizationMetadataItem,
   OrganizationMetadataQuery,
@@ -139,6 +142,52 @@ export const leadApi = {
   ): Promise<LeadActivityStatisticsResponse> => {
     const response = await http.get<LeadActivityStatisticsResponse>(
       `/api/leads/${leadId}/activities/statistics`
+    );
+    return response.data;
+  },
+
+  createActivity: async (
+    leadId: number,
+    payload: CreateLeadActivityRequest
+  ): Promise<LeadActivityResponse> => {
+    const response = await http.post<LeadActivityResponse>(
+      `/api/leads/${leadId}/activities`,
+      payload
+    );
+    return response.data;
+  },
+
+  updateActivity: async (
+    leadId: number,
+    activityId: number,
+    payload: CreateLeadActivityRequest
+  ): Promise<LeadActivityResponse> => {
+    const response = await http.put<LeadActivityResponse>(
+      `/api/leads/${leadId}/activities/${activityId}`,
+      payload
+    );
+    return response.data;
+  },
+
+  createMeeting: async (
+    leadId: number,
+    payload: CreateLeadMeetingRequest
+  ): Promise<LeadMeetingTaskResponse> => {
+    const response = await http.post<LeadMeetingTaskResponse>(
+      `/api/leads/${leadId}/meetings`,
+      payload
+    );
+    return response.data;
+  },
+
+  updateMeeting: async (
+    leadId: number,
+    meetingId: number,
+    payload: CreateLeadMeetingRequest
+  ): Promise<LeadMeetingTaskResponse> => {
+    const response = await http.put<LeadMeetingTaskResponse>(
+      `/api/leads/${leadId}/meetings/${meetingId}`,
+      payload
     );
     return response.data;
   },

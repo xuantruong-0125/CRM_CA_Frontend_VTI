@@ -44,6 +44,64 @@ export type ConvertLeadRequest = {
   userId?: number;
 };
 
+export type CreateLeadActivityRequest = {
+  activityType?: "CALL" | "MEETING" | "EMAIL" | string;
+  subject?: string;
+  description?: string;
+  startDate?: ISODateTimeString;
+  endDate?: ISODateTimeString;
+  completedAt?: ISODateTimeString;
+  outcome?: string;
+  performedBy?: number;
+  createdBy?: number;
+  status?: number;
+  isImportant?: boolean;
+};
+
+export type UpdateLeadActivityRequest = {
+  activityType?: "CALL" | "MEETING" | "EMAIL" | string;
+  subject?: string;
+  description?: string;
+  startDate?: ISODateTimeString;
+  endDate?: ISODateTimeString;
+  completedAt?: ISODateTimeString;
+  outcome?: string;
+  performedBy?: number;
+  updatedBy?: number;
+  status?: number;
+  isImportant?: boolean;
+};
+
+export type CreateLeadMeetingRequest = {
+  subject?: string;
+  description?: string;
+  startDate?: ISODateTimeString;
+  dueDate?: ISODateTimeString;
+  completedAt?: ISODateTimeString;
+  status?: string;
+  priority?: "LOW" | "NORMAL" | "HIGH" | "URGENT" | string;
+  progressPercent?: number;
+  assignedTo?: number;
+  assignedBy?: number;
+  createdBy?: number;
+  contactId?: number;
+};
+
+export type UpdateLeadMeetingRequest = {
+  subject?: string;
+  description?: string;
+  startDate?: ISODateTimeString;
+  dueDate?: ISODateTimeString;
+  completedAt?: ISODateTimeString;
+  status?: string;
+  priority?: "LOW" | "NORMAL" | "HIGH" | "URGENT" | string;
+  progressPercent?: number;
+  assignedTo?: number;
+  assignedBy?: number;
+  updatedBy?: number;
+  contactId?: number;
+};
+
 export type LeadResponse = {
   id?: number;
   contactName?: string;
@@ -98,6 +156,27 @@ export type LeadActivityStatisticsResponse = {
   meetingCount: number;
   emailCount: number;
   totalCount: number;
+};
+
+export type LeadMeetingTaskResponse = {
+  id?: number;
+  leadId?: number;
+  taskType?: string;
+  subject?: string;
+  description?: string;
+  startDate?: ISODateTimeString;
+  dueDate?: ISODateTimeString;
+  completedAt?: ISODateTimeString;
+  status?: string;
+  priority?: string;
+  progressPercent?: number;
+  assignedTo?: number;
+  assignedBy?: number;
+  createdBy?: number;
+  updatedBy?: number;
+  contactId?: number;
+  createdAt?: ISODateTimeString;
+  updatedAt?: ISODateTimeString;
 };
 
 export type LeadDashboardStats = {

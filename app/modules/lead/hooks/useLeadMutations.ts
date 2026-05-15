@@ -5,6 +5,8 @@ import { leadApi } from "@/modules/lead/api/lead.api";
 import type {
   ConvertLeadRequest,
   CreateLeadRequest,
+  CreateLeadActivityRequest,
+  CreateLeadMeetingRequest,
   UpdateLeadRequest,
 } from "@/modules/lead/types/lead.types";
 import { queryKeys } from "@/shared/constants/query-keys";
@@ -68,6 +70,56 @@ export function useConvertLead() {
       queryClient.invalidateQueries({ queryKey: queryKeys.lead.all });
       queryClient.invalidateQueries({
         queryKey: queryKeys.lead.detail(variables.id),
+      });
+    },
+  });
+}
+
+export function useCreateLeadActivity() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      leadId,
+      payload,
+    }: {
+      leadId: number;
+      payload: CreateLeadActivityRequest;
+    }) => leadApi.createActivity(leadId, payload),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.lead.activities(variables.leadId),
+      });
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.lead.activityStatistics(variables.leadId),
+      });
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.lead.detail(variables.leadId),
+      });
+    },
+  });
+}
+
+export function useCreateLeadMeeting() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      leadId,
+      payload,
+    }: {
+      leadId: number;
+      payload: CreateLeadMeetingRequest;
+    }) => leadApi.createMeeting(leadId, payload),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.lead.activities(variables.leadId),
+      });
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.lead.activityStatistics(variables.leadId),
+      });
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.lead.detail(variables.leadId),
       });
     },
   });

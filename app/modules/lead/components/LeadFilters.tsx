@@ -52,7 +52,8 @@ export default function LeadFilters({
   };
 
   // Các class dùng chung cho Select và Label để giữ UI đồng nhất
-  const selectClassName = "h-8 w-full rounded border border-slate-300 bg-white px-2 text-[12px] text-slate-900 outline-none transition focus:border-blue-500 focus:ring-1 focus:ring-blue-500";
+  // Đã thêm các class appearance-none và custom SVG (stroke màu #cbd5e1 giống border slate-300)
+  const selectClassName = `h-8 w-full rounded border border-slate-300 bg-white px-2 pr-7 text-[12px] text-slate-900 outline-none transition focus:border-blue-500 focus:ring-1 focus:ring-blue-500 appearance-none bg-[url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20fill='none'%20viewBox='0%200%2020%2020'%3E%3Cpath%20stroke='%23cbd5e1'%20stroke-linecap='round'%20stroke-linejoin='round'%20stroke-width='1.5'%20d='M6%208l4%204%204-4'/%3E%3C/svg%3E")] bg-no-repeat bg-[right_0.25rem_center] bg-[length:1.25rem_1.25rem]`;
   const labelClassName = "mb-1 block text-[12px] font-medium text-slate-700";
 
   return (

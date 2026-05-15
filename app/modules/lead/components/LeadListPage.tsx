@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { toast } from "react-toastify";
 import { leadApi } from "@/modules/lead/api/lead.api";
 import LeadFilters, { type LeadFilterValues } from "@/modules/lead/components/LeadFilters";
@@ -27,6 +27,8 @@ import type {
   LeadReferenceOptionResponse,
 } from "@/modules/lead/types/lead.types";
 import { getApiErrorMessage } from "@/shared/utils/api-error";
+import { LEAD_SHORTCUTS, matchesShortcut } from "@/modules/lead/utils/keyboard-shortcuts";
+import { KeyboardShortcutBadge } from "@/modules/lead/components/KeyboardShortcutBadge";
 
 type FormMode = "hidden" | "create" | "edit";
 
@@ -74,9 +76,13 @@ function getUserIdFromStorage(): number | undefined {
 
 export default function LeadListPage() {
   const [page, setPage] = useState(0);
-  const [size] = useState(20);
+  const [size, setSize] = useState(20);
   const [pageInput, setPageInput] = useState("1");
   const [searchTerm, setSearchTerm] = useState("");
+  const [maskPhoneEnabled, setMaskPhoneEnabled] = useState(true);
+  const [maskEmailEnabled, setMaskEmailEnabled] = useState(true);
+  const [showMaskFilterMenu, setShowMaskFilterMenu] = useState(false);
+  const [showPageSizeMenu, setShowPageSizeMenu] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
   const [filters, setFilters] = useState<LeadFilterValues>({});
   const [formMode, setFormMode] = useState<FormMode>("hidden");
@@ -368,11 +374,55 @@ export default function LeadListPage() {
     deleteLeadMutation.isPending ||
     convertLeadMutation.isPending;
 
-  const navigateToPage = (nextPage: number) => {
+  const navigateToPage = useCallback((nextPage: number) => {
     const clampedPage = Math.min(Math.max(nextPage, 0), totalPages - 1);
     setPage(clampedPage);
     setPageInput(String(clampedPage + 1));
+  }, [totalPages]);
+
+  const applyPageSize = (nextSize: number) => {
+    setSize(nextSize);
+    setPage(0);
+    setPageInput("1");
+    setShowPageSizeMenu(false);
   };
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (matchesShortcut(e, LEAD_SHORTCUTS.CREATE_LEAD)) {
+        console.log("✅ Alt+N triggered!", e);
+        e.preventDefault();
+        setEditingLead(null);
+        setFormMode("create");
+      } else if (matchesShortcut(e, LEAD_SHORTCUTS.TOGGLE_FILTER)) {
+        e.preventDefault();
+        setShowFilters((current) => !current);
+      } else if (matchesShortcut(e, LEAD_SHORTCUTS.TOGGLE_SECURITY)) {
+        e.preventDefault();
+        setShowMaskFilterMenu((current) => !current);
+        setShowPageSizeMenu(false);
+      } else if (matchesShortcut(e, LEAD_SHORTCUTS.TOGGLE_PAGE_SIZE)) {
+        e.preventDefault();
+        setShowPageSizeMenu((current) => !current);
+        setShowMaskFilterMenu(false);
+      } else if (matchesShortcut(e, LEAD_SHORTCUTS.FIRST_PAGE)) {
+        e.preventDefault();
+        navigateToPage(0);
+      } else if (matchesShortcut(e, LEAD_SHORTCUTS.PREV_PAGE)) {
+        e.preventDefault();
+        navigateToPage(page - 1);
+      } else if (matchesShortcut(e, LEAD_SHORTCUTS.NEXT_PAGE)) {
+        e.preventDefault();
+        navigateToPage(page + 1);
+      } else if (matchesShortcut(e, LEAD_SHORTCUTS.LAST_PAGE)) {
+        e.preventDefault();
+        navigateToPage(totalPages - 1);
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [page, totalPages, navigateToPage, setPage, setPageInput]);
 
   const submitPageInput = () => {
     const nextPage = Number.parseInt(pageInput, 10);
@@ -389,34 +439,36 @@ export default function LeadListPage() {
   if (formMode !== "hidden") {
     return (
       <main className="min-h-screen bg-slate-50 px-2 py-3 md:px-4">
-        <div className="mx-auto max-w-4xl space-y-3">
-          <header className="space-y-0.5">
-            <h1 className="text-[16px] font-semibold text-slate-900">
-              {formMode === "create" ? "Thêm khách hàng tiềm năng" : "Chỉnh sửa khách hàng tiềm năng"}
-            </h1>
-            <p className="text-[12px] text-slate-600">
-              Điền đầy đủ thông tin để lưu dữ liệu khách hàng tiềm năng.
-            </p>
-          </header>
+        <div className="mx-auto max-w-[1600px]">
+          <div className="space-y-3">
+            <header className="space-y-0.5">
+              <h1 className="text-[16px] font-semibold text-slate-900">
+                {formMode === "create" ? "Thêm khách hàng tiềm năng" : "Chỉnh sửa khách hàng tiềm năng"}
+              </h1>
+              <p className="text-[12px] text-slate-600">
+                Điền đầy đủ thông tin để lưu dữ liệu khách hàng tiềm năng.
+              </p>
+            </header>
 
-          <section className="rounded-lg border border-slate-200 bg-white p-3 shadow-sm">
-            <LeadForm
-              mode={formMode === "create" ? "create" : "edit"}
-              initialValues={formInitialValues}
-              statuses={leadStatuses}
-              sources={references?.sources || []}
-              campaigns={references?.campaigns || []}
-              assignees={assigneesQuery.data?.content || []}
-              provinces={provincesQuery.data?.content || []}
-              products={productsQuery.data?.content || []}
-              onSubmit={submitLeadForm}
-              onCancel={() => {
-                setFormMode("hidden");
-                setEditingLead(null);
-              }}
-              isSubmitting={isBusy}
-            />
-          </section>
+            <section className="rounded-lg border border-slate-200 bg-white p-3 shadow-sm">
+              <LeadForm
+                mode={formMode === "create" ? "create" : "edit"}
+                initialValues={formInitialValues}
+                statuses={leadStatuses}
+                sources={references?.sources || []}
+                campaigns={references?.campaigns || []}
+                assignees={assigneesQuery.data?.content || []}
+                provinces={provincesQuery.data?.content || []}
+                products={productsQuery.data?.content || []}
+                onSubmit={submitLeadForm}
+                onCancel={() => {
+                  setFormMode("hidden");
+                  setEditingLead(null);
+                }}
+                isSubmitting={isBusy}
+              />
+            </section>
+          </div>
         </div>
       </main>
     );
@@ -424,17 +476,19 @@ export default function LeadListPage() {
 
   return (
     <main className="min-h-screen bg-slate-50 px-2 py-3 md:px-4">
-      <div className="mx-auto max-w-[1600px] space-y-3">
-        <header className="space-y-0.5">
-          <h1 className="text-[16px] font-semibold text-slate-900">
-            Quản lý Khách hàng Tiềm năng
-          </h1>
-          <p className="text-[12px] text-slate-600">
-            Theo dõi và quản lý toàn bộ khách hàng tiềm năng của bạn
-          </p>
-        </header>
+      <div className="mx-auto max-w-[1600px]">
 
-        <section className="grid grid-cols-1 gap-2 lg:grid-cols-5">
+        <div className="space-y-3">
+          <header className="space-y-0.5">
+            <h1 className="text-[16px] font-semibold text-slate-900">
+              Quản lý Khách hàng Tiềm năng
+            </h1>
+            <p className="text-[12px] text-slate-600">
+              Theo dõi và quản lý toàn bộ khách hàng tiềm năng của bạn
+            </p>
+          </header>
+
+        <section className="grid grid-cols-2 gap-2 lg:grid-cols-3 xl:grid-cols-6">
           <div className="rounded-lg border border-slate-200 bg-white p-2 shadow-sm">
             <div className="flex items-start justify-between">
               <div>
@@ -479,6 +533,19 @@ export default function LeadListPage() {
           <div className="rounded-lg border border-slate-200 bg-white p-2 shadow-sm">
              <div className="flex items-start justify-between">
                <div>
+                 <p className="text-[11px] text-slate-600">Phát sinh giao dịch</p>
+                 <p className="mt-0.5 text-[15px] font-bold text-sky-600">
+                   {leadDashboardStatsQuery.isLoading ? "..." : leadDashboardStats?.contactingLeads ?? 0}
+                 </p>
+               </div>
+              <div className="flex h-6 w-6 items-center justify-center rounded-full bg-sky-50 text-sky-500">
+                <span className="text-[12px]">🤝</span>
+              </div>
+            </div>
+          </div>
+          <div className="rounded-lg border border-slate-200 bg-white p-2 shadow-sm">
+             <div className="flex items-start justify-between">
+               <div>
                   <p className="text-[11px] text-slate-600">Đã chuyển đổi</p>
                   <p className="mt-0.5 text-[15px] font-bold text-emerald-600">
                     {leadDashboardStatsQuery.isLoading ? "..." : leadDashboardStats?.convertedLeads ?? 0}
@@ -493,7 +560,7 @@ export default function LeadListPage() {
              <div className="flex items-start justify-between">
                <div>
                  <p className="text-[11px] text-slate-600">Doanh số dự kiến</p>
-                 <p className="mt-0.5 text-[15px] font-bold text-violet-600">
+                 <p className="mt-0.5 text-[13px] font-bold text-violet-600">
                    {leadDashboardStatsQuery.isLoading
                      ? "..."
                      : `${(leadDashboardStats?.expectedRevenueTotal ?? 0).toLocaleString("vi-VN")} đ`}
@@ -513,7 +580,7 @@ export default function LeadListPage() {
           <div className="flex flex-col gap-3 border-b border-slate-200 p-2 xl:flex-row xl:items-center xl:justify-between bg-slate-50/50 rounded-t-lg">
             
             {/* Tabs Trạng thái (Bên Trái) */}
-            <div className="flex flex-1 items-center gap-1 overflow-x-auto pb-1 xl:pb-0">
+            <div className="flex flex-1 min-w-0 items-center gap-0.5 pb-1 overflow-hidden xl:pb-0">
               <button
                 type="button"
                 onClick={() => {
@@ -521,7 +588,7 @@ export default function LeadListPage() {
                   setPageInput("1");
                   setFilters((prev) => ({ ...prev, statusId: undefined }));
                 }}
-                className={`whitespace-nowrap rounded-md px-3 py-1.5 text-[13px] font-medium transition-colors ${
+                className={`shrink-0 whitespace-nowrap rounded-md px-2 py-1 text-[11px] font-medium leading-none transition-colors ${
                   !filters.statusId
                     ? "bg-purple-100 text-purple-700"
                     : "text-slate-600 hover:bg-slate-200"
@@ -538,7 +605,7 @@ export default function LeadListPage() {
                     setPageInput("1");
                     setFilters((prev) => ({ ...prev, statusId: status.id }));
                   }}
-                  className={`whitespace-nowrap rounded-md px-3 py-1.5 text-[13px] font-medium transition-colors ${
+                  className={`shrink-0 whitespace-nowrap rounded-md px-2 py-1 text-[11px] font-medium leading-none transition-colors ${
                     filters.statusId === status.id
                       ? "bg-purple-100 text-purple-700"
                       : "text-slate-600 hover:bg-slate-200"
@@ -582,11 +649,13 @@ export default function LeadListPage() {
                     ? "border-blue-300 bg-blue-50 text-blue-700"
                     : "border-slate-300 bg-white text-slate-700 hover:bg-slate-50"
                 }`}
+                title={LEAD_SHORTCUTS.TOGGLE_FILTER.label}
               >
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
                   <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon>
                 </svg>
                 Nâng cao
+                <KeyboardShortcutBadge shortcut={LEAD_SHORTCUTS.TOGGLE_FILTER} className="ml-1" />
               </button>
 
               <button
@@ -596,8 +665,10 @@ export default function LeadListPage() {
                   setFormMode("create");
                 }}
                 className="inline-flex h-8 items-center gap-1.5 rounded bg-blue-600 px-3 text-[12px] font-semibold text-white shadow-sm transition hover:bg-blue-700"
+                title={LEAD_SHORTCUTS.CREATE_LEAD.label}
               >
                 Thêm mới
+                <KeyboardShortcutBadge shortcut={LEAD_SHORTCUTS.CREATE_LEAD} />
               </button>
             </div>
           </div>
@@ -635,8 +706,81 @@ export default function LeadListPage() {
           )}
 
           {/* Tiêu đề Bảng */}
-          <div className="px-3 py-2 border-b border-slate-200">
+          <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 px-3 py-2">
             <h2 className="text-[15px] font-semibold text-slate-900">Danh sách khách hàng tiềm năng</h2>
+
+            <div className="flex flex-wrap items-center gap-2">
+              <div className="relative">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowMaskFilterMenu((current) => !current);
+                    setShowPageSizeMenu(false);
+                  }}
+                  className="inline-flex h-8 items-center gap-1.5 rounded border border-slate-300 bg-white px-3 text-[12px] font-medium text-slate-700 transition hover:bg-slate-50"
+                  title={LEAD_SHORTCUTS.TOGGLE_SECURITY.label}
+                >
+                  Lọc bảo mật
+                </button>
+
+                {showMaskFilterMenu && (
+                  <div className="absolute right-0 z-20 mt-1 min-w-[180px] rounded border border-slate-200 bg-white p-2 shadow-lg">
+                    <label className="flex cursor-pointer items-center gap-2 rounded px-1 py-1 text-[12px] text-slate-700 hover:bg-slate-50">
+                      <input
+                        type="checkbox"
+                        checked={maskPhoneEnabled}
+                        onChange={(event) => setMaskPhoneEnabled(event.target.checked)}
+                        className="h-4 w-4 rounded border-slate-300"
+                      />
+                      Ẩn số điện thoại
+                    </label>
+                    <label className="flex cursor-pointer items-center gap-2 rounded px-1 py-1 text-[12px] text-slate-700 hover:bg-slate-50">
+                      <input
+                        type="checkbox"
+                        checked={maskEmailEnabled}
+                        onChange={(event) => setMaskEmailEnabled(event.target.checked)}
+                        className="h-4 w-4 rounded border-slate-300"
+                      />
+                      Ẩn Email
+                    </label>
+                  </div>
+                )}
+              </div>
+
+              <div className="relative">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowPageSizeMenu((current) => !current);
+                    setShowMaskFilterMenu(false);
+                  }}
+                  className="inline-flex h-8 items-center gap-1.5 rounded border border-slate-300 bg-white px-3 text-[12px] font-medium text-slate-700 transition hover:bg-slate-50"
+                  title={LEAD_SHORTCUTS.TOGGLE_PAGE_SIZE.label}
+                >
+                  Lead/trang: {size}
+                </button>
+
+                {showPageSizeMenu && (
+                  <div className="absolute right-0 z-20 mt-1 min-w-[130px] rounded border border-slate-200 bg-white p-1 shadow-lg">
+                    {[20, 50, 100].map((option) => (
+                      <button
+                        key={option}
+                        type="button"
+                        onClick={() => applyPageSize(option)}
+                        className={`flex w-full items-center justify-between rounded px-2 py-1.5 text-[12px] transition ${
+                          size === option
+                            ? "bg-blue-50 text-blue-700"
+                            : "text-slate-700 hover:bg-slate-50"
+                        }`}
+                      >
+                        <span>{option}</span>
+                        {size === option && <span>✓</span>}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
 
           {leadsQuery.error && (
@@ -652,6 +796,8 @@ export default function LeadListPage() {
               loading={leadsQuery.isLoading}
               provinceNameById={provinceNameById}
               statusNameById={statusNameById}
+              maskPhoneEnabled={maskPhoneEnabled}
+              maskEmailEnabled={maskEmailEnabled}
               loadingEditLeadId={editingLeadId}
               onEdit={async (lead) => {
                 if (!lead.id) {
@@ -678,9 +824,7 @@ export default function LeadListPage() {
 
           {/* Footer Bảng: Số bản ghi và Phân trang */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-t border-slate-200 px-3 py-2 text-[12px]">
-            <div className="text-[11px] text-slate-500">
-              {leadsPage?.totalElements ?? 0} bản ghi
-            </div>
+            <div className="text-[11px] text-slate-500">{leadsPage?.totalElements ?? 0} bản ghi</div>
             
             <div className="flex flex-wrap items-center justify-center sm:justify-end gap-1.5">
               <button
@@ -688,6 +832,7 @@ export default function LeadListPage() {
                 disabled={page <= 0}
                 onClick={() => navigateToPage(0)}
                 className="inline-flex h-7 w-7 items-center justify-center rounded border border-slate-300 bg-white text-slate-700 transition hover:bg-slate-50 disabled:opacity-50"
+                title={LEAD_SHORTCUTS.FIRST_PAGE.label}
               >
                 <span className="text-xs leading-none">⏮</span>
               </button>
@@ -696,6 +841,7 @@ export default function LeadListPage() {
                 disabled={page <= 0}
                 onClick={() => navigateToPage(page - 1)}
                 className="inline-flex h-7 w-7 items-center justify-center rounded border border-slate-300 bg-white text-slate-700 transition hover:bg-slate-50 disabled:opacity-50"
+                title={LEAD_SHORTCUTS.PREV_PAGE.label}
               >
                 <span className="text-xs leading-none">◀</span>
               </button>
@@ -732,6 +878,7 @@ export default function LeadListPage() {
                 disabled={!leadsPage?.hasNext}
                 onClick={() => navigateToPage(page + 1)}
                 className="inline-flex h-7 w-7 items-center justify-center rounded border border-slate-300 bg-white text-slate-700 transition hover:bg-slate-50 disabled:opacity-50"
+                title={LEAD_SHORTCUTS.NEXT_PAGE.label}
               >
                 <span className="text-xs leading-none">▶</span>
               </button>
@@ -740,13 +887,14 @@ export default function LeadListPage() {
                 disabled={!leadsPage?.hasNext}
                 onClick={() => navigateToPage(totalPages - 1)}
                 className="inline-flex h-7 w-7 items-center justify-center rounded border border-slate-300 bg-white text-slate-700 transition hover:bg-slate-50 disabled:opacity-50"
+                title={LEAD_SHORTCUTS.LAST_PAGE.label}
               >
                 <span className="text-xs leading-none">⏭</span>
               </button>
             </div>
           </div>
         </section>
-
+        </div>
       </div>
     </main>
   );

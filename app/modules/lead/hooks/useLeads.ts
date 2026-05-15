@@ -49,7 +49,7 @@ export function useLeadActivities(leadId?: number) {
 
 export function useLeadActivityStatistics(leadId?: number) {
   return useQuery({
-    queryKey: ["lead", "activity-statistics", leadId ?? 0] as const,
+    queryKey: queryKeys.lead.activityStatistics(leadId ?? 0),
     queryFn: () => leadApi.getActivityStatistics(leadId as number),
     enabled: typeof leadId === "number" && Number.isFinite(leadId),
   });

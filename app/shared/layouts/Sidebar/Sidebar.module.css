@@ -1,0 +1,45 @@
+.sidebar {
+  width: 220px;
+  background: #1a1a42;
+  color: white;
+  padding: 20px;
+  min-height: 100vh;
+  height: auto;
+  position: sticky;
+  top: 0;
+}
+
+.logo {
+  margin-bottom: 20px;
+  font-weight: bolder;
+}
+
+.menu {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.menu a {
+  color: white;
+  text-decoration: none;
+}
+
+.menu a:hover {
+  opacity: 0.7;
+}
+
+
+.menuItem {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  text-decoration: none;
+  color: #fff;
+}
+
+.menuItem:hover {
+  background: rgba(190, 190, 190, 0.1);
+  border-radius: 6px;
+}

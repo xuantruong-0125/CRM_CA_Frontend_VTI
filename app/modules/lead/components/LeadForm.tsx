@@ -1,13 +1,15 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useForm, FieldError, Controller } from "react-hook-form";
 import { leadFormSchema, type LeadFormValues } from "@/modules/lead/schemas/lead.schema";
 import type {
   LeadReferenceOptionResponse,
   MetadataItem,
 } from "@/modules/lead/types/lead.types";
+import { LEAD_SHORTCUTS, matchesShortcut } from "@/modules/lead/utils/keyboard-shortcuts";
+import { KeyboardShortcutBadge } from "@/modules/lead/components/KeyboardShortcutBadge";
 
 type LeadFormProps = {
   mode: "create" | "edit";
@@ -46,8 +48,14 @@ const DS = {
   formSpacing: "flex flex-col space-y-2",
 };
 
-const getInputClassName = (hasError: boolean) => {
-  const baseClasses = `w-full ${DS.input.height} ${DS.input.padding} ${DS.input.borderRadius} bg-white text-[12px] text-slate-900 outline-none transition-all duration-200`;
+const getInputClassName = (hasError: boolean, isSelect: boolean = false) => {
+  let baseClasses = `w-full ${DS.input.height} ${DS.input.padding} ${DS.input.borderRadius} bg-white text-[12px] text-slate-900 outline-none transition-all duration-200`;
+  
+  // Custom arrow cho select với màu slate-300 (#cbd5e1)
+  if (isSelect) {
+    baseClasses += ` appearance-none pr-7 bg-[url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20fill='none'%20viewBox='0%200%2020%2020'%3E%3Cpath%20stroke='%23cbd5e1'%20stroke-linecap='round'%20stroke-linejoin='round'%20stroke-width='1.5'%20d='M6%208l4%204%204-4'/%3E%3C/svg%3E")] bg-no-repeat bg-[right_0.25rem_center] bg-[length:1.25rem_1.25rem]`;
+  }
+
   const borderClasses = hasError ? DS.input.borderError : DS.input.border;
   const focusClasses = hasError ? DS.input.focusError : DS.input.focus;
   return `${baseClasses} ${borderClasses} ${focusClasses}`;
@@ -89,7 +97,6 @@ const isConvertedStatus = (status: LeadReferenceOptionResponse) => {
   );
 };
 
-// Tối ưu UI: Đưa Error lên cùng dòng với Label để KHÔNG chiếm thêm chiều cao dọc
 const FormField = ({ 
   children, 
   error, 
@@ -132,11 +139,9 @@ function ProductSelectionModal({
   const [search, setSearch] = useState("");
   const [selectedIds, setSelectedIds] = useState<number[]>(initialSelectedIds);
   
-  // Logic Phân trang
   const [currentPage, setCurrentPage] = useState(0);
   const ITEMS_PER_PAGE = 50;
 
-  // Lọc sản phẩm theo tìm kiếm
   const filteredProducts = products.filter((p) =>
     p.name.toLowerCase().includes(search.toLowerCase())
   );
@@ -324,7 +329,6 @@ function ProductSelectionModal({
   );
 }
 
-
 export default function LeadForm({
   mode,
   initialValues,
@@ -339,6 +343,8 @@ export default function LeadForm({
   isSubmitting,
 }: LeadFormProps) {
   const [isProductModalOpen, setIsProductModalOpen] = useState(false);
+  const submitButtonRef = useRef<HTMLButtonElement>(null);
+  const cancelButtonRef = useRef<HTMLButtonElement>(null);
   const convertedStatusIds = new Set(
     statuses.filter(isConvertedStatus).map((status) => Number(status.id))
   );
@@ -395,6 +401,21 @@ export default function LeadForm({
       reset(safeValues);
     }
   }, [initialValues, reset]);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (matchesShortcut(e, LEAD_SHORTCUTS.SAVE_FORM)) {
+        e.preventDefault();
+        submitButtonRef.current?.click();
+      } else if (matchesShortcut(e, LEAD_SHORTCUTS.CANCEL_FORM)) {
+        e.preventDefault();
+        cancelButtonRef.current?.click();
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement | HTMLSelectElement>) => {
     if (e.key === "Enter") {
@@ -511,7 +532,7 @@ export default function LeadForm({
                 />
               ) : (
                 <select
-                  className={getInputClassName(!!errors.statusId)}
+                  className={getInputClassName(!!errors.statusId, true)}
                   {...register("statusId")}
                   onKeyDown={handleKeyDown}
                 >
@@ -525,7 +546,7 @@ export default function LeadForm({
             
             <FormField label="Nguồn Lead" error={errors.sourceId}>
               <select
-                className={getInputClassName(!!errors.sourceId)}
+                className={getInputClassName(!!errors.sourceId, true)}
                 {...register("sourceId")}
                 onKeyDown={handleKeyDown}
               >
@@ -540,7 +561,7 @@ export default function LeadForm({
           <div className={`grid grid-cols-2 ${DS.spacing.innerGap}`}>
             <FormField label="Chiến dịch" error={errors.campaignId}>
               <select
-                className={getInputClassName(!!errors.campaignId)}
+                className={getInputClassName(!!errors.campaignId, true)}
                 {...register("campaignId")}
                 onKeyDown={handleKeyDown}
               >
@@ -553,7 +574,7 @@ export default function LeadForm({
             
             <FormField label="Người phụ trách" error={errors.assignedTo}>
               <select
-                className={getInputClassName(!!errors.assignedTo)}
+                className={getInputClassName(!!errors.assignedTo, true)}
                 {...register("assignedTo")}
                 onKeyDown={handleKeyDown}
               >
@@ -615,7 +636,7 @@ export default function LeadForm({
                 return (
                   <div className="flex flex-col gap-2">
                     {/* Hộp hiển thị sản phẩm đã chọn */}
-                    <div className={`flex flex-wrap items-center gap-1.5 min-h-[30px] p-1.5 ${DS.input.borderRadius} ${DS.input.border} bg-slate-50/50`}>
+                    <div className={`flex flex-wrap items-center content-start gap-1.5 min-h-[30px] max-h-[68px] overflow-y-auto p-1.5 ${DS.input.borderRadius} ${DS.input.border} bg-slate-50/50`}>
                       {selectedProducts.length === 0 && (
                         <span className="text-[11px] text-slate-400 px-1 italic">
                           Chưa có sản phẩm nào được chọn...
@@ -686,7 +707,7 @@ export default function LeadForm({
               <div className="col-span-1">
                 <FormField label="Tỉnh / Thành phố" error={errors.provinceId}>
                   <select
-                    className={getInputClassName(!!errors.provinceId)}
+                    className={getInputClassName(!!errors.provinceId, true)}
                     {...register("provinceId")}
                     onKeyDown={handleKeyDown}
                   >
@@ -735,17 +756,22 @@ export default function LeadForm({
       {/* ACTION BUTTONS */}
       <div className="flex items-center justify-end gap-2 pt-2 mt-1 border-t border-slate-200">
         <button
+          ref={cancelButtonRef}
           type="button"
           onClick={onCancel}
           disabled={isSubmitting}
-          className="h-[30px] px-4 text-[12px] font-medium text-slate-700 bg-white border border-slate-300 rounded-sm transition hover:bg-slate-50 hover:border-slate-400 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="h-[30px] px-4 text-[12px] font-medium text-slate-700 bg-white border border-slate-300 rounded-sm transition hover:bg-slate-50 hover:border-slate-400 disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center gap-1.5"
+          title={LEAD_SHORTCUTS.CANCEL_FORM.label}
         >
           Hủy
+          <KeyboardShortcutBadge shortcut={LEAD_SHORTCUTS.CANCEL_FORM} />
         </button>
         <button
+          ref={submitButtonRef}
           type="submit"
           disabled={isSubmitting || !isValid || isFormLocked}
           className="h-[30px] px-5 flex items-center gap-1.5 text-[12px] font-medium text-white bg-blue-600 rounded-sm transition hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
+          title={LEAD_SHORTCUTS.SAVE_FORM.label}
         >
           {isSubmitting && (
             <svg className="animate-spin h-3.5 w-3.5" fill="none" viewBox="0 0 24 24">
@@ -753,11 +779,19 @@ export default function LeadForm({
               <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
             </svg>
           )}
-          {isFormLocked
-            ? "Đã chuyển đổi"
-            : isSubmitting
-              ? "Đang lưu..."
-              : "Lưu"}
+          <span>
+            {isFormLocked
+              ? "Đã chuyển đổi"
+              : isSubmitting
+                ? "Đang lưu..."
+                : "Lưu"}
+          </span>
+          {!isFormLocked && !isSubmitting && (
+            <KeyboardShortcutBadge 
+              shortcut={LEAD_SHORTCUTS.SAVE_FORM} 
+              className="ml-auto"
+            />
+          )}
         </button>
       </div>
 

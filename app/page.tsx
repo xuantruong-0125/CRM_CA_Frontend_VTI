@@ -18,6 +18,12 @@ export default function Home() {
           <h2 className="text-lg font-semibold">Dieu huong nhanh</h2>
           <div className="mt-4 space-y-3">
             <Link
+              href="/customers"
+              className="block rounded-xl bg-amber-400 px-4 py-3 text-sm font-semibold text-slate-950 transition hover:bg-amber-300"
+            >
+              Mo module Customers
+            </Link>
+            <Link
               href="/leads"
               className="block rounded-xl bg-cyan-500 px-4 py-3 text-sm font-semibold text-slate-950 transition hover:bg-cyan-400"
             >

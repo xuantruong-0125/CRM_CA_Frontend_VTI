@@ -9,6 +9,8 @@ type LeadTableProps = {
   loading: boolean;
   provinceNameById: Record<number, string>;
   statusNameById: Record<number, string>;
+  maskPhoneEnabled: boolean;
+  maskEmailEnabled: boolean;
   loadingEditLeadId?: number | null;
   onEdit: (lead: LeadResponse) => void;
   onDelete: (lead: LeadResponse) => void;
@@ -19,6 +21,54 @@ type LeadTableProps = {
 type LeadActivityCellsProps = {
   leadId?: number;
 };
+
+function maskPhone(phone?: string) {
+  if (!phone) {
+    return "-";
+  }
+
+  const trimmedPhone = phone.trim();
+  if (trimmedPhone.length <= 4) {
+    return "*".repeat(trimmedPhone.length);
+  }
+
+  const visibleTail = trimmedPhone.slice(-4);
+  const maskedHead = "*".repeat(trimmedPhone.length - 4);
+  return `${maskedHead}${visibleTail}`;
+}
+
+function maskEmail(email?: string) {
+  if (!email) {
+    return "-";
+  }
+
+  const trimmedEmail = email.trim();
+  const atIndex = trimmedEmail.indexOf("@");
+  if (atIndex <= 0) {
+    return "***";
+  }
+
+  const localPart = trimmedEmail.slice(0, atIndex);
+  const domainPart = trimmedEmail.slice(atIndex + 1);
+
+  const visibleLocalPrefix = localPart.slice(0, 1);
+  const visibleLocalSuffix = localPart.length > 2 ? localPart.slice(-1) : "";
+  const maskedLocalCoreLength = Math.max(localPart.length - (visibleLocalPrefix.length + visibleLocalSuffix.length), 1);
+  const maskedLocal = `${visibleLocalPrefix}${"*".repeat(maskedLocalCoreLength)}${visibleLocalSuffix}`;
+
+  const dotIndex = domainPart.lastIndexOf(".");
+  if (dotIndex <= 0) {
+    return `${maskedLocal}@***`;
+  }
+
+  const domainName = domainPart.slice(0, dotIndex);
+  const domainExt = domainPart.slice(dotIndex);
+  const visibleDomainPrefix = domainName.slice(0, 1);
+  const maskedDomainCoreLength = Math.max(domainName.length - visibleDomainPrefix.length, 1);
+  const maskedDomain = `${visibleDomainPrefix}${"*".repeat(maskedDomainCoreLength)}`;
+
+  return `${maskedLocal}@${maskedDomain}${domainExt}`;
+}
 
 function getStatusBadgeClass(statusName?: string) {
   const normalizedStatus = (statusName || "").toLowerCase();
@@ -98,6 +148,8 @@ export default function LeadTable({
   loading,
   provinceNameById,
   statusNameById,
+  maskPhoneEnabled,
+  maskEmailEnabled,
   loadingEditLeadId,
   onEdit,
   onDelete,
@@ -152,10 +204,10 @@ export default function LeadTable({
                 {lead.companyName || "-"}
               </td>
               <td className="whitespace-nowrap px-3 py-2 align-middle">
-                {lead.phone || "-"}
+                {maskPhoneEnabled ? maskPhone(lead.phone) : (lead.phone || "-")}
               </td>
               <td className="max-w-[150px] truncate px-3 py-2 align-middle" title={lead.email || ""}>
-                {lead.email || "-"}
+                {maskEmailEnabled ? maskEmail(lead.email) : (lead.email || "-")}
               </td>
               <td className="whitespace-nowrap px-3 py-2 align-middle">
                 {lead.provinceId ? provinceNameById[lead.provinceId] ?? `#${lead.provinceId}` : "-"}
