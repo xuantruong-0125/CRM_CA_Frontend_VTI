@@ -46,15 +46,11 @@ export default function Sidebar({
     }, []);
 
     // Tránh lỗi Hydration
-    if (!mounted || !user) {
+    if (!mounted) {
         return null;
     }
 
-    if (!user) {
-        return null;
-    }
-
-    const role = user.roles[0];
+    const role = user?.roles?.[0] || "ADMIN"; // Dự phòng ADMIN để hiển thị menu khi dev
     const menus = getMenuByRole(role);
 
     const handleLogout = async () => {
@@ -125,9 +121,9 @@ export default function Sidebar({
 
             {/* USER INFO */}
             <div className={styles.userBox}>
-                {!collapsed && (
+                {user && (
                     <span className={styles.userInfo}>
-                        {user.roles.join(", ")} : {user.fullName}
+                        {user.roles?.join(", ")} : {user.fullName}
                     </span>
                 )}
 

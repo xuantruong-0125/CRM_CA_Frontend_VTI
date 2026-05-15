@@ -7,6 +7,8 @@ export interface LoginResponse {
     accessToken: string;
     refreshToken: string;
     username: string;
+    userId: number;
+    orgId: number;
     fullName: string;
     roles: string[];
 }

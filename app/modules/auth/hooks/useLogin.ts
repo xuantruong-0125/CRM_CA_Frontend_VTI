@@ -137,6 +137,13 @@ export const useLogin = () => {
                 response.username
             );
 
+            if (response.userId) {
+                localStorage.setItem("userId", response.userId.toString());
+            }
+            if (response.orgId) {
+                localStorage.setItem("orgId", response.orgId.toString());
+            }
+
             // localStorage.setItem(
             //     "role",
             //     response.roles[0]
@@ -158,9 +165,11 @@ export const useLogin = () => {
                 case "IT":
                     router.push("/system/users");
                     break;
-                case "SALE_MANAGER":
-                case "SALES":
-                    router.push("/leads");
+                case "MANAGER":
+                    router.push("/reports");
+                    break;
+                case "SALE":
+                    router.push("/my-kpi");
                     break;
 
                 default:
@@ -171,7 +180,6 @@ export const useLogin = () => {
                 err.response?.data?.message ||
                 "Đăng nhập thất bại"
             );
-            throw err;
         } finally {
             setLoading(false);
         }

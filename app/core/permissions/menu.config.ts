@@ -1,6 +1,22 @@
-import { Building2, ShieldCheck, Menu, Users } from "lucide-react";
+import { 
+    Building2, 
+    ShieldCheck, 
+    Menu, 
+    Users, 
+    LayoutDashboard, 
+    Target, 
+    BarChart3,
+    Trophy
+} from "lucide-react";
 
 export const MENU_CONFIG = [
+    {
+        key: "dashboard",
+        label: "Bảng điều khiển",
+        path: "/",
+        icon: LayoutDashboard,
+        roles: ["ADMIN", "IT", "MANAGER", "SALE"],
+    },
     {
         key: "organization",
         label: "Quản lý tổ chức",
@@ -15,7 +31,6 @@ export const MENU_CONFIG = [
         icon: ShieldCheck,
         roles: ["ADMIN", "IT"],
     },
-
     {
         key: "menu",
         label: "Quản lý menu",
@@ -30,5 +45,25 @@ export const MENU_CONFIG = [
         icon: Users,
         roles: ["IT"],
     },
-
+    {
+        key: "kpi-config",
+        label: "Thiết lập KPI",
+        path: "/kpi-configs",
+        icon: Target,
+        roles: ["ADMIN", "IT", "MANAGER"],
+    },
+    {
+        key: "reports",
+        label: "Báo cáo KPI",
+        path: "/reports",
+        icon: BarChart3,
+        roles: ["ADMIN", "MANAGER"],
+    },
+    {
+        key: "my-kpi",
+        label: "KPI Của Tôi",
+        path: "/my-kpi",
+        icon: Trophy,
+        roles: ["SALE", "MANAGER", "ADMIN"],
+    },
 ];
