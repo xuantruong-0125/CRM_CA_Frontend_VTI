@@ -12,6 +12,8 @@ export default function LoginPage() {
         password: "",
     });
 
+    const [showPassword, setShowPassword] = useState(false);
+
     const handleChange = (
         e: React.ChangeEvent<HTMLInputElement>
     ) => {
@@ -25,7 +27,11 @@ export default function LoginPage() {
         e: React.FormEvent<HTMLFormElement>
     ) => {
         e.preventDefault();
-        await login(formData);
+        const trimmedData = {
+            username: formData.username.trim(),
+            password: formData.password.trim(),
+        };
+        await login(trimmedData);
     };
 
     return (
@@ -53,14 +59,24 @@ export default function LoginPage() {
 
                 <div className={styles.formGroup}>
                     <label htmlFor="password">Mật khẩu</label>
-                    <input
-                        id="password"
-                        type="password"
-                        name="password"
-                        value={formData.password}
-                        onChange={handleChange}
-                        required
-                    />
+                    <div className={styles.passwordContainer}>
+                        <input
+                            id="password"
+                            type={showPassword ? "text" : "password"}
+                            name="password"
+                            value={formData.password}
+                            onChange={handleChange}
+                            required
+                        />
+                        <button 
+                            type="button" 
+                            className={styles.toggleButton} 
+                            onClick={() => setShowPassword(!showPassword)}
+                            tabIndex={-1}
+                        >
+                            {showPassword ? "Ẩn" : "Hiện"}
+                        </button>
+                    </div>
                 </div>
 
                 <button type="submit" disabled={loading}>
