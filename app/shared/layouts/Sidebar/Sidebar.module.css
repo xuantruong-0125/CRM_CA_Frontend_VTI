@@ -72,9 +72,18 @@
 }
 
 .menuItem:hover {
-  background: rgba(190, 190, 190, 0.1);
+  background-color: rgba(56, 15, 216, 0.816);
+  border-radius: 6px;
+  color: #fff;
+}
+
+.active {
+  background-color: #0f53e6;
+  color: white;
+  font-weight: 600;
   border-radius: 6px;
 }
+
 
 /* menu chiếm hết khoảng trống */
 .menu {
@@ -133,6 +142,6 @@
   display: none;
 }
 
-.sidebar.collapsed .header{
+.sidebar.collapsed .header {
   margin-left: -6px;
 }

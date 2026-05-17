@@ -201,28 +201,28 @@
 
 /* base icon */
 .icon {
-    cursor: pointer;
-    transition: all 0.2s ease;
+  cursor: pointer;
+  transition: all 0.2s ease;
 }
 
 /* ===== COLORS ===== */
 
 /* edit */
 .editIcon {
-    color: #a7f1fd;
+  color: #262626;
 }
 
 .editIcon:hover {
-    color: #ffffff;
-    transform: scale(1.15);
+  color: #262626;
+  transform: scale(1.15);
 }
 
 /* delete */
 .deleteIcon {
-    color: #e53935;
+  color: #e53935;
 }
 
 .deleteIcon:hover {
-    color: #b71c1c;
-    transform: scale(1.15);
+  color: #b71c1c;
+  transform: scale(1.15);
 }

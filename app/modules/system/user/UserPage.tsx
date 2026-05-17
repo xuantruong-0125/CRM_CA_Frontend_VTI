@@ -619,11 +619,17 @@ export default function UserPage() {
                             <td>{getRoleName(user.roleId)}</td>
                             <td>{getOrganizationName(user.organizationId)}</td>
 
-                            <td>
+                            {/* <td>
                                 <span
                                     className={`${styles.status} ${styles[user.status.toLowerCase()]
                                         }`}
                                 >
+                                    {user.status}
+                                </span>
+                            </td> */}
+
+                            <td>
+                                <span className={`${styles.statusBadge} ${styles[user.status]}`}>
                                     {user.status}
                                 </span>
                             </td>

@@ -37,10 +37,10 @@ export default function OrganizationPage() {
 
   // ===== COLOR =====
   const TYPE_COLOR: Record<OrganizationType, string> = {
-    COMPANY: "#3f03a8",
-    BRANCH: "#16bf4c",
-    DEPARTMENT: "#2470ad",
-    TEAM: "#ebcd26",
+    COMPANY: "#4a5dbe",
+    BRANCH: "#b0b0b0",
+    DEPARTMENT: "#dfdfdf",
+    TEAM: "#eaeaea",
   };
 
   // ===== ACTION =====
@@ -142,8 +142,8 @@ export default function OrganizationPage() {
             className={`${styles.treeItem} ${editingId === node.id ? styles.activeItem : ""
               }`}
             style={{
-              backgroundColor:
-                editingId === node.id ? "#4b4b4b" : TYPE_COLOR[node.type],
+              backgroundColor: TYPE_COLOR[node.type],
+              color: level === 0 ? "#fff" : "#000",
             }}
           >
             {/* LEFT */}

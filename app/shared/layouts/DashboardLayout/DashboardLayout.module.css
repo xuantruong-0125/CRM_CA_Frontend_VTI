@@ -3,6 +3,7 @@
 }
 
 .content {
+  height: 100vh;
   flex: 1;
   padding: 20px;
   background: #f5f6fa;

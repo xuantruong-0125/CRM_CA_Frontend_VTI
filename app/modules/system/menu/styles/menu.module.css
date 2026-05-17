@@ -210,11 +210,11 @@
 
 /* edit */
 .editIcon {
-    color: #4b4b4b;
+    color: #525252;
 }
 
 .editIcon:hover {
-    color: #575757;
+    color: #525252;
     transform: scale(1.15);
 }
 

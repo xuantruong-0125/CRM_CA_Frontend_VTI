@@ -8,8 +8,8 @@ import { Pencil, Trash2, Key } from "lucide-react";
 import ConfirmDeleteModal from "@/shared/components/ConfirmDeleteModal/ConfirmDeleteModal";
 import { toast } from "react-toastify";
 import PermissionModal from "./components/PermissonModal";
-import { getCurrentUser } from "@/core/auth/getCurrentUser";
-
+import { getCurrentUser, CurrentUser } from "@/core/auth/getCurrentUser";
+import { useEffect } from "react";
 export default function RolePage() {
     const { data, create, update, remove } = useRole();
     const [selectedRole, setSelectedRole] = useState<Role | null>(null);
@@ -25,7 +25,12 @@ export default function RolePage() {
     const [loadingDelete, setLoadingDelete] = useState(false);
 
     /* Phân quyền */
-    const user = getCurrentUser();
+    const [user, setUser] = useState<CurrentUser | null>(null);
+
+    useEffect(() => {
+        setUser(getCurrentUser());
+    }, []);
+
     const roles = user?.roles || [];
     const isAdmin = roles.includes("ADMIN");
     const isIT = roles.includes("IT");
@@ -118,8 +123,6 @@ export default function RolePage() {
     return (
         <div className={styles.container}>
             <h2 className={styles.title}>Quản lý role</h2>
-
-
             {isAdmin && (
                 <>
                     {/* FORM */}
@@ -243,7 +246,11 @@ export default function RolePage() {
                         <tr key={role.id} className={editingId === role.id ? styles.activeRow : ""}>
                             <td>{role.name}</td>
                             <td>{role.description}</td>
-                            <td>{role.scope}</td>
+                            <td>
+                                <span className={`${styles.scopeBadge} ${styles[role.scope]}`}>
+                                    {role.scope}
+                                </span>
+                            </td>
                             <td>
                                 <div className={styles.actions}>
                                     {isAdmin && (
