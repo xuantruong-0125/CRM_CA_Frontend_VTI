@@ -28,6 +28,13 @@ export default function RootLayout({
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
+      <head>
+        {/* Nhúng Bootstrap 5 */}
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+        {/* Nhúng FontAwesome */}
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+      </head>
+      
       <body className="min-h-full flex flex-col">
         {children}
         <ToastContainer
@@ -42,4 +49,7 @@ export default function RootLayout({
       </body>
     </html>
   );
+
+  
 }
+
