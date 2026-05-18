@@ -13,6 +13,10 @@ function toQueryKeyValue(params: object): string {
 export function useCustomers(params: CustomerListQuery) {
   const queryKeyValue = useMemo(() => toQueryKeyValue(params), [params]);
 
+  // debug: show params used to build query key
+  // eslint-disable-next-line no-console
+  console.debug("useCustomers params ->", params);
+
   return useQuery({
     queryKey: queryKeys.customer.list(queryKeyValue),
     queryFn: () => customerApi.getCustomers(params),

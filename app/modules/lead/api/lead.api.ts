@@ -5,14 +5,14 @@ import type {
   ConvertLeadResponse,
   CreateLeadRequest,
   CreateLeadActivityRequest,
-  CreateLeadMeetingRequest,
+  CreateLeadTaskRequest,
   LeadActivityResponse,
   LeadActivityStatisticsResponse,
   LeadListQuery,
   LeadPageResponse,
   LeadReferenceCatalogResponse,
   LeadResponse,
-  LeadMeetingTaskResponse,
+  LeadTaskResponse,
   MetadataPageResponse,
   OrganizationMetadataItem,
   OrganizationMetadataQuery,
@@ -171,10 +171,10 @@ export const leadApi = {
 
   createMeeting: async (
     leadId: number,
-    payload: CreateLeadMeetingRequest
-  ): Promise<LeadMeetingTaskResponse> => {
-    const response = await http.post<LeadMeetingTaskResponse>(
-      `/api/leads/${leadId}/meetings`,
+    payload: CreateLeadTaskRequest
+  ): Promise<LeadTaskResponse> => {
+    const response = await http.post<LeadTaskResponse>(
+      `/api/leads/${leadId}/tasks`,
       payload
     );
     return response.data;
@@ -183,10 +183,10 @@ export const leadApi = {
   updateMeeting: async (
     leadId: number,
     meetingId: number,
-    payload: CreateLeadMeetingRequest
-  ): Promise<LeadMeetingTaskResponse> => {
-    const response = await http.put<LeadMeetingTaskResponse>(
-      `/api/leads/${leadId}/meetings/${meetingId}`,
+    payload: CreateLeadTaskRequest
+  ): Promise<LeadTaskResponse> => {
+    const response = await http.put<LeadTaskResponse>(
+      `/api/leads/${leadId}/tasks/${meetingId}`,
       payload
     );
     return response.data;

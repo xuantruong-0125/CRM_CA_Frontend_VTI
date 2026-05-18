@@ -72,7 +72,7 @@ export type UpdateLeadActivityRequest = {
   isImportant?: boolean;
 };
 
-export type CreateLeadMeetingRequest = {
+export type CreateLeadTaskRequest = {
   subject?: string;
   description?: string;
   startDate?: ISODateTimeString;
@@ -87,7 +87,7 @@ export type CreateLeadMeetingRequest = {
   contactId?: number;
 };
 
-export type UpdateLeadMeetingRequest = {
+export type UpdateLeadTaskRequest = {
   subject?: string;
   description?: string;
   startDate?: ISODateTimeString;
@@ -158,10 +158,9 @@ export type LeadActivityStatisticsResponse = {
   totalCount: number;
 };
 
-export type LeadMeetingTaskResponse = {
+export type LeadTaskResponse = {
   id?: number;
   leadId?: number;
-  taskType?: string;
   subject?: string;
   description?: string;
   startDate?: ISODateTimeString;
@@ -199,6 +198,7 @@ export type LeadReferenceCatalogResponse = {
   statuses: LeadReferenceOptionResponse[];
   sources: LeadReferenceOptionResponse[];
   campaigns: LeadReferenceOptionResponse[];
+  provinces: LeadReferenceOptionResponse[];
   meta?: {
     version: string;
     generatedAt: ISODateTimeString;

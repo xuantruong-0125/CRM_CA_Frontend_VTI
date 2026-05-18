@@ -22,7 +22,7 @@ type OrganizationFilterOption = {
 type LeadFiltersProps = {
   statuses: LeadReferenceOptionResponse[];
   sources: LeadReferenceOptionResponse[];
-  provinces: MetadataItem[];
+  provinces: LeadReferenceOptionResponse[];
   organizations: OrganizationFilterOption[];
   defaultValues: LeadFilterValues;
   onChange: (values: LeadFilterValues) => void;

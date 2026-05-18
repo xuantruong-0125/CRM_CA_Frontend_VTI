@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Pencil, Plus, Search, Trash2, SlidersHorizontal } from "lucide-react";
 import { toast } from "react-toastify";
 import ClassificationBadge from "@/modules/customer/components/ClassificationBadge";
@@ -107,6 +107,12 @@ export default function CustomerListPage() {
     setEditingCustomer(null);
   };
 
+  const handleCustomerTypeSelect = (type: CustomerType | "") => {
+    console.log("Customer type selected:", type);
+    setPage(0);
+    setCustomerType(type);
+  };
+
   const handleSubmit = async (values: CustomerFormValues) => {
     try {
       if (formMode === "create") {
@@ -191,10 +197,7 @@ export default function CustomerListPage() {
             <div className="flex gap-2">
               <button
                 type="button"
-                onClick={() => {
-                  setPage(0);
-                  setCustomerType("");
-                }}
+                onClick={() => handleCustomerTypeSelect("")}
                 className={`rounded-[5px] px-3 py-2 text-[12px] font-semibold transition ${customerType === "" ? "bg-sky-600 text-white" : "border border-slate-300 bg-white text-slate-700 hover:bg-slate-50"}`}
               >
                 Tất cả
@@ -203,10 +206,7 @@ export default function CustomerListPage() {
                 <button
                   key={option.value}
                   type="button"
-                  onClick={() => {
-                    setPage(0);
-                    setCustomerType(option.value);
-                  }}
+                  onClick={() => handleCustomerTypeSelect(option.value)}
                   className={`rounded-[5px] px-3 py-2 text-[12px] font-semibold transition ${customerType === option.value ? "bg-sky-600 text-white" : "border border-slate-300 bg-white text-slate-700 hover:bg-slate-50"}`}
                 >
                   {option.label}
@@ -308,6 +308,7 @@ export default function CustomerListPage() {
             <p>Tổng khách hàng: {countQuery.data ?? 0}</p>
             <p>Trang {page + 1} / {totalPages}</p>
           </div>
+
         </section>
 
         <section className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">

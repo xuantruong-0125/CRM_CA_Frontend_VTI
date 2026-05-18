@@ -18,8 +18,113 @@ import type {
 
 export const customerApi = {
   getCustomers: async (query: CustomerListQuery): Promise<PageResponse<CustomerResponseDTO>> => {
-    const response = await http.get<PageResponse<CustomerResponseDTO>>("/api/customers", {
-      params: query,
+    const STATUS_ID_MAP: Record<string, number> = {
+      CARING: 1,
+      PAUSED: 2,
+      BLACKLIST: 3,
+      OTHER: 4,
+    };
+
+    const TIER_ID_MAP: Record<string, number> = {
+      SILVER: 1,
+      GOLD: 2,
+      DIAMOND: 3,
+    };
+
+    const params: Record<string, unknown> = {
+      page: query.page,
+      size: query.size,
+      sortBy: query.sortBy,
+      sortDirection: query.sortDirection,
+      q: query.q,
+    };
+
+    const normalizedQ = query.q?.trim();
+    const isEmailSearch = normalizedQ?.includes("@");
+    const isCodeSearch = normalizedQ && /^[A-Za-z0-9-]+$/.test(normalizedQ);
+
+    if (query.customerType) {
+      const endpoint = `/api/customers/type/${String(query.customerType).toLowerCase()}`;
+      const response = await http.get<PageResponse<CustomerResponseDTO>>(endpoint, { params });
+      return response.data;
+    }
+
+    if (normalizedQ && isEmailSearch) {
+      const response = await http.get<CustomerResponseDTO>("/api/customers/search/email", {
+        params: { email: normalizedQ },
+      });
+
+      return {
+        content: [response.data],
+        pageable: {
+          pageNumber: query.page ?? 0,
+          pageSize: query.size ?? 20,
+          offset: (query.page ?? 0) * (query.size ?? 20),
+          paged: true,
+          unpaged: false,
+        },
+        last: true,
+        totalPages: 1,
+        totalElements: 1,
+        size: query.size ?? 20,
+        number: query.page ?? 0,
+        sort: {
+          empty: true,
+          sorted: false,
+          unsorted: true,
+        },
+        first: true,
+        numberOfElements: 1,
+        empty: false,
+      };
+    }
+
+    if (normalizedQ && isCodeSearch) {
+      const response = await http.get<CustomerResponseDTO>("/api/customers/search/code", {
+        params: { code: normalizedQ },
+      });
+
+      return {
+        content: [response.data],
+        pageable: {
+          pageNumber: query.page ?? 0,
+          pageSize: query.size ?? 20,
+          offset: (query.page ?? 0) * (query.size ?? 20),
+          paged: true,
+          unpaged: false,
+        },
+        last: true,
+        totalPages: 1,
+        totalElements: 1,
+        size: query.size ?? 20,
+        number: query.page ?? 0,
+        sort: {
+          empty: true,
+          sorted: false,
+          unsorted: true,
+        },
+        first: true,
+        numberOfElements: 1,
+        empty: false,
+      };
+    }
+
+    let endpoint = "/api/customers";
+
+    if (query.status) {
+      const statusId = STATUS_ID_MAP[query.status as string];
+      if (typeof statusId === "number") {
+        endpoint = `/api/customers/status/${statusId}`;
+      }
+    } else if (query.tier) {
+      const tierId = TIER_ID_MAP[query.tier as string];
+      if (typeof tierId === "number") {
+        endpoint = `/api/customers/tier/${tierId}`;
+      }
+    }
+
+    const response = await http.get<PageResponse<CustomerResponseDTO>>(endpoint, {
+      params,
     });
 
     return response.data;

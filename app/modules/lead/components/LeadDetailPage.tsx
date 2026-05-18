@@ -8,7 +8,6 @@ import LeadForm from "@/modules/lead/components/LeadForm";
 import {
   useAssigneeMetadata,
   useProductMetadata,
-  useProvinceMetadata,
 } from "@/modules/lead/hooks/useLeadMetadata";
 import { useLeadReferences } from "@/modules/lead/hooks/useLeadReferences";
 import { useUpdateLead } from "@/modules/lead/hooks/useLeadMutations";
@@ -19,7 +18,7 @@ import {
 } from "@/modules/lead/hooks/useLeads";
 import LeadInteractionPanel from "@/modules/lead/components/LeadInteractionPanel";
 import type { LeadFormValues } from "@/modules/lead/schemas/lead.schema";
-import type { MetadataItem } from "@/modules/lead/types/lead.types";
+import type { LeadReferenceOptionResponse, MetadataItem } from "@/modules/lead/types/lead.types";
 import { getApiErrorMessage } from "@/shared/utils/api-error";
 import { LEAD_SHORTCUTS, matchesShortcut } from "@/modules/lead/utils/keyboard-shortcuts";
 import { KeyboardShortcutBadge } from "@/modules/lead/components/KeyboardShortcutBadge";
@@ -37,7 +36,6 @@ export default function LeadDetailPage({ id }: LeadDetailPageProps) {
   const activitiesQuery = useLeadActivities(id);
   const activityStatisticsQuery = useLeadActivityStatistics(id);
   const referencesQuery = useLeadReferences();
-  const provincesQuery = useProvinceMetadata({ page: 0, size: 100, sortBy: "name" });
   const assigneesQuery = useAssigneeMetadata({ page: 0, size: 50, sortBy: "fullName", status: "ACTIVE" });
   const productsQuery = useProductMetadata({ page: 0, size: 50, sortBy: "name", isActive: true });
   const updateLeadMutation = useUpdateLead();
@@ -60,7 +58,7 @@ export default function LeadDetailPage({ id }: LeadDetailPageProps) {
     }
   };
 
-  const provinces = (provincesQuery.data?.content || []) as MetadataItem[];
+  const provinces = (referencesQuery.data?.provinces || []) as LeadReferenceOptionResponse[];
   const statuses = referencesQuery.data?.statuses || [];
   const sources = referencesQuery.data?.sources || [];
   const campaigns = referencesQuery.data?.campaigns || [];

@@ -11,7 +11,6 @@ import {
   useAssigneeMetadata,
   useOrganizationMetadata,
   useProductMetadata,
-  useProvinceMetadata,
 } from "@/modules/lead/hooks/useLeadMetadata";
 import {
   useConvertLead,
@@ -130,7 +129,6 @@ export default function LeadListPage() {
   );
 
   const referencesQuery = useLeadReferences();
-  const provincesQuery = useProvinceMetadata({ page: 0, size: 100, sortBy: "name" });
   const organizationsQuery = useOrganizationMetadata();
   const assigneesQuery = useAssigneeMetadata({ page: 0, size: 50, sortBy: "fullName", status: "ACTIVE" });
   
@@ -177,9 +175,9 @@ export default function LeadListPage() {
 
   const provinceNameById = useMemo(() => {
     return Object.fromEntries(
-      (provincesQuery.data?.content || []).map((province) => [province.id, province.name])
+      (references?.provinces || []).map((province) => [province.id, province.name])
     ) as Record<number, string>;
-  }, [provincesQuery.data?.content]);
+  }, [references?.provinces]);
 
   const statusNameById = useMemo(() => {
     return Object.fromEntries(
@@ -458,7 +456,7 @@ export default function LeadListPage() {
                 sources={references?.sources || []}
                 campaigns={references?.campaigns || []}
                 assignees={assigneesQuery.data?.content || []}
-                provinces={provincesQuery.data?.content || []}
+                provinces={references?.provinces || []}
                 products={productsQuery.data?.content || []}
                 onSubmit={submitLeadForm}
                 onCancel={() => {
@@ -685,7 +683,7 @@ export default function LeadListPage() {
                 defaultValues={visibleLeadFilters}
                 statuses={leadStatuses}
                 sources={references?.sources || []}
-                provinces={provincesQuery.data?.content || []}
+                provinces={references?.provinces || []}
                 organizations={organizationOptions}
                 onChange={(nextFilters) => {
                   setPage(0);

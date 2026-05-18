@@ -18,7 +18,7 @@ type LeadFormProps = {
   sources: LeadReferenceOptionResponse[];
   campaigns: LeadReferenceOptionResponse[];
   assignees: MetadataItem[];
-  provinces: MetadataItem[];
+  provinces: LeadReferenceOptionResponse[];
   products: MetadataItem[];
   onSubmit: (values: LeadFormValues) => Promise<void>;
   onCancel: () => void;
