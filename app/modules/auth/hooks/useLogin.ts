@@ -100,10 +100,96 @@
 // };
 
 
+// "use client";
+
+// import { useState } from "react";
+// import { useRouter } from "next/navigation";
+// import { loginApi } from "../api/auth.api";
+// import { LoginRequest } from "../types/auth.type";
+
+// export const useLogin = () => {
+//     const router = useRouter();
+
+//     const [loading, setLoading] = useState(false);
+//     const [error, setError] = useState("");
+
+//     const login = async (payload: LoginRequest) => {
+//         try {
+//             setLoading(true);
+//             setError("");
+
+//             const response = await loginApi(payload);
+
+//             // Lưu JWT
+//             localStorage.setItem(
+//                 "accessToken",
+//                 response.accessToken
+//             );
+
+//             localStorage.setItem(
+//                 "refreshToken",
+//                 response.refreshToken
+//             );
+
+//             // Lưu thông tin user
+//             localStorage.setItem(
+//                 "username",
+//                 response.username
+//             );
+
+//             // localStorage.setItem(
+//             //     "role",
+//             //     response.roles[0]
+//             // );
+//             localStorage.setItem(
+//                 "roles",
+//                 JSON.stringify(response.roles)
+//             );
+
+//             localStorage.setItem("fullName", response.fullName);
+
+//             // Chuyển trang theo role
+//             const role = response.roles[0];
+
+//             switch (role) {
+//                 case "ADMIN":
+//                     router.push("/system/organizations");
+//                     break;
+//                 case "IT":
+//                     router.push("/system/users");
+//                     break;
+//                 case "SALE_MANAGER":
+//                 case "SALES":
+//                     router.push("/leads");
+//                     break;
+
+//                 default:
+//                     router.push("/");
+//             }
+//         } catch (err: any) {
+//             setError(
+//                 err.response?.data?.message ||
+//                 "Đăng nhập thất bại"
+//             );
+//             throw err;
+//         } finally {
+//             setLoading(false);
+//         }
+//     };
+
+//     return {
+//         login,
+//         loading,
+//         error,
+//     };
+// };
+
 "use client";
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { AxiosError } from "axios";
+
 import { loginApi } from "../api/auth.api";
 import { LoginRequest } from "../types/auth.type";
 
@@ -132,21 +218,31 @@ export const useLogin = () => {
             );
 
             // Lưu thông tin user
+
+            localStorage.setItem(
+                "userId",
+                response.userId.toString()
+            );
+            
             localStorage.setItem(
                 "username",
                 response.username
             );
 
-            // localStorage.setItem(
-            //     "role",
-            //     response.roles[0]
-            // );
             localStorage.setItem(
                 "roles",
                 JSON.stringify(response.roles)
             );
 
-            localStorage.setItem("fullName", response.fullName);
+            localStorage.setItem(
+                "fullName",
+                response.fullName
+            );
+
+            localStorage.setItem(
+                "scope",
+                response.scope
+            );
 
             // Chuyển trang theo role
             const role = response.roles[0];
@@ -155,9 +251,11 @@ export const useLogin = () => {
                 case "ADMIN":
                     router.push("/system/organizations");
                     break;
+
                 case "IT":
                     router.push("/system/users");
                     break;
+
                 case "SALE_MANAGER":
                 case "SALES":
                     router.push("/leads");
@@ -166,12 +264,23 @@ export const useLogin = () => {
                 default:
                     router.push("/");
             }
-        } catch (err: any) {
-            setError(
-                err.response?.data?.message ||
-                "Đăng nhập thất bại"
-            );
-            throw err;
+
+            return response;
+        } catch (err) {
+            if (err instanceof AxiosError) {
+                if (err.response?.status === 401) {
+                    setError("Sai tài khoản hoặc mật khẩu");
+                } else {
+                    setError(
+                        err.response?.data?.message ||
+                        "Đăng nhập thất bại"
+                    );
+                }
+            } else {
+                setError("Có lỗi xảy ra");
+            }
+
+            return null;
         } finally {
             setLoading(false);
         }

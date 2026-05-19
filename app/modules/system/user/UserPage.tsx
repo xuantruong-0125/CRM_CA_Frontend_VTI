@@ -272,8 +272,22 @@ export default function UserPage() {
         try {
             if (isEditing && editingId) {
                 const res = await update(editingId, form);
-                localStorage.setItem("fullName", res.fullName);
-                window.dispatchEvent(new Event("storage")); // trigger realtime hiển thị fullname
+
+                // chỉ update sidebar nếu sửa chính mình
+                const currentUsername =
+                    localStorage.getItem("username");
+
+                if (res.username === currentUsername) {
+                    localStorage.setItem(
+                        "fullName",
+                        res.fullName
+                    );
+
+                    window.dispatchEvent(
+                        new Event("storage")
+                    );
+                }
+
                 toast.success("Cập nhật người dùng thành công");
             } else {
                 await create(form);
