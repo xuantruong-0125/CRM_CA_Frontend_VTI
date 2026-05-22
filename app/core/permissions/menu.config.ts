@@ -27,8 +27,8 @@ export const MENU_CONFIG = [
         key: "user",
         label: "Quản lý user",
         path: "/system/users",
-        icon: UserCog,
-        roles: ["ADMIN"],
+        icon: Users,
+        roles: ["IT"],
     },
     {
         key: "category",

@@ -1,0 +1,52 @@
+.tree-node {
+  display: flex;
+  align-items: center;
+  padding: 6px 10px;
+  border-bottom: 1px solid #eee;
+}
+
+/* LEFT SIDE (thụt ở đây, KHÔNG thụt toàn row) */
+.tree-left {
+  width: 40%;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+
+  /* thụt theo level */
+  padding-left: calc(var(--level) * 40px);
+}
+
+/* LABEL */
+.tree-label {
+  font-size: 14px;
+}
+
+/* TOGGLE */
+.tree-toggle {
+  background: none;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+}
+
+/* RIGHT SIDE */
+.tree-actions {
+  display: flex;
+  gap: 60px;
+  flex: 1;
+  justify-content: flex-start;
+}
+
+/* CHECKBOX */
+.tree-actions input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+}
+
+.tree-root {
+  background-color: #50bcff;
+  font-weight: bold;
+  border-radius: 10px;
+}

@@ -32,16 +32,15 @@ export default function OrganizationPage() {
   // ===== UI STATE =====
   const [expanded, setExpanded] = useState<Record<number, boolean>>({});
   const [editingId, setEditingId] = useState<number | null>(null);
-  const [editName, setEditName] = useState("");
   const [deleteId, setDeleteId] = useState<number | null>(null);
   const [loadingDelete, setLoadingDelete] = useState(false);
 
   // ===== COLOR =====
   const TYPE_COLOR: Record<OrganizationType, string> = {
-    COMPANY: "#3f03a8",
-    BRANCH: "#16bf4c",
-    DEPARTMENT: "#2470ad",
-    TEAM: "#ebcd26",
+    COMPANY: "#4a5dbe",
+    BRANCH: "#b0b0b0",
+    DEPARTMENT: "#dfdfdf",
+    TEAM: "#eaeaea",
   };
 
   // ===== ACTION =====
@@ -81,17 +80,32 @@ export default function OrganizationPage() {
 
   const handleEdit = (node: Organization) => {
     setEditingId(node.id);
-    setEditName(node.name);
-  };
 
-  const handleUpdate = async (node: Organization) => {
-    await update(node.id, {
-      name: editName,
+    setForm({
+      name: node.name,
       parentId: node.parentId,
       type: node.type,
     });
+  };
 
-    setEditingId(null);
+  const handleUpdate = async () => {
+    if (!editingId) return;
+
+    try {
+      await update(editingId, form);
+
+      toast.success("Cập nhật thành công");
+
+      // reset form
+      setEditingId(null);
+      setForm({
+        name: "",
+        parentId: null,
+        type: "COMPANY",
+      });
+    } catch {
+      toast.error("Cập nhật thất bại");
+    }
   };
 
   const handleConfirmDelete = async () => {
@@ -117,10 +131,19 @@ export default function OrganizationPage() {
       <div key={node.id}>
         {/* indent wrapper */}
         <div style={{ marginLeft: level * 30 }}>
-          <div
+          {/* <div
             className={styles.treeItem}
             style={{
               backgroundColor: TYPE_COLOR[node.type],
+            }}
+          > */}
+
+          <div
+            className={`${styles.treeItem} ${editingId === node.id ? styles.activeItem : ""
+              }`}
+            style={{
+              backgroundColor: TYPE_COLOR[node.type],
+              color: level === 0 ? "#fff" : "#000",
             }}
           >
             {/* LEFT */}
@@ -140,47 +163,27 @@ export default function OrganizationPage() {
                 )}
               </span>
 
-              {editingId === node.id ? (
-                <input
-                  value={editName}
-                  onChange={(e) => setEditName(e.target.value)}
-                  className={styles.editInput}
-                />
-              ) : (
-                <span className={styles.nodeName}>{node.name}</span>
-              )}
+
+              <span className={styles.nodeName}>{node.name}</span>
+
             </div>
 
             {/* RIGHT */}
             <div className={styles.actions}>
-              {editingId === node.id ? (
-                <>
-                  <Check
-                    size={18}
-                    className={styles.save_btn}
-                    onClick={() => handleUpdate(node)}
-                  />
-                  <X
-                    size={18}
-                    className={styles.close_btn}
-                    onClick={() => setEditingId(null)}
-                  />
-                </>
-              ) : (
-                <>
-                  <Pencil
-                    size={18}
-                    className={styles.edit_btn}
-                    onClick={() => handleEdit(node)}
-                  />
-                  <Trash2
-                    size={18}
-                    className={styles.icon}
-                    // onClick={() => remove(node.id)}
-                    onClick={() => setDeleteId(node.id)}
-                  />
-                </>
-              )}
+
+              <>
+                <Pencil
+                  size={18}
+                  className={`${styles.icon} ${styles.editIcon}`}
+                  onClick={() => handleEdit(node)}
+                />
+                <Trash2
+                  size={18}
+                  className={`${styles.icon} ${styles.deleteIcon}`}
+                  onClick={() => setDeleteId(node.id)}
+                />
+              </>
+
             </div>
           </div>
         </div>
@@ -225,13 +228,17 @@ export default function OrganizationPage() {
         {/* FORM */}
         <div className={styles.form}>
           <div className={styles.formGroup}>
-            <label className={styles.label}>Tên tổ chức</label>
+            <label className={styles.label}>
+              Tên tổ chức
+              <span className={styles.required}>*</span>
+            </label>
             <input
               className={styles.input}
               value={form.name}
               onChange={(e) =>
                 setForm({ ...form, name: e.target.value })
               }
+              placeholder="Nhập tên tổ chức"
             />
           </div>
 
@@ -259,7 +266,10 @@ export default function OrganizationPage() {
           </div>
 
           <div className={styles.formGroup}>
-            <label className={styles.label}>Loại tổ chức</label>
+            <label className={styles.label}>
+              Loại tổ chức
+              <span className={styles.required}>*</span>
+            </label>
             <select
               className={styles.select}
               value={form.type}
@@ -277,9 +287,57 @@ export default function OrganizationPage() {
             </select>
           </div>
 
-          <button className={styles.submit_btn} onClick={handleSubmit}>
-            Thêm tổ chức mới
-          </button>
+          <div className={styles.formGroup}>
+            <div className={styles.formActions}>
+              {editingId ? (
+                <>
+                  <button
+                    className={styles.submit_btn}
+                    onClick={handleUpdate}
+                  >
+                    Cập nhật
+                  </button>
+
+                  <button
+                    className={styles.cancel_Btn}
+                    onClick={() => {
+                      setEditingId(null);
+                      setForm({
+                        name: "",
+                        parentId: null,
+                        type: "COMPANY",
+                      });
+                    }}
+                  >
+                    Hủy
+                  </button>
+                </>
+              ) : (
+                <button
+                  className={styles.submit_btn}
+                  onClick={handleSubmit}
+                >
+                  Thêm tổ chức mới
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* NOTE */}
+        <div className={styles.noteBox}>
+          <p className={styles.noteTitle}>Ghi chú:</p>
+
+          <ul>
+            <li>
+              - Các trường có dấu <span className={styles.required}>*</span> là bắt buộc nhập
+            </li>
+            <li>
+              - Loại tổ chức dùng để xác định cấp bậc:
+              COMPANY (Công ty) → BRANCH (Chi nhánh) →
+              DEPARTMENT (Phòng ban) → TEAM (Nhóm)
+            </li>
+          </ul>
         </div>
 
         {/* TREE */}

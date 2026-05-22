@@ -1,0 +1,234 @@
+@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@200;400;600&display=swap');
+
+.container {
+  font-family: Manrope;
+  height: 100%vh;
+}
+
+/* TITLE */
+.title {
+  margin-bottom: 16px;
+  background-color: rgb(21, 0, 211);
+  padding: 10px 20px;
+  border-radius: 10px;
+  text-align: left;
+  font-weight: bold;
+  font-size: larger;
+  color: white;
+}
+
+/* FORM */
+.form {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+/* mỗi group */
+.formGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+/* label */
+.label {
+  font-size: 17px;
+  padding-left: 2px;
+  font-weight: bolder;
+  color: #000000;
+  text-align: left;
+  font-family: Manrope;
+}
+
+.form input,
+.form select {
+  padding: 8px;
+  border: 1px solid #5b5959;
+  border-radius: 4px;
+  background-color: #ffffff;
+  color: #000;
+  font-family: Manrope;
+  font-size: 16px;
+}
+
+
+.form input:focus,
+.form select:focus {
+  outline: none;
+  border-color: #4a6cf7;
+}
+
+/* BUTTON */
+.form button {
+  background-color: rgb(0, 164, 22);
+  border-radius: 6px;
+  font-weight: bold;
+  padding: 0 16px;
+  height: 38px;
+  border: none;
+  color: white;
+  cursor: pointer;
+}
+
+.form button:hover {
+  opacity: 0.9;
+}
+
+.formActions {
+    display: flex;
+    gap: 10px;
+}
+
+.cancelBtn {
+    background-color: #575757 !important;
+    color: #ffffff !important;
+    border: 1px solid #ccc;
+}
+
+.cancelBtn:hover {
+    background-color: #e0e0e0;
+}
+
+/* TREE */
+.treeContainer {
+  border: 1px solid #dcdcdc;
+  padding: 12px;
+  border-radius: 8px;
+  background: #f7f9fb;
+}
+
+/* NODE */
+.treeItem {
+  display: flex;
+  padding: 8px 12px;
+  margin-bottom: 6px;
+  border-radius: 6px;
+  background: #0e5eff;
+  border: 1px solid #e5e7eb;
+  align-items: center;
+  font-size: 15px;
+}
+
+/* LEFT */
+.left {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 1;
+}
+
+/* EXPAND ICON */
+.expandIcon {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  width: 16px;
+}
+
+/* TEXT */
+.nodeName {
+  flex: 1;
+}
+
+/* INPUT EDIT */
+.editInput {
+  flex: 1;
+  padding: 4px 8px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+/* ACTIONS */
+.actions {
+  display: flex;
+  gap: 8px;
+}
+
+/* ICON */
+.actions svg {
+  cursor: pointer;
+}
+
+.actions svg:hover {
+  opacity: 0.7;
+}
+
+
+
+
+/* dấu * bắt buộc */
+.required {
+    color: red;
+    margin-left: 4px;
+}
+
+/* box ghi chú */
+.noteBox {
+    margin-top: 16px;
+    padding: 12px 16px;
+    border: 1px solid #dfe3e8;
+    border-radius: 6px;
+    background-color: #f9fafb;
+    font-size: 14px;
+    color: #333;
+}
+
+/* tiêu đề */
+.noteTitle {
+    font-weight: 600;
+    margin-bottom: 8px;
+}
+
+/* list */
+.noteBox ul {
+    padding-left: 18px;
+    margin: 0;
+}
+
+.noteBox li {
+    margin-bottom: 4px;
+    line-height: 1.5;
+}
+
+
+
+
+/* container action button */
+.actions {
+    display: flex;
+    gap: 8px;
+}
+
+/* base icon */
+.icon {
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+/* ===== COLORS ===== */
+
+/* edit */
+.editIcon {
+    color: #525252;
+}
+
+.editIcon:hover {
+    color: #525252;
+    transform: scale(1.15);
+}
+
+/* delete */
+.deleteIcon {
+    color: #e53935;
+}
+
+.deleteIcon:hover {
+    color: #b71c1c;
+    transform: scale(1.15);
+}
+
+
+.activeItem {
+  background-color: #a3a3a3 !important;
+}

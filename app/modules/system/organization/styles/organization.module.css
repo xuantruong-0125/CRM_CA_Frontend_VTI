@@ -1,17 +1,9 @@
-@import url('https://fonts.googleapis.com/css2?family=Genos:wght@200;400;600&family=Manjari:wght@100;400;700&family=Manrope:wght@200;400;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@200;400;600&display=swap');
 
-/* .container {
-  display: flex;
-  height: 100vh;
-  width: 100%;
+.container {
+  font-family: Manrope;
+  height: 100%vh;
 }
-.content {
-  flex: 1;
-  padding: 20px;
-  overflow-y: auto;
-  /* scroll nếu dài 
-  background: #f5f6fa;
-} */
 
 .title {
   margin-bottom: 16px;
@@ -57,7 +49,12 @@
   color: #000;
   font-family: Manrope;
   font-size: 16px;
+}
 
+.form input:focus,
+.form select:focus {
+  outline: none;
+  border-color: #4a6cf7;
 }
 
 .submit_btn {
@@ -70,6 +67,28 @@
   border: none;
   font-family: Manrope;
   font-size: medium;
+}
+
+
+.formActions {
+  display: flex;
+  gap: 10px;
+}
+
+.cancel_Btn {
+  background-color: #575757 !important;
+  border-radius: 5px;
+  font-weight: bolder !important;
+  width: 70px;
+  margin-top: 32px;
+  height: 42px;
+  border: none;
+  font-family: Manrope;
+  font-size: medium;
+}
+
+.cancel_Btn:hover {
+  background-color: #a6a6a6 !important;
 }
 
 
@@ -140,4 +159,70 @@
 
 .icon:hover {
   opacity: 0.7;
+}
+
+
+
+
+/* dấu * bắt buộc */
+.required {
+  color: red;
+  margin-left: 4px;
+}
+
+/* box ghi chú */
+.noteBox {
+  margin-top: 16px;
+  padding: 12px 16px;
+  border: 1px solid #dfe3e8;
+  border-radius: 6px;
+  background-color: #f9fafb;
+  font-size: 14px;
+  color: #333;
+}
+
+/* tiêu đề */
+.noteTitle {
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+/* list */
+.noteBox ul {
+  padding-left: 18px;
+  margin: 0;
+}
+
+.noteBox li {
+  margin-bottom: 4px;
+  line-height: 1.5;
+}
+
+
+/* base icon */
+.icon {
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+/* ===== COLORS ===== */
+
+/* edit */
+.editIcon {
+  color: #262626;
+}
+
+.editIcon:hover {
+  color: #262626;
+  transform: scale(1.15);
+}
+
+/* delete */
+.deleteIcon {
+  color: #e53935;
+}
+
+.deleteIcon:hover {
+  color: #b71c1c;
+  transform: scale(1.15);
 }
