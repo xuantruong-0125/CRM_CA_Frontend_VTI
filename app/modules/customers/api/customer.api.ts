@@ -11,7 +11,7 @@ const apiClient = axios.create({
 
 export const customerApi = {
   getCustomers: async (keyword = '', type = '', page = 1, size = 10): Promise<PageResponse<Customer>> => {
-    const response = await apiClient.get<ApiResponse<PageResponse<Customer>>>('/api/v1/customers', {
+    const response = await apiClient.get<ApiResponse<PageResponse<Customer>>>('/api/customers', {
       params: { keyword, type, page, size }
     });
     
@@ -19,25 +19,25 @@ export const customerApi = {
   },
 
   getCustomerById: async (id: number): Promise<Customer> => {
-    const response = await apiClient.get<ApiResponse<Customer>>(`/api/v1/customers/${id}`);
+    const response = await apiClient.get<ApiResponse<Customer>>(`/api/customers/${id}`);
     return response.data.data;
   },
 
   createCustomer: async (data: CreateCustomerRequest): Promise<Customer> => {
-    const response = await apiClient.post<ApiResponse<Customer>>('/api/v1/customers', data);
+    const response = await apiClient.post<ApiResponse<Customer>>('/api/customers', data);
     return response.data.data;
   },
 
   updateCustomer: async (id: number, data: UpdateCustomerRequest): Promise<Customer> => {
-    const response = await apiClient.put<ApiResponse<Customer>>(`/api/v1/customers/${id}`, data);
+    const response = await apiClient.put<ApiResponse<Customer>>(`/api/customers/${id}`, data);
     return response.data.data;
   },
 
   deleteCustomer: async (id: number): Promise<void> => {
-    await apiClient.delete(`/api/v1/customers/${id}`);
+    await apiClient.delete(`/api/customers/${id}`);
   },
 
   bulkDeleteCustomers: async (ids: number[]): Promise<void> => {
-    await apiClient.delete('/api/v1/customers/bulk', { data: ids });
+    await apiClient.delete('/api/customers/bulk', { data: ids });
   }
 };

@@ -19,7 +19,7 @@ export interface Customer {
   assignedTo: number | null;
   createdBy: number | null;
   updatedBy: number | null;
-  createdAt: string;
+  createdAt: string; // git featch 
   updatedAt: string;
   deletedAt: string | null;
   contacts?: Contact[];
@@ -43,4 +43,4 @@ export interface CreateCustomerRequest {
   assignedTo?: number | null;
 }
 
-export interface UpdateCustomerRequest extends Partial<CreateCustomerRequest> {}
+export interface UpdateCustomerRequest extends Partial<CreateCustomerRequest> { }
