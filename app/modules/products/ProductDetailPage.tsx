@@ -1,8 +1,8 @@
 "use client";
 
 import React, { useState, useEffect, useMemo } from "react";
+import httpClient from "@/core/http/httpClient";
 import { useRouter } from "next/navigation";
-import axios from "axios";
 import { CreateProductRequest, Product } from "./types/product.type";
 import { productApi } from "./api/product.api";
 import { priceApi } from "./api/price.api";
@@ -211,7 +211,7 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({ initialDat
   const uploadFile = async (file: File): Promise<string> => {
     const uploadFormData = new FormData();
     uploadFormData.append("file", file);
-    const res = await axios.post("http://localhost:8080/api/v1/upload", uploadFormData, {
+    const res = await httpClient.post("/api/v1/upload", uploadFormData, {
       headers: { "Content-Type": "multipart/form-data" },
     });
     return res.data.data;

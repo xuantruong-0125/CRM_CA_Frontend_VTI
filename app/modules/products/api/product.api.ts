@@ -1,22 +1,16 @@
-import axios from 'axios';
+import httpClient from '@/core/http/httpClient';
 import { Product, CreateProductRequest, UpdateProductRequest } from '../types/product.type';
 import { ApiResponse, PageResponse } from '../types/category.type';
 
-const apiClient = axios.create({
-  baseURL: 'http://localhost:8080', // Tuỳ chỉnh baseURL theo Backend Spring Boot của bạn
-  headers: {
-    'Content-Type': 'application/json',
-  },
-});
 
 export const productApi = {
   getProducts: async (): Promise<Product[]> => {
-    const response = await apiClient.get<ApiResponse<Product[]>>('/api/v1/products');
+    const response = await httpClient.get<ApiResponse<Product[]>>('/api/v1/products');
     return response.data.data;
   },
 
   getProductById: async (id: number): Promise<Product> => {
-    const response = await apiClient.get<ApiResponse<Product>>(`/api/v1/products/${id}`);
+    const response = await httpClient.get<ApiResponse<Product>>(`/api/v1/products/${id}`);
     return response.data.data;
   },
 
@@ -29,23 +23,23 @@ export const productApi = {
     minPrice?: number,
     maxPrice?: number
   ): Promise<PageResponse<Product>> => {
-    const response = await apiClient.get<ApiResponse<PageResponse<Product>>>('/api/v1/products/search', {
+    const response = await httpClient.get<ApiResponse<PageResponse<Product>>>('/api/v1/products/search', {
       params: { keyword, page, size, categoryId, status, minPrice, maxPrice }
     });
     return response.data.data;
   },
 
   createProduct: async (data: CreateProductRequest): Promise<Product> => {
-    const response = await apiClient.post<ApiResponse<Product>>('/api/v1/products', data);
+    const response = await httpClient.post<ApiResponse<Product>>('/api/v1/products', data);
     return response.data.data;
   },
 
   updateProduct: async (id: number, data: UpdateProductRequest): Promise<Product> => {
-    const response = await apiClient.put<ApiResponse<Product>>(`/api/v1/products/${id}`, data);
+    const response = await httpClient.put<ApiResponse<Product>>(`/api/v1/products/${id}`, data);
     return response.data.data;
   },
 
   deleteProduct: async (id: number): Promise<void> => {
-    await apiClient.delete(`/api/v1/products/${id}`);
+    await httpClient.delete(`/api/v1/products/${id}`);
   },
 };

@@ -1,17 +1,11 @@
-import axios from 'axios';
+import httpClient from '@/core/http/httpClient';
 import { Customer, CreateCustomerRequest, UpdateCustomerRequest } from '../types/customer.type';
 import { ApiResponse, PageResponse } from '../../products/types/category.type';
 
-const apiClient = axios.create({
-  baseURL: 'http://localhost:8080',
-  headers: {
-    'Content-Type': 'application/json',
-  },
-});
 
 export const customerApi = {
   getCustomers: async (keyword = '', type = '', page = 1, size = 10): Promise<PageResponse<Customer>> => {
-    const response = await apiClient.get<ApiResponse<PageResponse<Customer>>>('/api/customers', {
+    const response = await httpClient.get<ApiResponse<PageResponse<Customer>>>('/api/customers', {
       params: { keyword, type, page, size }
     });
     
@@ -19,25 +13,25 @@ export const customerApi = {
   },
 
   getCustomerById: async (id: number): Promise<Customer> => {
-    const response = await apiClient.get<ApiResponse<Customer>>(`/api/customers/${id}`);
+    const response = await httpClient.get<ApiResponse<Customer>>(`/api/customers/${id}`);
     return response.data.data;
   },
 
   createCustomer: async (data: CreateCustomerRequest): Promise<Customer> => {
-    const response = await apiClient.post<ApiResponse<Customer>>('/api/customers', data);
+    const response = await httpClient.post<ApiResponse<Customer>>('/api/customers', data);
     return response.data.data;
   },
 
   updateCustomer: async (id: number, data: UpdateCustomerRequest): Promise<Customer> => {
-    const response = await apiClient.put<ApiResponse<Customer>>(`/api/customers/${id}`, data);
+    const response = await httpClient.put<ApiResponse<Customer>>(`/api/customers/${id}`, data);
     return response.data.data;
   },
 
   deleteCustomer: async (id: number): Promise<void> => {
-    await apiClient.delete(`/api/customers/${id}`);
+    await httpClient.delete(`/api/customers/${id}`);
   },
 
   bulkDeleteCustomers: async (ids: number[]): Promise<void> => {
-    await apiClient.delete('/api/customers/bulk', { data: ids });
+    await httpClient.delete('/api/customers/bulk', { data: ids });
   }
 };
