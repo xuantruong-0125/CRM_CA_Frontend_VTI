@@ -160,7 +160,7 @@ export const useLogin = () => {
                     break;
                 case "SALE_MANAGER":
                 case "SALES":
-                    router.push("/leads");
+                    router.push("/task");
                     break;
 
                 default:

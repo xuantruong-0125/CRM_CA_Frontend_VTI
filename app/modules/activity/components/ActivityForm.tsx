@@ -3,8 +3,8 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { activityApi } from './api/activity.api'; // Bật cái này khi có API
-import axios from 'node_modules/axios/index.cjs';
+import { activityApi } from '../api/activity.api'; // Bật cái này khi có API
+import httpClient from '@/core/http/httpClient';
 
 interface Props {
     id?: number; // Có ID truyền vào thì là chế độ Sửa, không có thì là Thêm mới
@@ -16,6 +16,13 @@ const ActivityForm = ({ id }: Props) => {
 
     const [isLoading, setIsLoading] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
+
+
+    const [isManager, setIsManager] = useState(false);
+    const [currentUserId, setCurrentUserId] = useState<string>('');
+
+
+    const [isLocked, setIsLocked] = useState(false);
 
     const [users, setUsers] = useState<any[]>([]);
     const [auditData, setAuditData] = useState({ createdAt: '', updatedAt: '' });
@@ -36,23 +43,46 @@ const ActivityForm = ({ id }: Props) => {
     });
 
 
-
-
     const mockCustomers = [{ id: 1, name: 'Công ty ABC' }, { id: 2, name: 'Tập đoàn XYZ' }];
 
     useEffect(() => {
         const fetchUsers = async () => {
             try {
-                // Sử dụng axios hoặc instance api của bạn để gọi
-                const response = await fetch('http://localhost:8080/api/users');
-                const data = await response.json();
-                setUsers(data);
+                const response = await httpClient.get('/api/users');
+                if (response.data && response.data.content) {
+                    setUsers(response.data.content);
+                } else {
+                    setUsers([]);
+                }
             } catch (error) {
                 console.error('Không thể tải danh sách nhân viên:', error);
             }
         };
         fetchUsers();
     }, []);
+
+    useEffect(() => {
+        if (typeof window !== 'undefined') {
+            const rolesStr = localStorage.getItem('roles');
+            const uid = localStorage.getItem('userId');
+
+            let managerFlag = false;
+            if (rolesStr) {
+                try {
+                    const roles = JSON.parse(rolesStr);
+                    managerFlag = roles.includes('ADMIN') || roles.includes('MANAGER');
+                    setIsManager(managerFlag);
+                } catch (e) { console.error(e); }
+            }
+
+            if (uid) {
+                setCurrentUserId(uid);
+                if (!isEditMode && !managerFlag) {
+                    setFormData(prev => ({ ...prev, performedBy: uid }));
+                }
+            }
+        }
+    }, [isEditMode]);
 
 
     // Nếu là chế độ Sửa (có ID), gọi API lấy dữ liệu cũ đắp vào Form
@@ -84,6 +114,25 @@ const ActivityForm = ({ id }: Props) => {
                         important: data.important || false,
                         description: data.description || ''
                     });
+
+                    const rolesStr = localStorage.getItem('roles');
+
+                    let managerFlag = false;
+                    if (rolesStr) {
+                        try {
+                            const roles = JSON.parse(rolesStr);
+                            managerFlag = roles.includes('ADMIN') || roles.includes('MANAGER');
+                        } catch (e) { }
+                    }
+
+
+                    if (data.status === 'COMPLETED') {
+                        setIsLocked(true);
+                    } else {
+                        setIsLocked(false);
+                    }
+
+
                 } catch (error) {
                     alert('Không thể tải dữ liệu để sửa');
                 } finally {
@@ -110,12 +159,11 @@ const ActivityForm = ({ id }: Props) => {
 
     // Hàm xử lý khi bấm nút LƯU
     const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault(); // Ngăn trình duyệt load lại trang
+        e.preventDefault();
 
-        // --- BẮT ĐẦU: KIỂM TRA DỮ LIỆU ĐẦU VÀO TỰ LÀM (CUSTOM VALIDATION) ---
         if (!formData.subject.trim()) {
             alert("Vui lòng nhập Chủ đề hoạt động!");
-            return; // Dừng hàm lại ngay, không cho chạy tiếp
+            return;
         }
         if (!formData.startDate) {
             alert("Vui lòng chọn Thời gian bắt đầu!");
@@ -125,15 +173,11 @@ const ActivityForm = ({ id }: Props) => {
             alert("Vui lòng chọn Nhân viên thực hiện!");
             return;
         }
-        // if (!formData.relatedToId) { // Tạm thời bạn đang comment đoạn này
-        //     alert("Vui lòng chọn Khách hàng liên quan!");
-        //     return;
-        // }
-        // --- KẾT THÚC KIỂM TRA ---
+
 
         setIsSaving(true);
 
-        // BƯỚC 1: Tạo basePayload gồm các trường LUÔN ĐƯỢC PHÉP thay đổi (dùng chung cho cả Thêm và Sửa)
+        //  Tạo basePayload gồm các trường LUÔN ĐƯỢC PHÉP thay đổi (dùng chung cho cả Thêm và Sửa)
         const basePayload = {
             subject: formData.subject,
             startDate: formData.startDate,
@@ -149,27 +193,22 @@ const ActivityForm = ({ id }: Props) => {
             outcome: formData.outcome?.trim() === "" ? null : formData.outcome,
         };
 
-        // BƯỚC 2: Tách biệt Payload dựa trên Chế độ
+        //  Tách biệt Payload dựa trên Chế độ
         let finalPayload;
 
         if (isEditMode) {
-            // CHẾ ĐỘ SỬA: TUYỆT ĐỐI KHÔNG gửi activityType, relatedToType và relatedToId
             finalPayload = { ...basePayload };
         } else {
-            // CHẾ ĐỘ THÊM MỚI: Nhồi đầy đủ tất cả các trường vào để gửi
             finalPayload = {
                 ...basePayload,
                 activityType: formData.activityType as any,
                 relatedToType: formData.relatedToType,
-                // Xử lý an toàn: Nếu không chọn Khách hàng thì gửi null thay vì gửi số 0
                 relatedToId: formData.relatedToId ? Number(formData.relatedToId) : null,
             };
         }
 
-        // BƯỚC 3: Gọi API
         try {
             if (isEditMode) {
-                // 1. Gửi payload chỉ chứa các trường được sửa
                 await activityApi.updateActivity(id, finalPayload as any);
                 alert('Cập nhật thành công!');
 
@@ -206,7 +245,15 @@ const ActivityForm = ({ id }: Props) => {
                 <div className="mb-3">
 
                 </div>
-
+                {isLocked && (
+                    <div className="alert alert-success border-success-subtle shadow-sm d-flex align-items-center mb-4">
+                        <i className="fa-solid fa-check-circle text-success fs-4 me-3"></i>
+                        <div>
+                            <h6 className="alert-heading mb-1 fw-bold">Hoạt động đã đóng!</h6>
+                            <p className="mb-0 small">Hoạt động này đã được đánh dấu <b>Đã hoàn thành</b>. Bạn chỉ có thể xem, không thể thay đổi dữ liệu.</p>
+                        </div>
+                    </div>
+                )}
                 <div className="card shadow-sm border-0 rounded-3">
                     <div className="card-header bg-white border-bottom p-4">
                         <h5 className="mb-0 text-primary fw-bold">
@@ -230,7 +277,8 @@ const ActivityForm = ({ id }: Props) => {
                                         Loại hoạt động <span className="text-danger">*</span>
                                         {/* Hiện icon ổ khóa nhỏ nếu đang ở chế độ sửa */}
                                         {isEditMode && <i className="fa-solid fa-lock text-secondary ms-1" title="Không thể thay đổi loại hoạt động"></i>}
-                                    </label>                                    <select className="form-select focus-ring focus-ring-info"
+                                    </label>
+                                    <select className="form-select focus-ring focus-ring-info"
                                         name="activityType"
                                         value={formData.activityType}
                                         onChange={handleChange}
@@ -261,8 +309,14 @@ const ActivityForm = ({ id }: Props) => {
 
                             <div className="row mb-4 g-3">
                                 <div className="col-md-6">
-                                    <label className="form-label text-muted small text-uppercase fw-bold">Người thực hiện <span className="text-danger">*</span></label>
-                                    <select className="form-select focus-ring focus-ring-info" name="performedBy" value={formData.performedBy} onChange={handleChange} required>
+                                    <label className="form-label text-muted small text-uppercase fw-bold">Người thực hiện <span className="text-danger">*</span>
+                                        {!isManager && <i className="fa-solid fa-lock text-secondary ms-1" title="Bạn chỉ có thể tạo hoạt động cho chính mình"></i>}</label>
+                                    <select className="form-select focus-ring focus-ring-info"
+                                        name="performedBy"
+                                        value={formData.performedBy}
+                                        onChange={handleChange}
+                                        required
+                                        disabled={isLocked || !isManager}>
                                         <option value="">-- Chọn nhân viên phụ trách --</option>
                                         {users.map((user) => (
                                             <option key={user.id} value={user.id.toString()}>{user.fullName}</option>
@@ -343,9 +397,11 @@ const ActivityForm = ({ id }: Props) => {
                                 <button type="button" onClick={() => router.back()} className="btn btn-light border shadow-sm px-4 text-secondary fw-medium">
                                     Hủy bỏ
                                 </button>
-                                <button type="submit" className="btn btn-primary px-4 shadow-sm fw-medium" disabled={isSaving}>
-                                    {isSaving ? <><i className="fa-solid fa-spinner fa-spin me-2"></i>Đang lưu...</> : <><i className="fa-solid fa-floppy-disk me-2"></i>{isEditMode ? 'Cập nhật thay đổi' : 'Lưu hoạt động'}</>}
-                                </button>
+                                {!isLocked && (
+                                    <button type="submit" className="btn btn-primary px-4 shadow-sm fw-medium" disabled={isSaving}>
+                                        {isSaving ? <><i className="fa-solid fa-spinner fa-spin me-2"></i>Đang lưu...</> : <><i className="fa-solid fa-floppy-disk me-2"></i>{isEditMode ? 'Cập nhật thay đổi' : 'Lưu hoạt động'}</>}
+                                    </button>
+                                )}
                             </div>
 
                         </form>

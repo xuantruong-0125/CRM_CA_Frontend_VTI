@@ -1,6 +1,7 @@
 "use client";
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+
+import httpClient from '@/core/http/httpClient';
 
 
 // --- DỮ LIỆU GIẢ (MOCK DATA) ĐỂ TEST GIAO DIỆN ---
@@ -59,8 +60,9 @@ const CreateTaskModal: React.FC<CreateTaskModalProps> = ({ show, onClose, onSucc
         const fetchUsers = async () => {
             try {
                 // Duy có thể dùng fetch như bên Activity hoặc dùng axios cho đồng bộ với phần submit
-                const response = await axios.get('http://localhost:8080/api/users');
-                setUsers(response.data);
+                const response = await httpClient.get('/api/users');
+                const userList = response.data.content || [];
+                setUsers(userList);
             } catch (error) {
                 console.error('Không thể tải danh sách nhân viên:', error);
             }
@@ -116,7 +118,7 @@ const CreateTaskModal: React.FC<CreateTaskModalProps> = ({ show, onClose, onSucc
                 contactId: formData.contactId ? Number(formData.contactId) : null,
             };
 
-            await axios.post('http://localhost:8080/api/v1/tasks', payload);
+            await httpClient.post('/api/v1/tasks', payload);
 
             alert("Giao việc thành công!");
 

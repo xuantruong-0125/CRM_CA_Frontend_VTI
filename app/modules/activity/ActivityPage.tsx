@@ -1,10 +1,11 @@
 "use client";
-import axios from 'axios';
+import httpClient from '@/core/http/httpClient';
 import React, { useState, useEffect } from 'react';
 import { useActivity } from './hooks/useActivity';
 import Link from 'next/link';
 import { activityApi } from './api/activity.api';
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
+import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react';
 
 
 
@@ -28,6 +29,7 @@ const ActivityPage = () => {
     const pathname = usePathname();
     const searchParams = useSearchParams();
     const [sortConfig, setSortConfig] = useState({ key: 'startDate', direction: 'desc' });
+    const [isManager, setIsManager] = useState(false);
 
 
     //State tạm thời cho các ô nhập liệu trên thanh Filter
@@ -50,9 +52,12 @@ const ActivityPage = () => {
     useEffect(() => {
         const fetchUsers = async () => {
             try {
-                // Thay vì gọi axios thẳng, có file userApi.ts thì dùng càng tốt nhé!
-                const response = await axios.get('http://localhost:8080/api/users');
-                setUsers(response.data);
+                const response = await httpClient.get('/api/users');
+                if (response.data && response.data.content) {
+                    setUsers(response.data.content);
+                } else {
+                    setUsers([]);
+                }
             } catch (error) {
                 console.error('Lỗi khi tải danh sách nhân viên:', error);
             }
@@ -60,6 +65,22 @@ const ActivityPage = () => {
 
         fetchUsers();
     }, []); // Mảng rỗng [] nghĩa là chỉ gọi 1 lần khi load trang
+
+
+    useEffect(() => {
+        const rolesStorage = localStorage.getItem('roles');
+        if (rolesStorage) {
+            try {
+                const roles = JSON.parse(rolesStorage);
+                if (roles.includes('MANAGER')) {
+                    setIsManager(true);
+                }
+            } catch (e) {
+                console.error("Lỗi đọc phân quyền", e);
+            }
+        }
+    }, []);
+
 
     // Hàm xử lý khi gõ/chọn
     const handleInputChange = (e: any) => {
@@ -153,7 +174,7 @@ const ActivityPage = () => {
             try {
                 await activityApi.deleteActivities(selectedIds);
 
-                alert("Đã xóa xong rồi nhé!");
+                alert("Đã xóa ");
                 setSelectedIds([]);
                 refetch();
 
@@ -263,9 +284,11 @@ const ActivityPage = () => {
                     <div className="d-flex justify-content-between align-items-center mb-4">
                         {/* BÊN TRÁI: Tiêu đề và Nút hành động */}
                         <div className="d-flex align-items-center gap-3">
-                            <h5 className="text-uppercase text-dark mb-0 fw-bold" style={{ letterSpacing: '0.5px' }}>
+                            <h5 className="text-uppercase mb-0 fw-bold text-white px-4 py-2 rounded shadow-sm"
+                                style={{ backgroundColor: 'rgb(21, 0, 211)', letterSpacing: '0.5px' }}>
                                 <i className="fa-solid fa-list-check text-primary me-2"></i>Tất cả hoạt động
                             </h5>
+
                             <Link href="/activity/create" className="btn btn-primary btn-sm rounded-pill px-3 shadow-sm fw-medium">
                                 <i className="fa-solid fa-plus me-1"></i> Thêm mới
                             </Link>
@@ -324,8 +347,6 @@ const ActivityPage = () => {
                                 onChange={handleInputChange}
                             />
                         </div>
-
-
 
                         {/* 3. BỔ SUNG: Ô Lọc Loại hoạt động */}
                         <div style={{ minWidth: '140px' }}>
@@ -413,13 +434,13 @@ const ActivityPage = () => {
                         <table className="table table-hover align-middle mb-0" style={{ fontSize: '14px' }}>
                             <thead className="table-light text-muted" style={{ borderBottom: '2px solid #dee2e6' }}>
                                 <tr>
-                                    <th className="fw-semibold px-3 py-3" style={{ width: '4%' }}>
+                                    <th className="fw-semibold px-3 py-3" style={{ width: '4%', backgroundColor: 'transparent' }}>
                                         <input className="form-check-input shadow-sm cursor-pointer m-0" type="checkbox" onChange={handleSelectAll} title="Chọn tất cả" />
                                     </th>
-                                    <th className="fw-semibold py-3" style={{ width: '22%' }}>Chủ đề</th>
+                                    <th className="fw-semibold py-3" style={{ width: '22%', backgroundColor: 'transparent' }}>Chủ đề</th>
                                     <th
                                         className="fw-semibold py-3"
-                                        style={{ width: '13%', cursor: 'pointer', userSelect: 'none' }}
+                                        style={{ width: '13%', cursor: 'pointer', userSelect: 'none', backgroundColor: 'transparent' }}
                                         onClick={() => handleSort('startDate')}
                                     >
                                         <div className="d-flex align-items-center">
@@ -433,11 +454,11 @@ const ActivityPage = () => {
                                         </div>
                                     </th>
 
-                                    <th className="fw-semibold py-3 text-center" style={{ width: '10%' }}>Trạng thái</th>
-                                    <th className="fw-semibold py-3 text-center" style={{ width: '8%' }}>Quan trọng</th>
-                                    <th className="fw-semibold py-3" style={{ width: '18%' }}>Nội dung</th>
-                                    <th className="fw-semibold py-3" style={{ width: '12%' }}>Phụ trách</th>
-                                    <th className="fw-semibold text-center py-3" style={{ width: '13%' }}>Hành động</th>
+                                    <th className="fw-semibold py-3 text-center" style={{ width: '10%', backgroundColor: 'transparent' }}>Trạng thái</th>
+                                    <th className="fw-semibold py-3 text-center" style={{ width: '8%', backgroundColor: 'transparent' }}>Quan trọng</th>
+                                    <th className="fw-semibold py-3" style={{ width: '18%', backgroundColor: 'transparent' }}>Nội dung</th>
+                                    <th className="fw-semibold py-3" style={{ width: '12%', backgroundColor: 'transparent' }}>Phụ trách</th>
+                                    <th className="fw-semibold text-center py-3" style={{ width: '13%', backgroundColor: 'transparent' }}>Hành động</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -542,58 +563,108 @@ const ActivityPage = () => {
                     </div>
 
                     {/* THANH PHÂN TRANG */}
-                    <div className="d-flex flex-column flex-md-row justify-content-between align-items-center mt-4 pb-2">
-                        <div className="text-muted mb-3 mb-md-0" style={{ fontSize: '13px' }}>
-                            Hiển thị <strong className="text-primary">{activities.content?.length || 0}</strong> trên tổng số <strong className="text-dark">{activities.totalElements?.toLocaleString('vi-VN') || 0}</strong> hoạt động
+                    <div className="d-flex justify-content-between align-items-center mt-4 pb-5 w-100">
+
+                        {/* Phần 1: Hiển thị tổng số lượng (Nằm bên TRÁI) */}
+                        <div className="text-muted small fw-medium bg-white px-3 py-2 rounded shadow-sm border border-light">
+                            Tổng số: <b className="text-dark">{activities.totalElements?.toLocaleString('vi-VN') || 0}</b> hoạt động
                         </div>
 
-                        <div className="d-flex align-items-center gap-3">
-                            <nav aria-label="Page navigation">
-                                <ul className="pagination pagination-sm mb-0 gap-1 shadow-sm">
-                                    <li className={`page-item ${Number(localFilters.page) === 0 ? 'disabled' : ''}`}>
-                                        <button className="page-link rounded-circle border-0 text-secondary" onClick={() => handlePageChange(0)}>
-                                            <i className="fa-solid fa-angles-left"></i>
-                                        </button>
-                                    </li>
-                                    <li className={`page-item ${Number(localFilters.page) === 0 ? 'disabled' : ''}`}>
-                                        <button className="page-link rounded-circle border-0 text-secondary" onClick={() => handlePageChange(Number(localFilters.page) - 1)}>
-                                            <i className="fa-solid fa-chevron-left"></i>
-                                        </button>
-                                    </li>
-                                    <li className="page-item disabled">
-                                        <span className="page-link border-0 bg-transparent text-dark fw-bold">
-                                            Trang {Number(localFilters.page) + 1} / {activities.totalPages || 1}
-                                        </span>
-                                    </li>
-                                    <li className={`page-item ${Number(localFilters.page) >= (activities.totalPages - 1) ? 'disabled' : ''}`}>
-                                        <button className="page-link rounded-circle border-0 text-secondary" onClick={() => handlePageChange(Number(localFilters.page) + 1)}>
-                                            <i className="fa-solid fa-chevron-right"></i>
-                                        </button>
-                                    </li>
-                                    <li className={`page-item ${Number(localFilters.page) >= (activities.totalPages - 1) ? 'disabled' : ''}`}>
-                                        <button className="page-link rounded-circle border-0 text-secondary" onClick={() => handlePageChange(activities.totalPages - 1)}>
-                                            <i className="fa-solid fa-angles-right"></i>
-                                        </button>
-                                    </li>
-                                </ul>
-                            </nav>
+                        {/* Phần 2: Cụm điều hướng (Nằm bên PHẢI) */}
+                        <div className="d-flex align-items-center gap-2 bg-white p-2 rounded shadow-sm border border-light">
+                            {(() => {
+                                // Ép kiểu cho chắc chắn vì ở trang Activity, localFilters.page đang lưu dưới dạng String
+                                const currentPage = Number(localFilters.page) || 0;
+                                const maxPages = activities.totalPages || 1;
 
-                            <div className="d-flex align-items-center gap-2 ms-2">
-                                <span className="small text-muted">Đến trang:</span>
-                                <input
-                                    type="number"
-                                    className="form-control form-control-sm text-center shadow-sm"
-                                    style={{ width: '60px', borderRadius: '8px' }}
-                                    value={jumpPage}
-                                    onChange={(e) => setJumpPage(e.target.value)}
-                                    onKeyDown={handleJumpPage}
-                                    min="1"
-                                    max={activities.totalPages || 1}
-                                />
-                            </div>
+                                return (
+                                    <>
+                                        {/* Nút Về trang đầu (<<) */}
+                                        <button
+                                            className={`btn btn-sm d-flex align-items-center justify-content-center ${currentPage === 0 ? 'btn-light text-muted opacity-50' : 'btn-primary text-white'} border-0 rounded`}
+                                            style={{ width: '32px', height: '32px', padding: 0 }}
+                                            onClick={() => handlePageChange(0)}
+                                            disabled={currentPage === 0}
+                                        >
+                                            <ChevronsLeft size={18} />
+                                        </button>
+
+                                        {/* Nút Trang trước (<) */}
+                                        <button
+                                            className={`btn btn-sm d-flex align-items-center justify-content-center ${currentPage === 0 ? 'btn-light text-muted opacity-50' : 'btn-primary text-white'} border-0 rounded`}
+                                            style={{ width: '32px', height: '32px', padding: 0 }}
+                                            onClick={() => handlePageChange(currentPage - 1)}
+                                            disabled={currentPage === 0}
+                                        >
+                                            <ChevronLeft size={18} />
+                                        </button>
+
+                                        {/* Hiển thị số trang */}
+                                        <span className="text-muted small fw-medium mx-2">
+                                            Trang <span className="text-dark fw-bold">{currentPage + 1}</span> / {maxPages}
+                                        </span>
+
+                                        {/* Ô nhập số trang nhảy nhanh */}
+                                        <input
+                                            key={`jump-${currentPage}`}
+                                            type="number"
+                                            className="form-control form-control-sm text-center bg-light border-0 shadow-none fw-medium"
+                                            style={{ width: '45px', height: '32px' }}
+                                            min="1"
+                                            max={maxPages}
+                                            defaultValue={currentPage + 1}
+                                            id="jumpPageInputActivity"
+                                            onKeyDown={(e) => {
+                                                if (e.key === 'Enter') {
+                                                    const targetPage = parseInt((e.target as HTMLInputElement).value) - 1;
+                                                    if (targetPage >= 0 && targetPage < maxPages) {
+                                                        handlePageChange(targetPage);
+                                                    }
+                                                }
+                                            }}
+                                        />
+
+                                        {/* Nút ĐI */}
+                                        <button
+                                            className="btn btn-sm btn-primary text-white border-0 fw-medium rounded ms-1"
+                                            style={{ height: '32px', padding: '0 12px' }}
+                                            onClick={() => {
+                                                const inputEl = document.getElementById('jumpPageInputActivity') as HTMLInputElement;
+                                                if (inputEl) {
+                                                    const targetPage = parseInt(inputEl.value) - 1;
+                                                    if (targetPage >= 0 && targetPage < maxPages) {
+                                                        handlePageChange(targetPage);
+                                                    }
+                                                }
+                                            }}
+                                        >
+                                            Đi
+                                        </button>
+
+                                        {/* Nút Trang kế tiếp (>) */}
+                                        <button
+                                            className={`btn btn-sm d-flex align-items-center justify-content-center ms-1 ${currentPage >= (maxPages - 1) ? 'btn-light text-muted opacity-50' : 'btn-primary text-white'} border-0 rounded`}
+                                            style={{ width: '32px', height: '32px', padding: 0 }}
+                                            onClick={() => handlePageChange(currentPage + 1)}
+                                            disabled={currentPage >= (maxPages - 1)}
+                                        >
+                                            <ChevronRight size={18} />
+                                        </button>
+
+                                        {/* Nút Đến trang cuối (>>) */}
+                                        <button
+                                            className={`btn btn-sm d-flex align-items-center justify-content-center ${currentPage >= (maxPages - 1) ? 'btn-light text-muted opacity-50' : 'btn-primary text-white'} border-0 rounded`}
+                                            style={{ width: '32px', height: '32px', padding: 0 }}
+                                            onClick={() => handlePageChange(maxPages > 0 ? maxPages - 1 : 0)}
+                                            disabled={currentPage >= (maxPages - 1)}
+                                        >
+                                            <ChevronsRight size={18} />
+                                        </button>
+                                    </>
+                                );
+                            })()}
                         </div>
                     </div>
-
                 </div>
             </div>
         </div>

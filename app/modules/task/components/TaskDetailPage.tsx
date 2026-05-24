@@ -1,7 +1,7 @@
 "use client";
 import React, { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
-import axios from 'axios';
+import httpClient from '@/core/http/httpClient';
 
 interface INote {
     id: number;
@@ -80,11 +80,18 @@ const TaskDetailPage = () => {
     useEffect(() => {
         const fetchUsers = async () => {
             try {
-                // Dùng đúng đường dẫn API mà Duy đang dùng bên Create
-                const response = await axios.get('http://localhost:8080/api/users');
-                setUsers(response.data);
+                const response = await httpClient.get('/api/users');
+
+                if (response.data && response.data.content) {
+                    setUsers(response.data.content);
+                } else if (Array.isArray(response.data)) {
+                    setUsers(response.data);
+                } else {
+                    setUsers([]);
+                }
             } catch (error) {
                 console.error('Không thể tải danh sách nhân viên:', error);
+                setUsers([]);
             }
         };
 
@@ -122,7 +129,7 @@ const TaskDetailPage = () => {
             const newStatus = newProgress === 100 ? 'COMPLETED' : (newProgress === 0 ? 'NOT_STARTED' : 'IN_PROGRESS');
 
             // Gửi API cập nhật (Duy kiểm tra xem Backend dùng PUT hay PATCH nhé)
-            await axios.patch(`http://localhost:8080/api/v1/tasks/${id}`, {
+            await httpClient.patch(`/api/v1/tasks/${id}`, {
                 progressPercent: newProgress,
                 status: newStatus
             });
@@ -152,7 +159,7 @@ const TaskDetailPage = () => {
             if (newStatus === 'NOT_STARTED') updatedProgress = 0;
 
             // Gọi API PATCH cập nhật trạng thái
-            await axios.patch(`http://localhost:8080/api/v1/tasks/${id}`, {
+            await httpClient.patch(`/api/v1/tasks/${id}`, {
                 status: newStatus,
                 progressPercent: updatedProgress
             });
@@ -179,7 +186,7 @@ const TaskDetailPage = () => {
         if (!window.confirm("Bạn có chắc chắn đánh dấu hoàn thành công việc này?")) return;
 
         try {
-            await axios.patch(`http://localhost:8080/api/v1/tasks/${id}`, {
+            await httpClient.patch(`/api/v1/tasks/${id}`, {
                 progressPercent: 100,
                 status: 'COMPLETED'
             });
@@ -202,9 +209,9 @@ const TaskDetailPage = () => {
 
                 // DÙNG PROMISE.ALL ĐỂ GỌI 2 API SONG SONG CÙNG 1 LÚC
                 const [taskResponse, noteResponse, historyResponse] = await Promise.all([
-                    axios.get(`http://localhost:8080/api/v1/tasks/${id}`),
-                    axios.get(`http://localhost:8080/api/v1/notes/task/${id}`),
-                    axios.get(`http://localhost:8080/api/v1/tasks/${id}/histories`)
+                    httpClient.get(`/api/v1/tasks/${id}`),
+                    httpClient.get(`/api/v1/notes/task/${id}`),
+                    httpClient.get(`/api/v1/tasks/${id}/histories`)
                 ]);
 
                 // Hứng dữ liệu sau khi cả 2 API đều đã chạy xong
@@ -260,7 +267,7 @@ const TaskDetailPage = () => {
 
         try {
             // 2. Gọi API DELETE
-            await axios.delete(`http://localhost:8080/api/v1/notes/${noteId}`);
+            await httpClient.delete(`/api/v1/notes/${noteId}`);
 
             // 3. Cập nhật State (sử dụng prevNotes để đảm bảo an toàn dữ liệu)
             setNotes(prevNotes => prevNotes.filter(note => note.id !== noteId));
@@ -279,7 +286,7 @@ const TaskDetailPage = () => {
 
         setIsSubmittingNote(true);
         try {
-            const response = await axios.post(`http://localhost:8080/api/v1/notes`, {
+            const response = await httpClient.post('/api/v1/notes', {
                 notableType: "TASK",
                 notableId: id,
                 content: newNoteContent
@@ -349,7 +356,7 @@ const TaskDetailPage = () => {
             if (payloadToSend.assigneeId === "") payloadToSend.assigneeId = null;
             if (payloadToSend.contactId === "") payloadToSend.contactId = null;
 
-            await axios.patch(`http://localhost:8080/api/v1/tasks/${id}`, payloadToSend);
+            await httpClient.patch(`/api/v1/tasks/${id}`, payloadToSend);
 
             // 1. Đóng Popup
             setIsEditModalOpen(false);
@@ -439,18 +446,40 @@ const TaskDetailPage = () => {
                                             {/* Hàng 2: Người phụ trách & Khách hàng */}
                                             <div className="col-md-6 mb-2">
                                                 <label className="form-label fw-semibold text-secondary small mb-1">Người phụ trách</label>
-                                                <select
-                                                    className="form-select form-select-sm border-secondary-subtle"
-                                                    value={editFormData.assigneeId}
-                                                    onChange={(e) => setEditFormData({ ...editFormData, assigneeId: e.target.value })}
-                                                >
-                                                    <option value="">-- Chọn nhân viên --</option>
-                                                    {users.map((user: any) => (
-                                                        <option key={user.id} value={user.id}>
-                                                            {user.name || user.fullName}
-                                                        </option>
-                                                    ))}
-                                                </select>
+                                                {(() => {
+                                                    // 1. Kiểm tra môi trường web
+                                                    const isClient = typeof window !== 'undefined';
+
+                                                    // 2. Mở đúng "tên tủ" là 'roles' dưới Local Storage
+                                                    const rolesStorage = isClient ? localStorage.getItem('roles') : null;
+
+                                                    let roles: string[] = [];
+                                                    if (rolesStorage) {
+                                                        try {
+                                                            roles = JSON.parse(rolesStorage);
+                                                        } catch (e) {
+                                                            console.error("Lỗi đọc phân quyền", e);
+                                                        }
+                                                    }
+
+                                                    const isManager = roles.includes('ADMIN') || roles.includes('MANAGER');
+
+                                                    return (
+                                                        <select
+                                                            className={`form-select form-select-sm border-secondary-subtle ${!isManager ? 'bg-light text-muted cursor-not-allowed' : ''}`}
+                                                            value={editFormData.assigneeId}
+                                                            onChange={(e) => setEditFormData({ ...editFormData, assigneeId: e.target.value })}
+                                                            disabled={!isManager}
+                                                        >
+                                                            <option value="">-- Chọn nhân viên --</option>
+                                                            {Array.isArray(users) && users.map((user: any) => (
+                                                                <option key={user.id} value={user.id}>
+                                                                    {user.name || user.fullName}
+                                                                </option>
+                                                            ))}
+                                                        </select>
+                                                    );
+                                                })()}
                                             </div>
 
                                             {editFormData.relatedToType === 'CUSTOMER' && editFormData.relatedToId && (

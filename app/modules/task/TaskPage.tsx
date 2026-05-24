@@ -1,9 +1,14 @@
 "use client";
-import CreateTaskModal from './CreateTaskModal';
+import CreateTaskModal from './components/CreateTaskModal';
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react';
+// import axios from 'axios';
+
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+
+import httpClient from '@/core/http/httpClient';
+
 // import { useTask } from './hooks/useTask';
 
 interface ITaskFilter {
@@ -37,15 +42,26 @@ const TaskPage = () => {
 
     // Thêm 1 state để báo hiệu "Trình duyệt đã load xong chưa?"
     const [isMounted, setIsMounted] = useState(false);
+    const [isManager, setIsManager] = useState(false);
 
     useEffect(() => {
-        // Đánh dấu là đã qua giai đoạn Server Render, bắt đầu chạy trên Client
         setIsMounted(true);
 
         // Giờ mới lấy data từ Session đắp vào
         const savedFilters = sessionStorage.getItem('taskFilters');
         if (savedFilters) {
             setFilters(JSON.parse(savedFilters));
+        }
+        const rolesStorage = localStorage.getItem('roles');
+        if (rolesStorage) {
+            try {
+                const roles = JSON.parse(rolesStorage);
+                if (roles.includes('MANAGER')) {
+                    setIsManager(true);
+                }
+            } catch (e) {
+                console.error("Lỗi đọc phân quyền", e);
+            }
         }
     }, []);
 
@@ -58,7 +74,7 @@ const TaskPage = () => {
     const fetchTasks = async () => {
         try {
             setIsLoading(true);
-            const response = await axios.get('http://localhost:8080/api/v1/tasks', {
+            const response = await httpClient.get('/api/v1/tasks', {
                 params: {
                     subject: filters.subject || undefined,
                     status: filters.status || undefined,
@@ -202,7 +218,7 @@ const TaskPage = () => {
         try {
             // Dùng Promise.all để gọi API xóa nhiều ID cùng lúc chạy song song
             await Promise.all(
-                selectedTaskIds.map((id) => axios.delete(`http://localhost:8080/api/v1/tasks/${id}`))
+                selectedTaskIds.map((id) => httpClient.delete(`/api/v1/tasks/${id}`))
             );
 
             alert("Đã xóa thành công!");
@@ -224,27 +240,33 @@ const TaskPage = () => {
             {/* 1. HEADER */}
             <div className="d-flex justify-content-between align-items-center mb-4">
                 <div className="d-flex align-items-center gap-3">
-                    <h5 className="text-uppercase text-secondary mb-0 fw-bold">
+                    <h5 className="text-uppercase mb-0 fw-bold text-white px-4 py-2 rounded shadow-sm"
+                        style={{ backgroundColor: 'rgb(21, 0, 211)' }}>
                         <i className="fa-solid fa-list-check me-2"></i>QUẢN LÝ CÔNG VIỆC
                     </h5>
-                    <div>
-                        <button
-                            className="btn btn-success btn-sm rounded-pill px-3 shadow-sm"
-                            onClick={() => setShowCreateModal(true)} // Bấm vào là bật Form
-                        >
-                            <i className="fa-solid fa-plus me-1"></i> Giao việc mới
-                        </button>
-                    </div>
-                    <div>
-                        {selectedTaskIds.length > 0 && (
-                            <button
-                                className="btn btn-danger btn-sm rounded-pill px-3 shadow-sm fw-medium slide-in"
-                                onClick={handleDeleteSelected}
-                            >
-                                <i className="fa-solid fa-trash-can me-1"></i> Xóa ({selectedTaskIds.length})
-                            </button>
-                        )}
-                    </div>
+                    {isManager && (
+                        <div className="d-flex gap-2">
+                            <div>
+                                <button
+                                    className="btn btn-success btn-sm rounded-pill px-3 shadow-sm"
+                                    onClick={() => setShowCreateModal(true)} // Bấm vào là bật Form
+                                >
+                                    <i className="fa-solid fa-plus me-1"></i> Giao việc mới
+                                </button>
+                            </div>
+
+                            <div>
+                                {selectedTaskIds.length > 0 && (
+                                    <button
+                                        className="btn btn-danger btn-sm rounded-pill px-3 shadow-sm fw-medium slide-in"
+                                        onClick={handleDeleteSelected}
+                                    >
+                                        <i className="fa-solid fa-trash-can me-1"></i> Xóa ({selectedTaskIds.length})
+                                    </button>
+                                )}
+                            </div>
+                        </div>
+                    )}
 
                 </div>
 
@@ -355,11 +377,14 @@ const TaskPage = () => {
             )}
 
             {/* 3. BẢNG DỮ LIỆU */}
-            <div className="table-responsive shadow-sm rounded-3 bg-white border border-light">
+            <div className="table-responsive shadow-sm rounded-3 bg-white border border-light overflow-hidden">
                 <table className="table table-hover align-middle mb-0" style={{ fontSize: '14px' }}>
-                    <thead className="table-light text-muted" style={{ borderBottom: '2px solid #dee2e6' }}>
+                    <thead className="bg-light"
+                        style={{
+                            borderBottom: '2px solid #dee2e6'
+                        }}>
                         <tr>
-                            <th className="fw-semibold px-3 py-3" style={{ width: '8%' }}>
+                            <th className="fw-semibold px-3 py-3" style={{ width: '8%', backgroundColor: 'transparent' }} >
                                 <div className="d-flex align-items-center gap-2">
                                     <input
                                         className="form-check-input shadow-sm cursor-pointer m-0"
@@ -370,14 +395,14 @@ const TaskPage = () => {
                                     />
                                 </div>
                             </th>
-                            <th className="fw-semibold py-3" style={{ width: '22%' }}>Chủ đề công việc</th>
-                            <th className="fw-semibold py-3" style={{ width: '15%' }}>Trạng thái & Tiến độ</th>
-                            <th className="fw-semibold py-3" style={{ width: '8%' }}>Ưu tiên</th>
-                            <th className="fw-semibold py-3" style={{ width: '15%' }}>Thời hạn (Start - Due)</th>
-                            <th className="fw-semibold py-3" style={{ width: '12%' }}>Liên hệ</th>
-                            <th className="fw-semibold py-3" style={{ width: '12%' }}>Liên quan đến</th>
-                            <th className="fw-semibold py-3" style={{ width: '10%' }}>Phân công cho</th>
-                            <th className="fw-semibold text-center py-3" style={{ width: '7%' }}>Chi tiết</th>
+                            <th className="fw-semibold py-3" style={{ width: '22%', backgroundColor: 'transparent' }}>Chủ đề công việc</th>
+                            <th className="fw-semibold py-3" style={{ width: '15%', backgroundColor: 'transparent' }}>Trạng thái & Tiến độ</th>
+                            <th className="fw-semibold py-3" style={{ width: '8%', backgroundColor: 'transparent' }}>Ưu tiên</th>
+                            <th className="fw-semibold py-3" style={{ width: '15%', backgroundColor: 'transparent' }}>Thời hạn (Start - Due)</th>
+                            <th className="fw-semibold py-3" style={{ width: '12%', backgroundColor: 'transparent' }}>Liên hệ</th>
+                            <th className="fw-semibold py-3" style={{ width: '12%', backgroundColor: 'transparent' }}>Liên quan đến</th>
+                            <th className="fw-semibold py-3" style={{ width: '10%', backgroundColor: 'transparent' }}>Phân công cho</th>
+                            <th className="fw-semibold text-center py-3" style={{ width: '7%', backgroundColor: 'transparent' }}>Chi tiết</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -503,72 +528,98 @@ const TaskPage = () => {
             </div>
 
             {/* 5. PHÂN TRANG (PAGINATION) */}
-            <div className="d-flex justify-content-between align-items-center mt-4 pb-5">
-                {/* Hiển thị thông tin tổng quát */}
-                <div className="text-muted small">
-                    Hiển thị <b>{tasks.length}</b> trên tổng số <b>{totalElements}</b> công việc
+            <div className="d-flex justify-content-between align-items-center mt-4 pb-5 w-100">
+
+                {/* 💡 PHẦN 1: Hiển thị tổng số lượng (Nằm bên TRÁI, ngang mép trái của bảng) */}
+                <div className="text-muted small fw-medium bg-white px-3 py-2 rounded shadow-sm border border-light">
+                    Tổng số: <b className="text-dark">{totalElements}</b> công việc
                 </div>
 
-                <div className="d-flex align-items-center gap-3">
-                    {/* Bộ nút điều hướng */}
-                    <nav>
-                        <ul className="pagination pagination-sm mb-0 gap-1">
-                            {/* Nút Về trang đầu */}
-                            <li className={`page-item ${filters.page === 0 ? 'disabled' : ''}`}>
-                                <button className="page-link rounded-circle border-0 shadow-sm" onClick={() => setFilters({ ...filters, page: 0 })}>
-                                    <i className="fa-solid fa-angles-left"></i>
-                                </button>
-                            </li>
+                {/* 💡 PHẦN 2: Cụm điều hướng phân trang (Nằm bên PHẢI, ngang mép phải của bảng) */}
+                <div className="d-flex align-items-center gap-2 bg-white p-2 rounded shadow-sm border border-light">
 
-                            {/* Nút Trang trước */}
-                            <li className={`page-item ${filters.page === 0 ? 'disabled' : ''}`}>
-                                <button className="page-link rounded-circle border-0 shadow-sm" onClick={() => setFilters({ ...filters, page: filters.page - 1 })}>
-                                    <i className="fa-solid fa-chevron-left"></i>
-                                </button>
-                            </li>
+                    {/* Nút Về trang đầu (<<) */}
+                    <button
+                        className={`btn btn-sm d-flex align-items-center justify-content-center ${filters.page === 0 ? 'btn-light text-muted opacity-50' : 'btn-primary text-white'} border-0 rounded`}
+                        style={{ width: '32px', height: '32px', padding: 0 }}
+                        onClick={() => setFilters({ ...filters, page: 0 })}
+                        disabled={filters.page === 0}
+                    >
+                        <ChevronsLeft size={18} />
+                    </button>
 
-                            {/* Hiển thị số trang (Ví dụ: Trang 1 / 10) */}
-                            <li className="page-item disabled">
-                                <span className="page-link border-0 bg-transparent text-dark fw-bold">
-                                    Trang {filters.page + 1} / {totalPages || 1}
-                                </span>
-                            </li>
+                    {/* Nút Trang trước (<) */}
+                    <button
+                        className={`btn btn-sm d-flex align-items-center justify-content-center ${filters.page === 0 ? 'btn-light text-muted opacity-50' : 'btn-primary text-white'} border-0 rounded`}
+                        style={{ width: '32px', height: '32px', padding: 0 }}
+                        onClick={() => setFilters({ ...filters, page: filters.page - 1 })}
+                        disabled={filters.page === 0}
+                    >
+                        <ChevronLeft size={18} />
+                    </button>
 
-                            {/* Nút Trang kế tiếp */}
-                            <li className={`page-item ${filters.page >= (totalPages - 1) ? 'disabled' : ''}`}>
-                                <button className="page-link rounded-circle border-0 shadow-sm" onClick={() => setFilters({ ...filters, page: filters.page + 1 })}>
-                                    <i className="fa-solid fa-chevron-right"></i>
-                                </button>
-                            </li>
+                    {/* Hiển thị số trang */}
+                    <span className="text-muted small fw-medium mx-2">
+                        Trang <span className="text-dark fw-bold">{filters.page + 1}</span> / {totalPages || 1}
+                    </span>
 
-                            {/* Nút Đến trang cuối */}
-                            <li className={`page-item ${filters.page >= (totalPages - 1) ? 'disabled' : ''}`}>
-                                <button className="page-link rounded-circle border-0 shadow-sm" onClick={() => setFilters({ ...filters, page: totalPages - 1 })}>
-                                    <i className="fa-solid fa-angles-right"></i>
-                                </button>
-                            </li>
-                        </ul>
-                    </nav>
-
-                    {/* Ô nhập số trang để nhảy nhanh (Jump to page) */}
-                    <div className="d-flex align-items-center gap-2 ms-3">
-                        <span className="small text-muted">Đến trang:</span>
-                        <input
-                            type="number"
-                            className="form-control form-control-sm text-center shadow-sm"
-                            style={{ width: '100px', borderRadius: '8px' }}
-                            min="1"
-                            max={totalPages}
-                            onKeyDown={(e) => {
-                                if (e.key === 'Enter') {
-                                    const targetPage = parseInt((e.target as HTMLInputElement).value) - 1;
-                                    if (targetPage >= 0 && targetPage < totalPages) {
-                                        setFilters({ ...filters, page: targetPage });
-                                    }
+                    {/* Ô nhập số trang nhảy nhanh */}
+                    <input
+                        key={filters.page}
+                        type="number"
+                        className="form-control form-control-sm text-center bg-light border-0 shadow-none fw-medium"
+                        style={{ width: '45px', height: '32px' }}
+                        min="1"
+                        max={totalPages || 1}
+                        defaultValue={filters.page + 1}
+                        id="jumpPageInput"
+                        onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                                const targetPage = parseInt((e.target as HTMLInputElement).value) - 1;
+                                if (targetPage >= 0 && targetPage < (totalPages || 1)) {
+                                    setFilters({ ...filters, page: targetPage });
                                 }
-                            }}
-                        />
-                    </div>
+                            }
+                        }}
+                    />
+
+                    {/* Nút ĐI */}
+                    <button
+                        className="btn btn-sm btn-primary text-white border-0 fw-medium rounded ms-1"
+                        style={{ height: '32px', padding: '0 12px' }}
+                        onClick={() => {
+                            const inputEl = document.getElementById('jumpPageInput') as HTMLInputElement;
+                            if (inputEl) {
+                                const targetPage = parseInt(inputEl.value) - 1;
+                                if (targetPage >= 0 && targetPage < (totalPages || 1)) {
+                                    setFilters({ ...filters, page: targetPage });
+                                }
+                            }
+                        }}
+                    >
+                        Đi
+                    </button>
+
+                    {/* Nút Trang kế tiếp (>) */}
+                    <button
+                        className={`btn btn-sm d-flex align-items-center justify-content-center ms-1 ${filters.page >= (totalPages - 1) ? 'btn-light text-muted opacity-50' : 'btn-primary text-white'} border-0 rounded`}
+                        style={{ width: '32px', height: '32px', padding: 0 }}
+                        onClick={() => setFilters({ ...filters, page: filters.page + 1 })}
+                        disabled={filters.page >= (totalPages - 1)}
+                    >
+                        <ChevronRight size={18} />
+                    </button>
+
+                    {/* Nút Đến trang cuối (>>) */}
+                    <button
+                        className={`btn btn-sm d-flex align-items-center justify-content-center ${filters.page >= (totalPages - 1) ? 'btn-light text-muted opacity-50' : 'btn-primary text-white'} border-0 rounded`}
+                        style={{ width: '32px', height: '32px', padding: 0 }}
+                        onClick={() => setFilters({ ...filters, page: (totalPages > 0 ? totalPages - 1 : 0) })}
+                        disabled={filters.page >= (totalPages - 1)}
+                    >
+                        <ChevronsRight size={18} />
+                    </button>
+
                 </div>
             </div>
             {/* Nhúng Modal Thêm Task */}
@@ -576,8 +627,7 @@ const TaskPage = () => {
                 show={showCreateModal}
                 onClose={() => setShowCreateModal(false)}
                 onSuccess={() => {
-                    // Hàm load lại dữ liệu bảng của Duy (ví dụ: fetchTasks())
-                    // Nếu anh em mình dùng filters, có thể set lại page về 0 để load trang đầu
+
                     setFilters({ ...filters, page: 0 });
                 }}
             />

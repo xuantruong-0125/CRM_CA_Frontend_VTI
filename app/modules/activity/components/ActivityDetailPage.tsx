@@ -3,12 +3,12 @@
 import React, { useEffect, useState } from 'react';
 
 import Link from 'next/link';
-import { activityApi } from './api/activity.api';
+import { activityApi } from '../api/activity.api';
 
 import { useParams } from 'next/navigation';//xài Next.js App Router
-import { IActivity } from './types/activity.type';
+import { IActivity } from '../types/activity.type';
 import { useRouter } from 'next/navigation';
-import axios from 'axios';
+import httpClient from '@/core/http/httpClient';
 
 
 interface Props {
@@ -38,6 +38,30 @@ const ActivityDetailPage = () => {
     const [newNoteContent, setNewNoteContent] = useState("");
     const [isSubmittingNote, setIsSubmittingNote] = useState(false);
 
+    const [isManager, setIsManager] = useState(false);
+    const [currentUserId, setCurrentUserId] = useState<string>('');
+
+    useEffect(() => {
+        if (typeof window !== 'undefined') {
+            const rolesStr = localStorage.getItem('roles');
+            const uid = localStorage.getItem('userId');
+
+            if (rolesStr) {
+                try {
+                    const roles = JSON.parse(rolesStr);
+                    if (roles.includes('ADMIN') || roles.includes('MANAGER')) {
+                        setIsManager(true);
+                    }
+                } catch (e) {
+                    console.error("Lỗi đọc phân quyền", e);
+                }
+            }
+            if (uid) {
+                setCurrentUserId(uid);
+            }
+        }
+    }, []);
+
     useEffect(() => {
         const fetchDetailAndNotes = async () => {
             try {
@@ -49,7 +73,7 @@ const ActivityDetailPage = () => {
 
                 // 2. Lấy danh sách Ghi chú (Notes) của Activity này từ Backend
                 // Gọi API lấy Note và ép kiểu dữ liệu trả về theo giao diện INote
-                const notesResponse = await axios.get(`http://localhost:8080/api/v1/notes/activity/${id}`);
+                const notesResponse = await httpClient.get(`/api/v1/notes/activity/${id}`);
                 setNotes(notesResponse.data);
 
             } catch (err: any) {
@@ -93,7 +117,7 @@ const ActivityDetailPage = () => {
 
         try {
             // 2. Gọi API DELETE xuống Spring Boot
-            await axios.delete(`http://localhost:8080/api/v1/notes/${noteId}`);
+            await httpClient.delete(`/api/v1/notes/${noteId}`);
 
             // 3. Nếu Spring Boot trả về 204 (Thành công), ta lọc bỏ note đó khỏi mảng hiện tại
             // Cách này giúp giao diện mượt hơn vì không phải gọi lại API fetch danh sách
@@ -302,12 +326,21 @@ const ActivityDetailPage = () => {
 
                 {/* THANH HÀNH ĐỘNG (XÓA / SỬA) */}
                 <div className="d-flex justify-content-end gap-3 mt-4 mb-5">
-                    <button onClick={handleDelete} className="btn btn-outline-danger px-4 shadow-sm bg-white">
-                        <i className="fa-solid fa-trash-can me-2"></i> Xóa hoạt động
-                    </button>
-                    <Link href={`/activity/edit/${activity.id}`} className="btn btn-primary px-4 shadow-sm">
-                        <i className="fa-solid fa-pen-to-square me-2"></i> Chỉnh sửa thông tin
-                    </Link>
+                    {isManager && (
+                        <button onClick={handleDelete} className="btn btn-outline-danger px-4 shadow-sm bg-white">
+                            <i className="fa-solid fa-trash-can me-2"></i> Xóa hoạt động
+                        </button>
+                    )}
+
+                    {activity.status !== 'COMPLETED' ? (
+                        <Link href={`/activity/edit/${activity.id}`} className="btn btn-primary px-4 shadow-sm">
+                            <i className="fa-solid fa-pen-to-square me-2"></i> Chỉnh sửa thông tin
+                        </Link>
+                    ) : (
+                        <button className="btn btn-secondary px-4 shadow-sm" disabled>
+                            <i className="fa-solid fa-lock me-2"></i> Hoạt động đã đóng
+                        </button>
+                    )}
                 </div>
             </div>
         </div>
