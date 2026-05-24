@@ -257,8 +257,9 @@ export const useLogin = () => {
                     break;
 
                 case "SALE_MANAGER":
-                case "SALES":
-                    router.push("/leads");
+                case "MANAGER":
+                case "SALE":
+                    router.push("/quotes");
                     break;
 
                 default:
