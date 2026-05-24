@@ -9,6 +9,8 @@ export type LeadListQuery = {
   sortDir?: SortDir;
 };
 
+export type LeadTaskListQuery = LeadListQuery;
+
 export type SearchLeadRequest = LeadListQuery & {
   provinceId?: number;
   organizationId?: number;
@@ -41,21 +43,19 @@ export type CreateLeadRequest = {
 export type UpdateLeadRequest = Partial<CreateLeadRequest>;
 
 export type ConvertLeadRequest = {
-  userId?: number;
+  userId: number;
 };
 
 export type CreateLeadActivityRequest = {
-  activityType?: "CALL" | "MEETING" | "EMAIL" | string;
-  subject?: string;
+  activityType: "CALL" | "MEETING" | "EMAIL" | string;
+  subject: string;
   description?: string;
+  relatedToType?: "LEAD" | string;
+  relatedToId?: number;
+  performedBy: number;
   startDate?: ISODateTimeString;
   endDate?: ISODateTimeString;
-  completedAt?: ISODateTimeString;
-  outcome?: string;
-  performedBy?: number;
-  createdBy?: number;
-  status?: number;
-  isImportant?: boolean;
+  noteContent?: string;
 };
 
 export type UpdateLeadActivityRequest = {
@@ -214,14 +214,14 @@ export type AssigneeMetadataQuery = MetadataQueryBase & {
   organizationId?: number;
   roleId?: number;
   status?: "ACTIVE" | "INACTIVE" | "LOCKED";
-  sortBy?: "fullName" | "username" | "createdAt";
+  sortBy?: "name" | "code" | "createdAt";
 };
 
 export type ProductMetadataQuery = MetadataQueryBase & {
   type?: "PRODUCT" | "SERVICE";
   categoryId?: number;
   isActive?: boolean;
-  sortBy?: "name" | "skuCode" | "createdAt";
+  sortBy?: "name" | "code" | "createdAt";
 };
 
 export type ProvinceMetadataQuery = MetadataQueryBase & {
@@ -230,15 +230,7 @@ export type ProvinceMetadataQuery = MetadataQueryBase & {
 };
 
 export type OrganizationMetadataQuery = MetadataQueryBase & {
-  sortBy?: "name" | "id";
-};
-
-export type OrganizationMetadataItem = {
-  id: number;
-  name: string;
-  parentId: number | null;
-  type: "COMPANY" | "BRANCH" | "DEPARTMENT" | "TEAM" | string;
-  children: OrganizationMetadataItem[];
+  sortBy?: "name" | "code" | "id";
 };
 
 export type MetadataItem = {
@@ -255,6 +247,9 @@ export type LeadActivityResponse = {
   activityType?: string;
   subject?: string;
   description?: string;
+  noteContent?: string;
+  relatedToType?: string;
+  relatedToId?: number;
   startDate?: ISODateTimeString;
   endDate?: ISODateTimeString;
   completedAt?: ISODateTimeString;

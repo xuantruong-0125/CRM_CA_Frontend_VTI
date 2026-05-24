@@ -14,12 +14,12 @@ import type {
   LeadResponse,
   LeadTaskResponse,
   MetadataPageResponse,
-  OrganizationMetadataItem,
   OrganizationMetadataQuery,
   ProductMetadataQuery,
-  ProvinceMetadataQuery,
+  LeadReferenceOptionResponse,
   SearchLeadRequest,
   UpdateLeadRequest,
+  UpdateLeadActivityRequest,
 } from "@/modules/lead/types/lead.types";
 
 export const leadApi = {
@@ -50,20 +50,17 @@ export const leadApi = {
     return response.data;
   },
 
-  getProvinceMetadata: async (
-    query: ProvinceMetadataQuery
-  ): Promise<MetadataPageResponse> => {
-    const response = await http.get<MetadataPageResponse>(
-      "/api/leads/metadata/provinces",
-      { params: query }
+  getProvinceMetadata: async (): Promise<LeadReferenceOptionResponse[]> => {
+    const response = await http.get<LeadReferenceCatalogResponse>(
+      "/api/leads/references"
     );
-    return response.data;
+    return response.data.provinces || [];
   },
 
   getOrganizationMetadata: async (
     query: OrganizationMetadataQuery = {}
-  ): Promise<MetadataPageResponse | OrganizationMetadataItem[]> => {
-    const response = await http.get<MetadataPageResponse | OrganizationMetadataItem[]>(
+  ): Promise<MetadataPageResponse> => {
+    const response = await http.get<MetadataPageResponse>(
       "/api/leads/metadata/organizations",
       { params: query }
     );
@@ -105,16 +102,9 @@ export const leadApi = {
   searchLeads: async (
     query: SearchLeadRequest
   ): Promise<LeadPageResponse<LeadResponse>> => {
-    const params = {
-      ...query,
-      // Backward compatibility: some BE implementations parse `status`
-      // instead of `statusId` for search filtering.
-      status: query.statusId,
-    };
-
     const response = await http.get<LeadPageResponse<LeadResponse>>(
       "/api/leads/search",
-      { params }
+      { params: query }
     );
     return response.data;
   },
@@ -131,10 +121,18 @@ export const leadApi = {
   },
 
   getActivities: async (leadId: number): Promise<LeadActivityResponse[]> => {
-    const response = await http.get<LeadActivityResponse[]>(
-      `/api/leads/${leadId}/activities`
+    const response = await http.get<LeadPageResponse<LeadActivityResponse>>(
+      "/api/v1/activities",
+      {
+        params: {
+          relatedToType: "LEAD",
+          relatedToId: leadId,
+          page: 0,
+          size: 100,
+        },
+      }
     );
-    return response.data;
+    return response.data.content || [];
   },
 
   getActivityStatistics: async (
@@ -146,13 +144,32 @@ export const leadApi = {
     return response.data;
   },
 
+  getLeadTasks: async (
+    leadId: number,
+    query: LeadListQuery = {}
+  ): Promise<LeadTaskResponse[]> => {
+    const response = await http.get<LeadPageResponse<LeadTaskResponse> | LeadTaskResponse[]>(
+      `/api/leads/${leadId}/tasks`,
+      { params: query }
+    );
+    if (Array.isArray(response.data)) {
+      return response.data;
+    }
+
+    return response.data.content || [];
+  },
+
   createActivity: async (
     leadId: number,
     payload: CreateLeadActivityRequest
   ): Promise<LeadActivityResponse> => {
     const response = await http.post<LeadActivityResponse>(
-      `/api/leads/${leadId}/activities`,
-      payload
+      "/api/v1/activities",
+      {
+        ...payload,
+        relatedToType: "LEAD",
+        relatedToId: leadId,
+      }
     );
     return response.data;
   },
@@ -160,33 +177,37 @@ export const leadApi = {
   updateActivity: async (
     leadId: number,
     activityId: number,
-    payload: CreateLeadActivityRequest
+    payload: UpdateLeadActivityRequest
   ): Promise<LeadActivityResponse> => {
     const response = await http.put<LeadActivityResponse>(
-      `/api/leads/${leadId}/activities/${activityId}`,
-      payload
+      `/api/v1/activities/${activityId}`,
+      {
+        ...payload,
+        relatedToType: "LEAD",
+        relatedToId: leadId,
+      }
     );
     return response.data;
   },
 
-  createMeeting: async (
+  createLeadTask: async (
     leadId: number,
     payload: CreateLeadTaskRequest
   ): Promise<LeadTaskResponse> => {
     const response = await http.post<LeadTaskResponse>(
-      `/api/leads/${leadId}/tasks`,
+      `/api/v1/tasks`,
       payload
     );
     return response.data;
   },
 
-  updateMeeting: async (
+  updateLeadTask: async (
     leadId: number,
-    meetingId: number,
+    taskId: number,
     payload: CreateLeadTaskRequest
   ): Promise<LeadTaskResponse> => {
     const response = await http.put<LeadTaskResponse>(
-      `/api/leads/${leadId}/tasks/${meetingId}`,
+      `/api/leads/${leadId}/tasks/${taskId}`,
       payload
     );
     return response.data;

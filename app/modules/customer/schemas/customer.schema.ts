@@ -53,6 +53,10 @@ export const customerFormSchema = z
     statusId: optionalNumber(),
     tierId: optionalNumber(),
     assignedTo: optionalNumber(),
+    addressType: z.string().trim().max(30).optional(),
+    fullAddress: optionalText(500),
+    provinceId: optionalNumber(),
+    isPrimaryAddress: z.boolean().optional(),
   })
   .superRefine((values, context) => {
     if (values.type === "B2B" && !values.taxCode) {
@@ -65,6 +69,7 @@ export const customerFormSchema = z
   });
 
 export type CustomerFormValues = z.infer<typeof customerFormSchema>;
+export type CustomerFormInput = z.input<typeof customerFormSchema>;
 
 export const customerSearchSchema = z.object({
   q: z.string().trim().optional(),

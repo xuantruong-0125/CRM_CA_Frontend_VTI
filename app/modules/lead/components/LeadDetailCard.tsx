@@ -4,6 +4,7 @@ import type {
   LeadActivityStatisticsResponse,
   LeadActivityResponse,
   LeadResponse,
+  LeadTaskResponse,
 } from "@/modules/lead/types/lead.types";
 import { LEAD_SHORTCUTS } from "@/modules/lead/utils/keyboard-shortcuts";
 import { KeyboardShortcutBadge } from "@/modules/lead/components/KeyboardShortcutBadge";
@@ -11,11 +12,13 @@ import { KeyboardShortcutBadge } from "@/modules/lead/components/KeyboardShortcu
 type LeadDetailCardProps = {
   lead: LeadResponse;
   activities: LeadActivityResponse[];
+  tasks: LeadTaskResponse[];
   activityStatistics?: LeadActivityStatisticsResponse;
   activityStatisticsLoading?: boolean;
   activityStatisticsError?: string;
   onCreateActivityClick?: () => void;
   onCreateTaskClick?: () => void;
+  onActivityClick?: (activity: LeadActivityResponse) => void;
 };
 
 function formatDateTime(value?: string) {
@@ -69,19 +72,115 @@ function getActivityTypeLabel(activityType?: string) {
   return activityType || "Khác";
 }
 
+function getActivityStatusLabel(status?: number | string) {
+  if (typeof status === "string") {
+    const up = status.toUpperCase();
+    if (up === "PLANNED" || up === "COMPLETED" || up === "CANCELED") {
+      return up;
+    }
+    const n = Number(status);
+    if (!Number.isNaN(n)) {
+      if (n === 1) return "COMPLETED";
+      if (n === 2) return "CANCELED";
+      return "PLANNED";
+    }
+    return status;
+  }
+
+  const s = Number(status);
+  if (s === 1) {
+    return "COMPLETED";
+  }
+
+  if (s === 2) {
+    return "CANCELED";
+  }
+
+  return "PLANNED";
+}
+
+function getActivityStatusClass(status?: number | string) {
+  if (typeof status === "string") {
+    const up = status.toUpperCase();
+    if (up === "COMPLETED") return "bg-emerald-100 text-emerald-700";
+    if (up === "CANCELED") return "bg-rose-100 text-rose-700";
+    return "bg-sky-100 text-sky-700";
+  }
+
+  const s = Number(status);
+  if (s === 1) {
+    return "bg-emerald-100 text-emerald-700";
+  }
+
+  if (s === 2) {
+    return "bg-rose-100 text-rose-700";
+  }
+
+  return "bg-sky-100 text-sky-700";
+}
+
+function getTaskStatusLabel(status?: string) {
+  const normalized = (status || "").toUpperCase();
+
+  if (normalized.includes("COMPLETED")) {
+    return "Hoàn thành";
+  }
+  if (normalized.includes("IN_PROGRESS")) {
+    return "Đang thực hiện";
+  }
+  if (normalized.includes("WAITING")) {
+    return "Đang chờ";
+  }
+  if (normalized.includes("DEFERRED")) {
+    return "Tạm hoãn";
+  }
+  if (normalized.includes("NOT_STARTED")) {
+    return "Chưa bắt đầu";
+  }
+
+  return status || "Khác";
+}
+
+function getTaskPriorityClass(priority?: string) {
+  const normalized = (priority || "").toUpperCase();
+
+  if (normalized.includes("URGENT")) {
+    return "bg-red-100 text-red-700";
+  }
+  if (normalized.includes("HIGH")) {
+    return "bg-orange-100 text-orange-700";
+  }
+  if (normalized.includes("NORMAL")) {
+    return "bg-sky-100 text-sky-700";
+  }
+  if (normalized.includes("LOW")) {
+    return "bg-slate-100 text-slate-600";
+  }
+
+  return "bg-slate-100 text-slate-700";
+}
+
 export default function LeadDetailCard({
   lead,
   activities,
+  tasks,
   activityStatistics,
   activityStatisticsLoading,
   activityStatisticsError,
   onCreateActivityClick,
   onCreateTaskClick,
+  onActivityClick,
 }: LeadDetailCardProps) {
   const sortedActivities = [...activities].sort((a, b) => {
     const dateA = new Date(a.startDate || a.createdAt || 0).getTime();
     const dateB = new Date(b.startDate || b.createdAt || 0).getTime();
     return dateB - dateA;
+  });
+
+  const sortedTasks = [...tasks].sort((a, b) => {
+    const dateA = new Date(a.dueDate || a.startDate || a.createdAt || 0).getTime();
+    const dateB = new Date(b.dueDate || b.startDate || b.createdAt || 0).getTime();
+    return dateA - dateB;
   });
 
   const fallbackStatistics = sortedActivities.reduce(
@@ -197,41 +296,113 @@ export default function LeadDetailCard({
         ) : (
           <ul className="space-y-3 text-sm text-slate-700">
             {sortedActivities.map((activity) => (
-              <li key={activity.id} className="rounded-xl border border-slate-200 bg-slate-50/40 p-3">
+              <li key={activity.id} className="rounded-xl border border-slate-200 bg-slate-50/40 p-3 transition hover:border-sky-300 hover:bg-sky-50/40">
+                <button
+                  type="button"
+                  onClick={() => onActivityClick?.(activity)}
+                  className="block w-full text-left"
+                  title={onActivityClick ? "Nhấn để chỉnh sửa hoạt động" : undefined}
+                >
+                  <div className="mb-2 flex flex-wrap items-center gap-2">
+                    <span
+                      className={`inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-semibold ${getActivityTypeClass(
+                        activity.activityType
+                      )}`}
+                    >
+                      {getActivityTypeLabel(activity.activityType)}
+                    </span>
+                    <span
+                      className={`inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-semibold ${getActivityStatusClass(
+                        activity.status
+                      )}`}
+                    >
+                      {getActivityStatusLabel(activity.status)}
+                    </span>
+                    <span className="text-[11px] text-slate-500">
+                      {formatDateTime(activity.startDate || activity.createdAt)}
+                    </span>
+                    <span
+                      className={`ml-auto rounded-full px-2 py-0.5 text-[11px] font-medium ${
+                        activity.completedAt
+                          ? "bg-emerald-100 text-emerald-700"
+                          : "bg-amber-100 text-amber-700"
+                      }`}
+                    >
+                      {activity.completedAt ? "Đã hoàn thành" : "Đang theo dõi"}
+                    </span>
+                  </div>
+
+                  <p className="text-[13px] font-semibold text-slate-900">
+                    {activity.subject || "(Không có tiêu đề)"}
+                  </p>
+
+                  <p className="mt-1 text-[12px] text-slate-700">{activity.description || "-"}</p>
+
+                  <div className="mt-2 grid grid-cols-1 gap-1 text-[11px] text-slate-500 md:grid-cols-2">
+                    <p>
+                      Ghi chú: <span className="font-medium text-slate-700">{activity.noteContent || activity.outcome || "-"}</span>
+                    </p>
+                    <p>
+                      Hạn công việc lúc: <span className="font-medium text-slate-700">{formatDateTime(activity.endDate || activity.completedAt)}</span>
+                    </p>
+                  </div>
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+
+      <section className="rounded-2xl border border-slate-200 bg-white p-6">
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
+          <div className="flex items-center gap-2">
+            <h3 className="text-lg font-semibold text-slate-900">Danh sách công việc liên quan</h3>
+            <span className="rounded-full bg-slate-100 px-3 py-1 text-[11px] font-medium text-slate-600">
+              Tổng: {sortedTasks.length}
+            </span>
+          </div>
+
+          <button
+            type="button"
+            onClick={onCreateTaskClick}
+            className="h-[30px] rounded-sm border border-slate-300 bg-white px-3 text-[12px] font-medium text-slate-700 transition hover:bg-slate-50 inline-flex items-center gap-1.5"
+            title={LEAD_SHORTCUTS.CREATE_TASK.label}
+          >
+            Tạo nhắc việc
+            <KeyboardShortcutBadge shortcut={LEAD_SHORTCUTS.CREATE_TASK} />
+          </button>
+        </div>
+
+        {!sortedTasks.length ? (
+          <p className="text-sm text-slate-500">Chưa có task nào liên quan đến lead này.</p>
+        ) : (
+          <ul className="space-y-3 text-sm text-slate-700">
+            {sortedTasks.map((task) => (
+              <li key={task.id} className="rounded-xl border border-slate-200 bg-slate-50/40 p-3">
                 <div className="mb-2 flex flex-wrap items-center gap-2">
-                  <span
-                    className={`inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-semibold ${getActivityTypeClass(
-                      activity.activityType
-                    )}`}
-                  >
-                    {getActivityTypeLabel(activity.activityType)}
+                  <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-semibold ${getTaskPriorityClass(task.priority)}`}>
+                    {task.priority || "NORMAL"}
+                  </span>
+                  <span className="inline-flex items-center rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-600">
+                    {getTaskStatusLabel(task.status)}
                   </span>
                   <span className="text-[11px] text-slate-500">
-                    {formatDateTime(activity.startDate || activity.createdAt)}
-                  </span>
-                  <span
-                    className={`ml-auto rounded-full px-2 py-0.5 text-[11px] font-medium ${
-                      activity.completedAt
-                        ? "bg-emerald-100 text-emerald-700"
-                        : "bg-amber-100 text-amber-700"
-                    }`}
-                  >
-                    {activity.completedAt ? "Đã hoàn thành" : "Đang theo dõi"}
+                    Hạn: {formatDateTime(task.dueDate || task.startDate || task.createdAt)}
                   </span>
                 </div>
 
                 <p className="text-[13px] font-semibold text-slate-900">
-                  {activity.subject || "(Không có tiêu đề)"}
+                  {task.subject || "(Không có tiêu đề)"}
                 </p>
 
-                <p className="mt-1 text-[12px] text-slate-700">{activity.description || "-"}</p>
+                <p className="mt-1 text-[12px] text-slate-700">{task.description || "-"}</p>
 
                 <div className="mt-2 grid grid-cols-1 gap-1 text-[11px] text-slate-500 md:grid-cols-2">
                   <p>
-                    Kết quả: <span className="font-medium text-slate-700">{activity.outcome || "-"}</span>
+                    Bắt đầu: <span className="font-medium text-slate-700">{formatDateTime(task.startDate)}</span>
                   </p>
                   <p>
-                    Hoàn thành lúc: <span className="font-medium text-slate-700">{formatDateTime(activity.completedAt)}</span>
+                    Hoàn thành lúc: <span className="font-medium text-slate-700">{formatDateTime(task.completedAt)}</span>
                   </p>
                 </div>
               </li>

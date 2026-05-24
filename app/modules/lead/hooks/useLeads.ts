@@ -7,6 +7,7 @@ import type {
   LeadDashboardStats,
   LeadListQuery,
   LeadResponse,
+  LeadTaskListQuery,
   SearchLeadRequest,
 } from "@/modules/lead/types/lead.types";
 import { queryKeys } from "@/shared/constants/query-keys";
@@ -51,6 +52,15 @@ export function useLeadActivityStatistics(leadId?: number) {
   return useQuery({
     queryKey: queryKeys.lead.activityStatistics(leadId ?? 0),
     queryFn: () => leadApi.getActivityStatistics(leadId as number),
+    enabled: typeof leadId === "number" && Number.isFinite(leadId),
+  });
+}
+
+export function useLeadTasks(leadId?: number, params: LeadTaskListQuery = {}) {
+  const queryKeyValue = useMemo(() => toQueryKeyValue(params), [params]);
+  return useQuery({
+    queryKey: queryKeys.lead.tasks(leadId ?? 0, queryKeyValue),
+    queryFn: () => leadApi.getLeadTasks(leadId as number, params),
     enabled: typeof leadId === "number" && Number.isFinite(leadId),
   });
 }

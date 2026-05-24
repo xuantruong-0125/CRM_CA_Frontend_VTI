@@ -2,11 +2,14 @@ import { http } from "@/shared/api/http";
 import type {
   ActivityResponseDTO,
   AttachmentResponseDTO,
+  CreateActivityDTO,
+  CreateContactDTO,
   ContactResponseDTO,
   ContractResponseDTO,
   CreateCustomerDTO,
   CustomerAddressResponseDTO,
   CustomerListQuery,
+  CustomerSaleUserResponseDTO,
   CustomerResponseDTO,
   FeedbackResponseDTO,
   InvoiceResponseDTO,
@@ -15,6 +18,17 @@ import type {
   QuoteResponseDTO,
   UpdateCustomerDTO,
 } from "@/modules/customer/types/customer.types";
+
+type LeadAssigneeResponseDTO = {
+  id: number;
+  code?: string;
+  name?: string;
+};
+
+type LeadAssigneesResponse =
+  | { content?: LeadAssigneeResponseDTO[] }
+  | LeadAssigneeResponseDTO[]
+  | LeadAssigneeResponseDTO;
 
 export const customerApi = {
   getCustomers: async (query: CustomerListQuery): Promise<PageResponse<CustomerResponseDTO>> => {
@@ -31,99 +45,40 @@ export const customerApi = {
       DIAMOND: 3,
     };
 
+    const normalizedQ = query.q?.trim();
+
     const params: Record<string, unknown> = {
       page: query.page,
       size: query.size,
       sortBy: query.sortBy,
       sortDirection: query.sortDirection,
-      q: query.q,
     };
 
-    const normalizedQ = query.q?.trim();
-    const isEmailSearch = normalizedQ?.includes("@");
-    const isCodeSearch = normalizedQ && /^[A-Za-z0-9-]+$/.test(normalizedQ);
-
     if (query.customerType) {
-      const endpoint = `/api/customers/type/${String(query.customerType).toLowerCase()}`;
-      const response = await http.get<PageResponse<CustomerResponseDTO>>(endpoint, { params });
-      return response.data;
+      params.type = query.customerType;
     }
-
-    if (normalizedQ && isEmailSearch) {
-      const response = await http.get<CustomerResponseDTO>("/api/customers/search/email", {
-        params: { email: normalizedQ },
-      });
-
-      return {
-        content: [response.data],
-        pageable: {
-          pageNumber: query.page ?? 0,
-          pageSize: query.size ?? 20,
-          offset: (query.page ?? 0) * (query.size ?? 20),
-          paged: true,
-          unpaged: false,
-        },
-        last: true,
-        totalPages: 1,
-        totalElements: 1,
-        size: query.size ?? 20,
-        number: query.page ?? 0,
-        sort: {
-          empty: true,
-          sorted: false,
-          unsorted: true,
-        },
-        first: true,
-        numberOfElements: 1,
-        empty: false,
-      };
-    }
-
-    if (normalizedQ && isCodeSearch) {
-      const response = await http.get<CustomerResponseDTO>("/api/customers/search/code", {
-        params: { code: normalizedQ },
-      });
-
-      return {
-        content: [response.data],
-        pageable: {
-          pageNumber: query.page ?? 0,
-          pageSize: query.size ?? 20,
-          offset: (query.page ?? 0) * (query.size ?? 20),
-          paged: true,
-          unpaged: false,
-        },
-        last: true,
-        totalPages: 1,
-        totalElements: 1,
-        size: query.size ?? 20,
-        number: query.page ?? 0,
-        sort: {
-          empty: true,
-          sorted: false,
-          unsorted: true,
-        },
-        first: true,
-        numberOfElements: 1,
-        empty: false,
-      };
-    }
-
-    let endpoint = "/api/customers";
 
     if (query.status) {
       const statusId = STATUS_ID_MAP[query.status as string];
       if (typeof statusId === "number") {
-        endpoint = `/api/customers/status/${statusId}`;
-      }
-    } else if (query.tier) {
-      const tierId = TIER_ID_MAP[query.tier as string];
-      if (typeof tierId === "number") {
-        endpoint = `/api/customers/tier/${tierId}`;
+        params.statusId = statusId;
       }
     }
 
-    const response = await http.get<PageResponse<CustomerResponseDTO>>(endpoint, {
+    if (query.tier) {
+      const tierId = TIER_ID_MAP[query.tier as string];
+      if (typeof tierId === "number") {
+        params.tierId = tierId;
+      }
+    }
+
+    if (normalizedQ) {
+      // New BE supports a single `keyword` parameter that searches across
+      // name, code, tax, email, phone. Use it for the search bar.
+      params.keyword = normalizedQ;
+    }
+
+    const response = await http.get<PageResponse<CustomerResponseDTO>>("/api/customers/search", {
       params,
     });
 
@@ -154,6 +109,31 @@ export const customerApi = {
     return response.data;
   },
 
+  getSalesUsers: async (): Promise<CustomerSaleUserResponseDTO[]> => {
+    const response = await http.get<LeadAssigneesResponse>("/api/leads/metadata/assignees");
+
+    const normalizeAssignee = (assignee: LeadAssigneeResponseDTO): CustomerSaleUserResponseDTO => ({
+      id: assignee.id,
+      username: assignee.code ?? `user-${assignee.id}`,
+      email: "",
+      fullName: assignee.name ?? assignee.code ?? `User #${assignee.id}`,
+      roleId: 0,
+      organizationId: 0,
+      status: "ACTIVE",
+      lastLogin: null,
+    });
+
+    if (Array.isArray(response.data)) {
+      return response.data.map(normalizeAssignee);
+    }
+
+    if (response.data && typeof response.data === "object" && "content" in response.data) {
+      return (response.data.content ?? []).map(normalizeAssignee);
+    }
+
+    return response.data ? [normalizeAssignee(response.data as LeadAssigneeResponseDTO)] : [];
+  },
+
   updateCustomerStatus: async (id: number, statusId: number): Promise<void> => {
     await http.patch(`/api/customers/${id}/status`, null, { params: { statusId } });
   },
@@ -172,6 +152,35 @@ export const customerApi = {
     );
 
     return response.data;
+  },
+
+  createCustomerAddress: async (payload: {
+    customerId: number;
+    addressType: string;
+    fullAddress: string;
+    provinceId?: number;
+    isPrimary?: boolean;
+  }): Promise<CustomerAddressResponseDTO> => {
+    const response = await http.post<CustomerAddressResponseDTO>(`/api/customer-addresses`, payload);
+    return response.data;
+  },
+
+  updateCustomerAddress: async (
+    id: number,
+    payload: {
+      customerId: number;
+      addressType: string;
+      fullAddress: string;
+      provinceId?: number;
+      isPrimary?: boolean;
+    }
+  ): Promise<CustomerAddressResponseDTO> => {
+    const response = await http.put<CustomerAddressResponseDTO>(`/api/customer-addresses/${id}`, payload);
+    return response.data;
+  },
+
+  deleteCustomerAddress: async (id: number): Promise<void> => {
+    await http.delete(`/api/customer-addresses/${id}`);
   },
 
   getContactsByCustomerId: async (customerId: number): Promise<ContactResponseDTO[]> => {
@@ -235,6 +244,37 @@ export const customerApi = {
     const response = await http.get<PageResponse<AttachmentResponseDTO>>(
       `/api/attachments/related-paginated/customer/${customerId}`
     );
+
+    return response.data;
+  },
+
+  // Create contact for a customer
+  createContact: async (payload: CreateContactDTO): Promise<ContactResponseDTO> => {
+    const response = await http.post<ContactResponseDTO>(`/api/contacts`, payload);
+    return response.data;
+  },
+
+  updateContact: async (id: number, payload: CreateContactDTO): Promise<ContactResponseDTO> => {
+    const response = await http.put<ContactResponseDTO>(`/api/v1/contacts/${id}`, payload);
+    return response.data;
+  },
+
+  // Create activity (log) related to a customer
+  createActivity: async (payload: CreateActivityDTO): Promise<ActivityResponseDTO> => {
+    const response = await http.post<ActivityResponseDTO>(`/api/activities`, payload);
+    return response.data;
+  },
+
+  updateActivity: async (id: number, payload: CreateActivityDTO): Promise<ActivityResponseDTO> => {
+    const response = await http.put<ActivityResponseDTO>(`/api/v1/activities/${id}`, payload);
+    return response.data;
+  },
+
+  // Upload attachment (multipart/form-data)
+  uploadAttachment: async (formData: FormData): Promise<AttachmentResponseDTO> => {
+    const response = await http.post<AttachmentResponseDTO>(`/api/attachments`, formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
 
     return response.data;
   },

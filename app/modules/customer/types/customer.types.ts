@@ -10,6 +10,18 @@ export type CustomerTier = "SILVER" | "GOLD" | "DIAMOND";
 
 export type CustomerClassification = CustomerTier;
 
+export interface CustomerSaleUserResponseDTO {
+  id: number;
+  username: string;
+  email: string;
+  fullName: string;
+  roleId: number;
+  organizationId: number;
+  status: string;
+  lastLogin?: ISODateTimeString | null;
+  createdAt?: ISODateTimeString;
+}
+
 export interface PageResponse<T> {
   content: T[];
   pageable: {
@@ -86,6 +98,7 @@ export interface CustomerResponseDTO {
   email?: string;
   fax?: string;
   description?: string;
+  establishedDate?: ISODateTimeString;
   sourceId?: number;
   statusName?: string;
   tierName?: string;
@@ -114,6 +127,7 @@ export interface CustomerAddressResponseDTO {
 }
 
 export interface CreateContactDTO {
+  customerId: number;
   fullName: string;
   phone?: string;
   email?: string;

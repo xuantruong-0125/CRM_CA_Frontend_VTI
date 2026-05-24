@@ -2,6 +2,16 @@
 
 import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { toast } from "react-toastify";
+import {
+  ChevronsLeft,
+  ChevronLeft,
+  ChevronRight,
+  ChevronsRight,
+  Eye,
+  EyeOff,
+  Search,
+  SlidersHorizontal,
+} from "lucide-react";
 import { leadApi } from "@/modules/lead/api/lead.api";
 import LeadFilters, { type LeadFilterValues } from "@/modules/lead/components/LeadFilters";
 import LeadForm from "@/modules/lead/components/LeadForm";
@@ -19,17 +29,23 @@ import {
   useUpdateLead,
 } from "@/modules/lead/hooks/useLeadMutations";
 import { useLeadReferences } from "@/modules/lead/hooks/useLeadReferences";
-import { useLeadDashboardStats, useSearchLeads } from "@/modules/lead/hooks/useLeads";
+import { useSearchLeads } from "@/modules/lead/hooks/useLeads";
 import type {
   LeadResponse,
-  OrganizationMetadataItem,
+  MetadataItem,
   LeadReferenceOptionResponse,
 } from "@/modules/lead/types/lead.types";
 import { getApiErrorMessage } from "@/shared/utils/api-error";
 import { LEAD_SHORTCUTS, matchesShortcut } from "@/modules/lead/utils/keyboard-shortcuts";
-import { KeyboardShortcutBadge } from "@/modules/lead/components/KeyboardShortcutBadge";
+import ConfirmDeleteModal from "@/shared/components/ConfirmDeleteModal/ConfirmDeleteModal";
 
 type FormMode = "hidden" | "create" | "edit";
+
+type PendingSubmission = {
+  mode: "create" | "edit";
+  values: LeadFormValues;
+  label: string;
+};
 
 type OrganizationOption = {
   id: number;
@@ -87,6 +103,9 @@ export default function LeadListPage() {
   const [formMode, setFormMode] = useState<FormMode>("hidden");
   const [editingLead, setEditingLead] = useState<LeadResponse | null>(null);
   const [editingLeadId, setEditingLeadId] = useState<number | null>(null);
+  const [deleteLeadTarget, setDeleteLeadTarget] = useState<LeadResponse | null>(null);
+  const [pendingSubmission, setPendingSubmission] = useState<PendingSubmission | null>(null);
+  const [convertLeadTarget, setConvertLeadTarget] = useState<LeadResponse | null>(null);
   const searchDebounceRef = useRef<number | null>(null);
 
   useEffect(() => {
@@ -96,9 +115,6 @@ export default function LeadListPage() {
 
     searchDebounceRef.current = window.setTimeout(() => {
       const normalizedSearchTerm = searchTerm.trim();
-
-      // Heuristic: if it looks like a phone number (at least 8 chars), search by phone.
-      // Otherwise, search by email.
       const isPhoneSearch = /^[0-9+\-\s()]{8,}$/.test(normalizedSearchTerm);
 
       setPage(0);
@@ -130,13 +146,9 @@ export default function LeadListPage() {
 
   const referencesQuery = useLeadReferences();
   const organizationsQuery = useOrganizationMetadata();
-  const assigneesQuery = useAssigneeMetadata({ page: 0, size: 50, sortBy: "fullName", status: "ACTIVE" });
-  
-  // TĂNG SIZE LÊN 3000 ĐỂ LẤY TOÀN BỘ SẢN PHẨM TRUYỀN VÀO MODAL
+  const assigneesQuery = useAssigneeMetadata({ page: 0, size: 50, sortBy: "name", status: "ACTIVE" });
   const productsQuery = useProductMetadata({ page: 0, size: 3000, sortBy: "name", isActive: true });
-  
   const leadsQuery = useSearchLeads(searchParams);
-  const leadDashboardStatsQuery = useLeadDashboardStats();
 
   const createLeadMutation = useCreateLead();
   const updateLeadMutation = useUpdateLead();
@@ -145,7 +157,6 @@ export default function LeadListPage() {
 
   const references = referencesQuery.data;
   const leadsPage = leadsQuery.data;
-  const leadDashboardStats = leadDashboardStatsQuery.data;
   const totalPages = Math.max(leadsPage?.totalPages ?? 1, 1);
 
   const leadStatuses = useMemo<LeadReferenceOptionResponse[]>(() => {
@@ -186,27 +197,11 @@ export default function LeadListPage() {
   }, [leadStatuses]);
 
   const organizationOptions = useMemo<OrganizationOption[]>(() => {
-    const flattenTree = (nodes: OrganizationMetadataItem[], level = 0): OrganizationOption[] => {
-      return nodes.flatMap((node) => {
-        const prefix = level > 0 ? `${"- ".repeat(level)}` : "";
-        const current: OrganizationOption = {
-          id: node.id,
-          name: `${prefix}${node.name}`,
-        };
-
-        const children = node.children?.length
-          ? flattenTree(node.children, level + 1)
-          : [];
-
-        return [current, ...children];
-      });
-    };
-
-    const orgs = Array.isArray(organizationsQuery.data)
-      ? organizationsQuery.data
-      : ((organizationsQuery.data as Record<string, unknown>)?.content as OrganizationMetadataItem[] | undefined) || [];
-    
-    return flattenTree(orgs);
+    const orgs = organizationsQuery.data?.content || [];
+    return orgs.map((organization: MetadataItem) => ({
+      id: organization.id,
+      name: organization.name,
+    }));
   }, [organizationsQuery.data]);
 
   const visibleLeadFilters = useMemo(
@@ -263,35 +258,46 @@ export default function LeadListPage() {
   }, [editingLead]);
 
   const submitLeadForm = async (values: LeadFormValues) => {
-    try {
-      if (formMode === "create") {
-        const confirmed = window.confirm("Bạn có chắc muốn thêm lead mới?");
-        if (!confirmed) {
-          return;
-        }
+    if (formMode === "create") {
+      setPendingSubmission({
+        mode: "create",
+        values,
+        label: "lead mới",
+      });
+      return;
+    }
 
+    if (formMode === "edit" && editingLead?.id) {
+      setPendingSubmission({
+        mode: "edit",
+        values,
+        label: editingLead.contactName || `#${editingLead.id}`,
+      });
+      return;
+    }
+  };
+
+  const confirmLeadSubmission = async () => {
+    if (!pendingSubmission) {
+      return;
+    }
+
+    try {
+      if (pendingSubmission.mode === "create") {
         await createLeadMutation.mutateAsync({
-          ...values,
-          companyName: values.companyName ?? "",
+          ...pendingSubmission.values,
+          companyName: pendingSubmission.values.companyName ?? "",
         });
         toast.success("Tạo lead thành công");
-      }
-
-      if (formMode === "edit" && editingLead?.id) {
-        const confirmed = window.confirm(
-          `Bạn có chắc muốn cập nhật lead ${editingLead.contactName || `#${editingLead.id}`}?`
-        );
-        if (!confirmed) {
-          return;
-        }
-
+      } else if (editingLead?.id) {
         await updateLeadMutation.mutateAsync({
           id: editingLead.id,
-          payload: values,
+          payload: pendingSubmission.values,
         });
         toast.success("Cập nhật lead thành công");
       }
 
+      setPendingSubmission(null);
       setFormMode("hidden");
       setEditingLead(null);
     } catch (error) {
@@ -304,16 +310,18 @@ export default function LeadListPage() {
       return;
     }
 
-    const confirmed = window.confirm(
-      `Bạn có chắc muốn xóa lead ${lead.contactName || "này"}?`
-    );
-    if (!confirmed) {
+    setDeleteLeadTarget(lead);
+  };
+
+  const confirmDeleteLead = async () => {
+    if (!deleteLeadTarget?.id) {
       return;
     }
 
     try {
-      await deleteLeadMutation.mutateAsync(lead.id);
+      await deleteLeadMutation.mutateAsync(deleteLeadTarget.id);
       toast.success("Xóa lead thành công");
+      setDeleteLeadTarget(null);
     } catch (error) {
       toast.error(getApiErrorMessage(error));
     }
@@ -324,25 +332,28 @@ export default function LeadListPage() {
       return;
     }
 
-    const confirmed = window.confirm(
-      `Bạn có chắc muốn chuyển đổi lead ${lead.contactName || `#${lead.id}`}?`
-    );
-    if (!confirmed) {
+    setConvertLeadTarget(lead);
+  };
+
+  const confirmConvertLead = async () => {
+    if (!convertLeadTarget?.id) {
       return;
     }
 
-    const userId = getUserIdFromStorage() ?? lead.assignedTo;
+    const userId = getUserIdFromStorage() ?? convertLeadTarget.assignedTo;
     if (!userId || userId <= 0) {
       toast.error("Không tìm thấy userId hợp lệ để chuyển đổi lead");
+      setConvertLeadTarget(null);
       return;
     }
 
     try {
       await convertLeadMutation.mutateAsync({
-        id: lead.id,
+        id: convertLeadTarget.id,
         payload: { userId },
       });
       toast.success("Chuyển đổi lead thành công");
+      setConvertLeadTarget(null);
     } catch (error) {
       toast.error(getApiErrorMessage(error));
     }
@@ -372,11 +383,14 @@ export default function LeadListPage() {
     deleteLeadMutation.isPending ||
     convertLeadMutation.isPending;
 
-  const navigateToPage = useCallback((nextPage: number) => {
-    const clampedPage = Math.min(Math.max(nextPage, 0), totalPages - 1);
-    setPage(clampedPage);
-    setPageInput(String(clampedPage + 1));
-  }, [totalPages]);
+  const navigateToPage = useCallback(
+    (nextPage: number) => {
+      const clampedPage = Math.min(Math.max(nextPage, 0), totalPages - 1);
+      setPage(clampedPage);
+      setPageInput(String(clampedPage + 1));
+    },
+    [totalPages]
+  );
 
   const applyPageSize = (nextSize: number) => {
     setSize(nextSize);
@@ -388,7 +402,6 @@ export default function LeadListPage() {
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (matchesShortcut(e, LEAD_SHORTCUTS.CREATE_LEAD)) {
-        console.log("✅ Alt+N triggered!", e);
         e.preventDefault();
         setEditingLead(null);
         setFormMode("create");
@@ -420,7 +433,7 @@ export default function LeadListPage() {
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [page, totalPages, navigateToPage, setPage, setPageInput]);
+  }, [page, totalPages, navigateToPage]);
 
   const submitPageInput = () => {
     const nextPage = Number.parseInt(pageInput, 10);
@@ -436,149 +449,80 @@ export default function LeadListPage() {
 
   if (formMode !== "hidden") {
     return (
-      <main className="min-h-screen bg-slate-50 px-2 py-3 md:px-4">
-        <div className="mx-auto max-w-[1600px]">
-          <div className="space-y-3">
-            <header className="space-y-0.5">
-              <h1 className="text-[16px] font-semibold text-slate-900">
+      <main className="min-h-screen bg-slate-100 px-4 py-6 md:px-8">
+        <div className="mx-auto max-w-[1600px] space-y-6">
+          <section className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
+            <div className="bg-[rgb(21,0,211)] px-6 py-4 text-white">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-white/70">Lead module</p>
+              <h1 className="mt-1 text-[18px] font-bold leading-tight text-white">
                 {formMode === "create" ? "Thêm khách hàng tiềm năng" : "Chỉnh sửa khách hàng tiềm năng"}
               </h1>
-              <p className="text-[12px] text-slate-600">
-                Điền đầy đủ thông tin để lưu dữ liệu khách hàng tiềm năng.
-              </p>
-            </header>
+            </div>
 
-            <section className="rounded-lg border border-slate-200 bg-white p-3 shadow-sm">
-              <LeadForm
-                mode={formMode === "create" ? "create" : "edit"}
-                initialValues={formInitialValues}
-                statuses={leadStatuses}
-                sources={references?.sources || []}
-                campaigns={references?.campaigns || []}
-                assignees={assigneesQuery.data?.content || []}
-                provinces={references?.provinces || []}
-                products={productsQuery.data?.content || []}
-                onSubmit={submitLeadForm}
-                onCancel={() => {
-                  setFormMode("hidden");
-                  setEditingLead(null);
-                }}
-                isSubmitting={isBusy}
-              />
-            </section>
-          </div>
+            <div className="px-6 py-6">
+              <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+                <LeadForm
+                  mode={formMode === "create" ? "create" : "edit"}
+                  initialValues={formInitialValues}
+                  statuses={leadStatuses}
+                  sources={references?.sources || []}
+                  campaigns={references?.campaigns || []}
+                  assignees={assigneesQuery.data?.content || []}
+                  provinces={references?.provinces || []}
+                  products={productsQuery.data?.content || []}
+                  onSubmit={submitLeadForm}
+                  onCancel={() => {
+                    setFormMode("hidden");
+                    setEditingLead(null);
+                  }}
+                  isSubmitting={isBusy}
+                />
+              </div>
+            </div>
+          </section>
         </div>
+
+        <ConfirmDeleteModal
+          open={!!deleteLeadTarget}
+          title="Xóa lead"
+          message={deleteLeadTarget ? `Bạn có chắc muốn xóa lead ${deleteLeadTarget.contactName || "này"}?` : "Bạn có chắc muốn xóa lead này?"}
+          onClose={() => setDeleteLeadTarget(null)}
+          onConfirm={confirmDeleteLead}
+          loading={deleteLeadMutation.isPending}
+        />
       </main>
     );
   }
 
   return (
-    <main className="min-h-screen bg-slate-50 px-2 py-3 md:px-4">
-      <div className="mx-auto max-w-[1600px]">
-
-        <div className="space-y-3">
-          <header className="space-y-0.5">
-            <h1 className="text-[16px] font-semibold text-slate-900">
-              Quản lý Khách hàng Tiềm năng
-            </h1>
-            <p className="text-[12px] text-slate-600">
-              Theo dõi và quản lý toàn bộ khách hàng tiềm năng của bạn
-            </p>
-          </header>
-
-        <section className="grid grid-cols-2 gap-2 lg:grid-cols-3 xl:grid-cols-6">
-          <div className="rounded-lg border border-slate-200 bg-white p-2 shadow-sm">
-            <div className="flex items-start justify-between">
+    <main className="min-h-screen bg-slate-100 px-4 py-6 md:px-8">
+      <div className="mx-auto max-w-[1600px] space-y-6">
+        <section className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
+          <div className="bg-[rgb(21,0,211)] px-6 py-4 text-white">
+            <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
               <div>
-                <p className="text-[11px] text-slate-600">Tổng số KHTN</p>
-                <p className="mt-0.5 text-[15px] font-bold text-slate-950">
-                  {leadDashboardStatsQuery.isLoading
-                    ? "..."
-                    : (leadDashboardStats?.totalLeads ?? 0).toLocaleString("vi-VN")}
-                </p>
+                <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-white/70">Lead module</p>
+                <h1 className="mt-1 text-[18px] font-bold leading-tight text-white">Quản lý khách hàng tiềm năng</h1>
               </div>
-              <div className="flex h-6 w-6 items-center justify-center rounded-full bg-blue-50 text-blue-500">
-                <span className="text-[12px]">👥</span>
-              </div>
-            </div>
-          </div>
-          <div className="rounded-lg border border-slate-200 bg-white p-2 shadow-sm">
-            <div className="flex items-start justify-between">
-              <div>
-                <p className="text-[11px] text-slate-600">Mới</p>
-                <p className="mt-0.5 text-[15px] font-bold text-blue-600">
-                  {leadDashboardStatsQuery.isLoading ? "..." : leadDashboardStats?.newLeads ?? 0}
-                </p>
-              </div>
-              <div className="flex h-6 w-6 items-center justify-center rounded-full bg-blue-50 text-blue-500">
-                <span className="text-[11px] font-bold">N</span>
-              </div>
-            </div>
-          </div>
-          <div className="rounded-lg border border-slate-200 bg-white p-2 shadow-sm">
-             <div className="flex items-start justify-between">
-               <div>
-                 <p className="text-[11px] text-slate-600">Đang liên hệ</p>
-                 <p className="mt-0.5 text-[15px] font-bold text-amber-600">
-                   {leadDashboardStatsQuery.isLoading ? "..." : leadDashboardStats?.contactingLeads ?? 0}
-                 </p>
-               </div>
-              <div className="flex h-6 w-6 items-center justify-center rounded-full bg-amber-50 text-amber-500">
-                <span className="text-[12px]">📞</span>
-              </div>
-            </div>
-          </div>
-          <div className="rounded-lg border border-slate-200 bg-white p-2 shadow-sm">
-             <div className="flex items-start justify-between">
-               <div>
-                 <p className="text-[11px] text-slate-600">Phát sinh giao dịch</p>
-                 <p className="mt-0.5 text-[15px] font-bold text-sky-600">
-                   {leadDashboardStatsQuery.isLoading ? "..." : leadDashboardStats?.contactingLeads ?? 0}
-                 </p>
-               </div>
-              <div className="flex h-6 w-6 items-center justify-center rounded-full bg-sky-50 text-sky-500">
-                <span className="text-[12px]">🤝</span>
-              </div>
-            </div>
-          </div>
-          <div className="rounded-lg border border-slate-200 bg-white p-2 shadow-sm">
-             <div className="flex items-start justify-between">
-               <div>
-                  <p className="text-[11px] text-slate-600">Đã chuyển đổi</p>
-                  <p className="mt-0.5 text-[15px] font-bold text-emerald-600">
-                    {leadDashboardStatsQuery.isLoading ? "..." : leadDashboardStats?.convertedLeads ?? 0}
-                  </p>
-               </div>
-              <div className="flex h-6 w-6 items-center justify-center rounded-full bg-emerald-50 text-emerald-500">
-                <span className="text-[12px]">↗</span>
-              </div>
-            </div>
-          </div>
-          <div className="rounded-lg border border-slate-200 bg-white p-2 shadow-sm">
-             <div className="flex items-start justify-between">
-               <div>
-                 <p className="text-[11px] text-slate-600">Doanh số dự kiến</p>
-                 <p className="mt-0.5 text-[13px] font-bold text-violet-600">
-                   {leadDashboardStatsQuery.isLoading
-                     ? "..."
-                     : `${(leadDashboardStats?.expectedRevenueTotal ?? 0).toLocaleString("vi-VN")} đ`}
-                 </p>
-               </div>
-              <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-violet-50 text-violet-500">
-                <span className="text-[12px]">↗</span>
-              </div>
-            </div>
-          </div>
-        </section>
 
-        {/* --- KHU VỰC TOOLBAR & BẢNG DANH SÁCH --- */}
-        <section className="rounded-lg border border-slate-200 bg-white shadow-sm flex flex-col">
-          
-          {/* Toolbar: Tabs Trạng thái + Search + Action Buttons */}
-          <div className="flex flex-col gap-3 border-b border-slate-200 p-2 xl:flex-row xl:items-center xl:justify-between bg-slate-50/50 rounded-t-lg">
-            
-            {/* Tabs Trạng thái (Bên Trái) */}
-            <div className="flex flex-1 min-w-0 items-center gap-0.5 pb-1 overflow-hidden xl:pb-0">
+              <div className="flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setEditingLead(null);
+                    setFormMode("create");
+                  }}
+                  className="inline-flex items-center justify-center gap-2 rounded-[5px] bg-emerald-500 px-3 py-2 text-[12px] font-semibold text-white transition hover:bg-emerald-400"
+                  title={LEAD_SHORTCUTS.CREATE_LEAD.label}
+                >
+                  Thêm lead mới
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div className="border-b border-slate-200 bg-slate-50 px-6 py-3">
+            <div className="flex gap-2 overflow-x-auto pb-1">
               <button
                 type="button"
                 onClick={() => {
@@ -586,10 +530,8 @@ export default function LeadListPage() {
                   setPageInput("1");
                   setFilters((prev) => ({ ...prev, statusId: undefined }));
                 }}
-                className={`shrink-0 whitespace-nowrap rounded-md px-2 py-1 text-[11px] font-medium leading-none transition-colors ${
-                  !filters.statusId
-                    ? "bg-purple-100 text-purple-700"
-                    : "text-slate-600 hover:bg-slate-200"
+                className={`whitespace-nowrap rounded-[5px] px-3 py-2 text-[12px] font-medium transition ${
+                  !filters.statusId ? "bg-[rgb(21,0,211)] text-white" : "bg-white text-slate-700 hover:bg-slate-100"
                 }`}
               >
                 Tất cả
@@ -603,88 +545,100 @@ export default function LeadListPage() {
                     setPageInput("1");
                     setFilters((prev) => ({ ...prev, statusId: status.id }));
                   }}
-                  className={`shrink-0 whitespace-nowrap rounded-md px-2 py-1 text-[11px] font-medium leading-none transition-colors ${
+                  className={`whitespace-nowrap rounded-[5px] px-3 py-2 text-[12px] font-medium transition ${
                     filters.statusId === status.id
-                      ? "bg-purple-100 text-purple-700"
-                      : "text-slate-600 hover:bg-slate-200"
+                      ? "bg-[rgb(21,0,211)] text-white"
+                      : "bg-white text-slate-700 hover:bg-slate-100"
                   }`}
                 >
                   {status.name}
                 </button>
               ))}
             </div>
+          </div>
 
-            {/* Các công cụ Lọc, Tìm kiếm, Thêm mới (Bên Phải) */}
-            <div className="flex flex-wrap items-center gap-2">
-              <div className="relative min-w-[200px]">
-                <svg
-                  viewBox="0 0 24 24"
-                  aria-hidden="true"
-                  className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400"
-                >
-                  <path
-                    d="M21 21l-4.35-4.35m1.85-5.4a7.2 7.2 0 11-14.4 0 7.2 7.2 0 0114.4 0z"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="1.8"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
+          <div className="border-b border-slate-200 px-6 py-4">
+            <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
+              <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2">
+                <label className="relative w-full max-w-[340px]">
+                  <Search className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
+                  <input
+                    type="text"
+                    value={searchTerm}
+                    onChange={(event) => setSearchTerm(event.target.value)}
+                    placeholder="Tìm theo điện thoại hoặc email..."
+                    className="w-full rounded-[5px] border border-slate-300 bg-white py-2 pl-10 pr-4 text-[12px] text-slate-900 outline-none transition focus:border-[rgb(21,0,211)] focus:ring-2 focus:ring-[rgb(21,0,211)]/20"
                   />
-                </svg>
-                <input
-                  value={searchTerm}
-                  onChange={(event) => setSearchTerm(event.target.value)}
-                  placeholder="Tìm theo SĐT, email..."
-                  className="h-8 w-full rounded border border-slate-300 bg-white pl-8 pr-2 text-[12px] text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-slate-400"
-                />
+                </label>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowFilters((current) => !current);
+                    setShowMaskFilterMenu(false);
+                    setShowPageSizeMenu(false);
+                  }}
+                  className="inline-flex items-center gap-2 rounded-[5px] border border-slate-300 bg-white px-3 py-2 text-[12px] font-semibold text-slate-700 transition hover:bg-slate-50"
+                >
+                  <SlidersHorizontal size={16} />
+                  Bộ lọc nâng cao
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowMaskFilterMenu((current) => !current);
+                    setShowPageSizeMenu(false);
+                  }}
+                  className="inline-flex items-center gap-2 rounded-[5px] border border-slate-300 bg-white px-3 py-2 text-[12px] font-semibold text-slate-700 transition hover:bg-slate-50"
+                >
+                  {maskPhoneEnabled || maskEmailEnabled ? <EyeOff size={16} /> : <Eye size={16} />}
+                  Bảo mật
+                </button>
+
+                <div className="relative">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowPageSizeMenu((current) => !current);
+                      setShowMaskFilterMenu(false);
+                    }}
+                    className="inline-flex items-center gap-2 rounded-[5px] border border-slate-300 bg-white px-3 py-2 text-[12px] font-semibold text-slate-700 transition hover:bg-slate-50"
+                    title={LEAD_SHORTCUTS.TOGGLE_PAGE_SIZE.label}
+                  >
+                    Lead/trang: {size}
+                  </button>
+
+                  {showPageSizeMenu && (
+                    <div className="absolute left-0 z-20 mt-2 min-w-[140px] rounded-[5px] border border-slate-200 bg-white p-1 shadow-xl">
+                      {[20, 50, 100].map((option) => (
+                        <button
+                          key={option}
+                          type="button"
+                          onClick={() => applyPageSize(option)}
+                          className={`flex w-full items-center justify-between rounded-[5px] px-2 py-1.5 text-[12px] transition ${
+                            size === option ? "bg-blue-50 text-blue-700" : "text-slate-700 hover:bg-slate-50"
+                          }`}
+                        >
+                          <span>{option}</span>
+                          {size === option && <span>✓</span>}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
-
-              <button
-                type="button"
-                onClick={() => setShowFilters((current) => !current)}
-                className={`inline-flex h-8 items-center gap-1.5 rounded border px-3 text-[12px] font-medium transition ${
-                  showFilters
-                    ? "border-blue-300 bg-blue-50 text-blue-700"
-                    : "border-slate-300 bg-white text-slate-700 hover:bg-slate-50"
-                }`}
-                title={LEAD_SHORTCUTS.TOGGLE_FILTER.label}
-              >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                  <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon>
-                </svg>
-                Nâng cao
-                <KeyboardShortcutBadge shortcut={LEAD_SHORTCUTS.TOGGLE_FILTER} className="ml-1" />
-              </button>
-
-              <button
-                type="button"
-                onClick={() => {
-                  setEditingLead(null);
-                  setFormMode("create");
-                }}
-                className="inline-flex h-8 items-center gap-1.5 rounded bg-blue-600 px-3 text-[12px] font-semibold text-white shadow-sm transition hover:bg-blue-700"
-                title={LEAD_SHORTCUTS.CREATE_LEAD.label}
-              >
-                Thêm mới
-                <KeyboardShortcutBadge shortcut={LEAD_SHORTCUTS.CREATE_LEAD} />
-              </button>
             </div>
           </div>
 
-          {/* Form Lọc Nâng Cao */}
           {showFilters && (
-            <div className="border-b border-slate-200 p-3 bg-slate-50/30">
-              {organizationsQuery.error && (
-                <p className="mb-2 rounded text-[11px] bg-red-50 px-2 py-1 text-red-700">
-                  {getApiErrorMessage(organizationsQuery.error)}
-                </p>
-              )}
+            <div className="border-b border-slate-200 bg-slate-50/70 px-6 py-4">
               <LeadFilters
-                defaultValues={visibleLeadFilters}
                 statuses={leadStatuses}
                 sources={references?.sources || []}
                 provinces={references?.provinces || []}
                 organizations={organizationOptions}
+                defaultValues={visibleLeadFilters}
                 onChange={(nextFilters) => {
                   setPage(0);
                   setPageInput("1");
@@ -694,101 +648,44 @@ export default function LeadListPage() {
                   setPage(0);
                   setPageInput("1");
                   setSearchTerm("");
-                  setFilters({
-                    phone: undefined,
-                    email: undefined,
-                  });
+                  setFilters({ phone: undefined, email: undefined });
                 }}
               />
             </div>
           )}
 
-          {/* Tiêu đề Bảng */}
-          <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 px-3 py-2">
-            <h2 className="text-[15px] font-semibold text-slate-900">Danh sách khách hàng tiềm năng</h2>
-
-            <div className="flex flex-wrap items-center gap-2">
-              <div className="relative">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setShowMaskFilterMenu((current) => !current);
-                    setShowPageSizeMenu(false);
-                  }}
-                  className="inline-flex h-8 items-center gap-1.5 rounded border border-slate-300 bg-white px-3 text-[12px] font-medium text-slate-700 transition hover:bg-slate-50"
-                  title={LEAD_SHORTCUTS.TOGGLE_SECURITY.label}
-                >
-                  Lọc bảo mật
-                </button>
-
-                {showMaskFilterMenu && (
-                  <div className="absolute right-0 z-20 mt-1 min-w-[180px] rounded border border-slate-200 bg-white p-2 shadow-lg">
-                    <label className="flex cursor-pointer items-center gap-2 rounded px-1 py-1 text-[12px] text-slate-700 hover:bg-slate-50">
-                      <input
-                        type="checkbox"
-                        checked={maskPhoneEnabled}
-                        onChange={(event) => setMaskPhoneEnabled(event.target.checked)}
-                        className="h-4 w-4 rounded border-slate-300"
-                      />
-                      Ẩn số điện thoại
-                    </label>
-                    <label className="flex cursor-pointer items-center gap-2 rounded px-1 py-1 text-[12px] text-slate-700 hover:bg-slate-50">
-                      <input
-                        type="checkbox"
-                        checked={maskEmailEnabled}
-                        onChange={(event) => setMaskEmailEnabled(event.target.checked)}
-                        className="h-4 w-4 rounded border-slate-300"
-                      />
-                      Ẩn Email
-                    </label>
-                  </div>
-                )}
-              </div>
-
-              <div className="relative">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setShowPageSizeMenu((current) => !current);
-                    setShowMaskFilterMenu(false);
-                  }}
-                  className="inline-flex h-8 items-center gap-1.5 rounded border border-slate-300 bg-white px-3 text-[12px] font-medium text-slate-700 transition hover:bg-slate-50"
-                  title={LEAD_SHORTCUTS.TOGGLE_PAGE_SIZE.label}
-                >
-                  Lead/trang: {size}
-                </button>
-
-                {showPageSizeMenu && (
-                  <div className="absolute right-0 z-20 mt-1 min-w-[130px] rounded border border-slate-200 bg-white p-1 shadow-lg">
-                    {[20, 50, 100].map((option) => (
-                      <button
-                        key={option}
-                        type="button"
-                        onClick={() => applyPageSize(option)}
-                        className={`flex w-full items-center justify-between rounded px-2 py-1.5 text-[12px] transition ${
-                          size === option
-                            ? "bg-blue-50 text-blue-700"
-                            : "text-slate-700 hover:bg-slate-50"
-                        }`}
-                      >
-                        <span>{option}</span>
-                        {size === option && <span>✓</span>}
-                      </button>
-                    ))}
-                  </div>
-                )}
+          {showMaskFilterMenu && (
+            <div className="border-b border-slate-200 bg-slate-50/70 px-6 py-4 text-[12px] text-slate-700">
+              <div className="flex flex-wrap items-center gap-4">
+                <label className="inline-flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={maskPhoneEnabled}
+                    onChange={(event) => setMaskPhoneEnabled(event.target.checked)}
+                    className="h-4 w-4 rounded border-slate-300"
+                  />
+                  Ẩn SĐT
+                </label>
+                <label className="inline-flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={maskEmailEnabled}
+                    onChange={(event) => setMaskEmailEnabled(event.target.checked)}
+                    className="h-4 w-4 rounded border-slate-300"
+                  />
+                  Ẩn Email
+                </label>
               </div>
             </div>
-          </div>
-
-          {leadsQuery.error && (
-            <p className="mx-2 mt-2 rounded bg-red-50 px-2 py-1 text-[11px] text-red-700">
-              {getApiErrorMessage(leadsQuery.error)}
-            </p>
           )}
 
-          {/* Component Bảng */}
-          <div className="p-0 text-[12px] flex-1">
+          {leadsQuery.error && (
+            <div className="border-b border-red-200 bg-red-50 px-6 py-3 text-[12px] text-red-700">
+              {getApiErrorMessage(leadsQuery.error)}
+            </div>
+          )}
+
+          <div className="overflow-hidden">
             <LeadTable
               leads={leadsPage?.content || []}
               loading={leadsQuery.isLoading}
@@ -820,80 +717,137 @@ export default function LeadListPage() {
             />
           </div>
 
-          {/* Footer Bảng: Số bản ghi và Phân trang */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-t border-slate-200 px-3 py-2 text-[12px]">
-            <div className="text-[11px] text-slate-500">{leadsPage?.totalElements ?? 0} bản ghi</div>
-            
-            <div className="flex flex-wrap items-center justify-center sm:justify-end gap-1.5">
-              <button
-                type="button"
-                disabled={page <= 0}
-                onClick={() => navigateToPage(0)}
-                className="inline-flex h-7 w-7 items-center justify-center rounded border border-slate-300 bg-white text-slate-700 transition hover:bg-slate-50 disabled:opacity-50"
-                title={LEAD_SHORTCUTS.FIRST_PAGE.label}
-              >
-                <span className="text-xs leading-none">⏮</span>
-              </button>
-              <button
-                type="button"
-                disabled={page <= 0}
-                onClick={() => navigateToPage(page - 1)}
-                className="inline-flex h-7 w-7 items-center justify-center rounded border border-slate-300 bg-white text-slate-700 transition hover:bg-slate-50 disabled:opacity-50"
-                title={LEAD_SHORTCUTS.PREV_PAGE.label}
-              >
-                <span className="text-xs leading-none">◀</span>
-              </button>
+          <div className="border-t border-slate-200 px-6 py-4">
+            <div className="grid items-center gap-4 lg:grid-cols-[1fr_auto_1fr]">
+              <div className="text-[12px] font-medium text-slate-600">
+                Total: {(leadsPage?.totalElements ?? 0).toLocaleString("vi-VN")} leads
+              </div>
 
-              <form
-                className="flex items-center gap-1.5 px-1"
-                onSubmit={(event) => {
-                  event.preventDefault();
-                  submitPageInput();
-                }}
-              >
-                <input
-                  value={pageInput}
-                  onChange={(event) => setPageInput(event.target.value)}
-                  onBlur={() => {
-                    if (pageInput.trim() === "") {
-                      setPageInput(String((leadsPage?.page ?? page) + 1));
-                    }
-                  }}
-                  inputMode="numeric"
-                  className="h-7 w-12 rounded border border-slate-300 bg-white px-1 text-center text-[12px] text-slate-900 outline-none transition focus:border-slate-400"
-                />
-                <span className="text-[11px] text-slate-600">/ {totalPages}</span>
+              <div className="flex items-center justify-center gap-2">
                 <button
-                  type="submit"
-                  className="rounded border border-slate-300 bg-white px-2 py-1 text-[11px] text-slate-700 transition hover:bg-slate-50"
+                  type="button"
+                  disabled={page <= 0}
+                  onClick={() => navigateToPage(0)}
+                  className="inline-flex h-9 w-9 items-center justify-center rounded-[5px] border border-slate-300 bg-white text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
+                  title={LEAD_SHORTCUTS.FIRST_PAGE.label}
                 >
-                  Đi
+                  <ChevronsLeft size={16} />
                 </button>
-              </form>
+                <button
+                  type="button"
+                  disabled={page <= 0}
+                  onClick={() => navigateToPage(page - 1)}
+                  className="inline-flex h-9 w-9 items-center justify-center rounded-[5px] border border-slate-300 bg-white text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
+                  title={LEAD_SHORTCUTS.PREV_PAGE.label}
+                >
+                  <ChevronLeft size={16} />
+                </button>
 
-              <button
-                type="button"
-                disabled={!leadsPage?.hasNext}
-                onClick={() => navigateToPage(page + 1)}
-                className="inline-flex h-7 w-7 items-center justify-center rounded border border-slate-300 bg-white text-slate-700 transition hover:bg-slate-50 disabled:opacity-50"
-                title={LEAD_SHORTCUTS.NEXT_PAGE.label}
-              >
-                <span className="text-xs leading-none">▶</span>
-              </button>
-              <button
-                type="button"
-                disabled={!leadsPage?.hasNext}
-                onClick={() => navigateToPage(totalPages - 1)}
-                className="inline-flex h-7 w-7 items-center justify-center rounded border border-slate-300 bg-white text-slate-700 transition hover:bg-slate-50 disabled:opacity-50"
-                title={LEAD_SHORTCUTS.LAST_PAGE.label}
-              >
-                <span className="text-xs leading-none">⏭</span>
-              </button>
+                <form
+                  className="flex items-center gap-2 rounded-[5px] border border-slate-200 bg-slate-50 px-3 py-2"
+                  onSubmit={(event) => {
+                    event.preventDefault();
+                    submitPageInput();
+                  }}
+                >
+                  <span className="text-[12px] font-semibold text-slate-700">Trang</span>
+                  <input
+                    value={pageInput}
+                    onChange={(event) => setPageInput(event.target.value)}
+                    onBlur={() => {
+                      if (pageInput.trim() === "") {
+                        setPageInput(String((leadsPage?.page ?? page) + 1));
+                      }
+                    }}
+                    inputMode="numeric"
+                    className="h-8 w-14 rounded-[5px] border border-slate-300 bg-white px-2 text-center text-[12px] text-slate-900 outline-none transition focus:border-[rgb(21,0,211)] focus:ring-2 focus:ring-[rgb(21,0,211)]/20"
+                  />
+                  <span className="text-[12px] text-slate-600">/ {totalPages}</span>
+                  <button
+                    type="submit"
+                    className="rounded-[5px] bg-[rgb(21,0,211)] px-3 py-2 text-[12px] font-semibold text-white transition hover:opacity-90"
+                  >
+                    Đi
+                  </button>
+                </form>
+
+                <button
+                  type="button"
+                  disabled={!leadsPage?.hasNext}
+                  onClick={() => navigateToPage(page + 1)}
+                  className="inline-flex h-9 w-9 items-center justify-center rounded-[5px] border border-slate-300 bg-white text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
+                  title={LEAD_SHORTCUTS.NEXT_PAGE.label}
+                >
+                  <ChevronRight size={16} />
+                </button>
+                <button
+                  type="button"
+                  disabled={!leadsPage?.hasNext}
+                  onClick={() => navigateToPage(totalPages - 1)}
+                  className="inline-flex h-9 w-9 items-center justify-center rounded-[5px] border border-slate-300 bg-white text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
+                  title={LEAD_SHORTCUTS.LAST_PAGE.label}
+                >
+                  <ChevronsRight size={16} />
+                </button>
+              </div>
+
+              <div className="hidden lg:block" />
             </div>
           </div>
         </section>
-        </div>
       </div>
+
+      {formMode !== "hidden" && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/50 p-4 backdrop-blur-sm">
+          <div className="max-h-[90vh] w-full max-w-5xl overflow-y-auto rounded-3xl bg-white shadow-2xl">
+            <LeadForm
+              key={formMode}
+              mode={formMode === "create" ? "create" : "edit"}
+              initialValues={formInitialValues}
+              statuses={leadStatuses}
+              sources={references?.sources || []}
+              campaigns={references?.campaigns || []}
+              assignees={assigneesQuery.data?.content || []}
+              provinces={references?.provinces || []}
+              products={productsQuery.data?.content || []}
+              onSubmit={submitLeadForm}
+              onCancel={() => {
+                setFormMode("hidden");
+                setEditingLead(null);
+              }}
+              isSubmitting={isBusy}
+            />
+          </div>
+        </div>
+      )}
+
+      <ConfirmDeleteModal
+        open={!!pendingSubmission}
+        title={pendingSubmission?.mode === "create" ? "Xác nhận tạo lead" : "Xác nhận cập nhật lead"}
+        message={
+          pendingSubmission
+            ? pendingSubmission.mode === "create"
+              ? `Bạn có chắc muốn thêm ${pendingSubmission.label}?`
+              : `Bạn có chắc muốn cập nhật lead ${pendingSubmission.label}?`
+            : "Bạn có chắc chắn muốn tiếp tục?"
+        }
+        confirmLabel={pendingSubmission?.mode === "create" ? "Tạo lead" : "Cập nhật"}
+        cancelLabel="Hủy"
+        onClose={() => setPendingSubmission(null)}
+        onConfirm={confirmLeadSubmission}
+        loading={createLeadMutation.isPending || updateLeadMutation.isPending}
+      />
+
+      <ConfirmDeleteModal
+        open={!!convertLeadTarget}
+        title="Xác nhận chuyển đổi lead"
+        message={convertLeadTarget ? `Bạn có chắc muốn chuyển đổi lead ${convertLeadTarget.contactName || `#${convertLeadTarget.id}`}?` : "Bạn có chắc muốn chuyển đổi lead này?"}
+        confirmLabel="Chuyển đổi"
+        cancelLabel="Hủy"
+        onClose={() => setConvertLeadTarget(null)}
+        onConfirm={confirmConvertLead}
+        loading={convertLeadMutation.isPending}
+      />
     </main>
   );
 }

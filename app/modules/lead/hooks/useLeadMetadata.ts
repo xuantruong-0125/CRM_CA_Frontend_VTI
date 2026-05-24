@@ -31,11 +31,11 @@ export function useProductMetadata(params: ProductMetadataQuery) {
   });
 }
 
-export function useProvinceMetadata(params: ProvinceMetadataQuery) {
+export function useProvinceMetadata(params: ProvinceMetadataQuery = {}) {
   const queryKeyValue = useMemo(() => toQueryKeyValue(params), [params]);
   return useQuery({
     queryKey: queryKeys.lead.provinces(queryKeyValue),
-    queryFn: () => leadApi.getProvinceMetadata(params),
+    queryFn: () => leadApi.getProvinceMetadata(),
   });
 }
 

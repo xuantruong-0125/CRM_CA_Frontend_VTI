@@ -2,7 +2,13 @@
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { customerApi } from "@/modules/customer/api/customer.api";
-import type { CreateCustomerDTO, UpdateCustomerDTO } from "@/modules/customer/types/customer.types";
+import type {
+  AttachmentResponseDTO,
+  CreateActivityDTO,
+  CreateContactDTO,
+  CreateCustomerDTO,
+  UpdateCustomerDTO,
+} from "@/modules/customer/types/customer.types";
 import { queryKeys } from "@/shared/constants/query-keys";
 
 export function useCreateCustomer() {
@@ -77,6 +83,71 @@ export function useAssignCustomerToUser() {
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: queryKeys.customer.all });
       queryClient.invalidateQueries({ queryKey: queryKeys.customer.detail(variables.id) });
+    },
+  });
+}
+
+export function useCreateContact() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (payload: CreateContactDTO) => customerApi.createContact(payload),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.customer.contacts(variables.customerId) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.customer.detail(variables.customerId) });
+    },
+  });
+}
+
+export function useUpdateContact() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id, payload }: { id: number; payload: CreateContactDTO }) =>
+      customerApi.updateContact(id, payload),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.customer.contacts(variables.payload.customerId) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.customer.detail(variables.payload.customerId) });
+    },
+  });
+}
+
+export function useCreateActivity() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (payload: CreateActivityDTO) => customerApi.createActivity(payload),
+    onSuccess: (_, variables) => {
+      const relatedCustomerId = variables.relatedToId ?? 0;
+      queryClient.invalidateQueries({ queryKey: queryKeys.customer.activities(relatedCustomerId) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.customer.detail(relatedCustomerId) });
+    },
+  });
+}
+
+export function useUpdateActivity() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id, payload }: { id: number; payload: CreateActivityDTO }) =>
+      customerApi.updateActivity(id, payload),
+    onSuccess: (_, variables) => {
+      const relatedCustomerId = variables.payload.relatedToId ?? 0;
+      queryClient.invalidateQueries({ queryKey: queryKeys.customer.activities(relatedCustomerId) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.customer.detail(relatedCustomerId) });
+    },
+  });
+}
+
+export function useUploadAttachment() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (formData: FormData) => customerApi.uploadAttachment(formData),
+    onSuccess: (data: AttachmentResponseDTO) => {
+      const relatedId = data.relatedToId;
+      queryClient.invalidateQueries({ queryKey: queryKeys.customer.attachments(relatedId) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.customer.detail(relatedId) });
     },
   });
 }

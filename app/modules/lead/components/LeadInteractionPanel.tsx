@@ -2,8 +2,8 @@
 
 import { useMemo, useState, useEffect, useRef } from "react";
 import { toast } from "react-toastify";
-import { useCreateLeadActivity, useCreateLeadMeeting } from "@/modules/lead/hooks/useLeadMutations";
-import type { LeadResponse } from "@/modules/lead/types/lead.types";
+import { useCreateLeadActivity, useCreateLeadTask, useUpdateLeadActivity } from "@/modules/lead/hooks/useLeadMutations";
+import type { LeadActivityResponse, LeadResponse } from "@/modules/lead/types/lead.types";
 import { getApiErrorMessage } from "@/shared/utils/api-error";
 import { getCurrentUser } from "@/core/auth/getCurrentUser";
 import { LEAD_SHORTCUTS } from "@/modules/lead/utils/keyboard-shortcuts";
@@ -14,6 +14,7 @@ type InteractionMode = "activity" | "task";
 type LeadInteractionPanelProps = {
   lead: LeadResponse;
   defaultMode?: InteractionMode;
+  activityToEdit?: LeadActivityResponse | null;
   onClose?: () => void;
 };
 
@@ -25,6 +26,22 @@ const textAreaClassName =
 
 const labelClassName = "text-[11px] font-medium text-slate-700";
 
+const ACTIVITY_STATUS_OPTIONS = [
+  { value: 0, label: "PLANNED" },
+  { value: 1, label: "COMPLETED" },
+  { value: 2, label: "CANCELED" },
+] as const;
+
+function mapStatusLabelToValue(status?: number | string) {
+  if (status == null) return "0";
+  if (typeof status === "number") return String(status);
+  const up = String(status).toUpperCase();
+  if (up === "COMPLETED") return "1";
+  if (up === "CANCELED") return "2";
+  // default PLANNED
+  return "0";
+}
+
 function toIsoOrUndefined(value: string) {
   return value ? new Date(value).toISOString() : undefined;
 }
@@ -32,16 +49,20 @@ function toIsoOrUndefined(value: string) {
 export default function LeadInteractionPanel({
   lead,
   defaultMode = "activity",
+  activityToEdit,
   onClose,
 }: LeadInteractionPanelProps) {
   const [mode, setMode] = useState<InteractionMode>(defaultMode);
   const [activityType, setActivityType] = useState("CALL");
   const [activitySubject, setActivitySubject] = useState("");
   const [activityDescription, setActivityDescription] = useState("");
-  const [activityOutcome, setActivityOutcome] = useState("");
+  const [activityNoteContent, setActivityNoteContent] = useState("");
   const [activityStartDate, setActivityStartDate] = useState("");
+  const [activityEndDate, setActivityEndDate] = useState("");
   const [activityCompletedAt, setActivityCompletedAt] = useState("");
+  const [activityOutcome, setActivityOutcome] = useState("");
   const [activityImportant, setActivityImportant] = useState(false);
+  const [activityStatus, setActivityStatus] = useState("0");
 
   const [taskSubject, setTaskSubject] = useState("");
   const [taskDescription, setTaskDescription] = useState("");
@@ -51,7 +72,8 @@ export default function LeadInteractionPanel({
   const [taskDueDate, setTaskDueDate] = useState("");
 
   const createActivityMutation = useCreateLeadActivity();
-  const createMeetingMutation = useCreateLeadMeeting();
+  const updateActivityMutation = useUpdateLeadActivity();
+  const createTaskMutation = useCreateLeadTask();
 
   const submitActivityFormRef = useRef<HTMLButtonElement>(null);
   const resetActivityFormRef = useRef<HTMLButtonElement>(null);
@@ -63,6 +85,29 @@ export default function LeadInteractionPanel({
     () => lead.contactName || lead.companyName || `Lead #${lead.id ?? ""}`,
     [lead.companyName, lead.contactName, lead.id]
   );
+
+  const isEditingActivity = Boolean(activityToEdit);
+
+  useEffect(() => {
+    if (!activityToEdit) {
+      return;
+    }
+
+    const timer = setTimeout(() => {
+      setActivityType(activityToEdit.activityType || "CALL");
+      setActivitySubject(activityToEdit.subject || "");
+      setActivityDescription(activityToEdit.description || "");
+      setActivityNoteContent(activityToEdit.noteContent || "");
+      setActivityStartDate(activityToEdit.startDate ? activityToEdit.startDate.slice(0, 16) : "");
+      setActivityEndDate(activityToEdit.endDate ? activityToEdit.endDate.slice(0, 16) : "");
+      setActivityCompletedAt(activityToEdit.completedAt ? activityToEdit.completedAt.slice(0, 16) : "");
+      setActivityOutcome(activityToEdit.outcome || "");
+      setActivityImportant(Boolean(activityToEdit.isImportant));
+      setActivityStatus(mapStatusLabelToValue(activityToEdit.status));
+    }, 0);
+
+    return () => clearTimeout(timer as unknown as number);
+  }, [activityToEdit]);
 
   useEffect(() => {
     const handleKeydown = (e: KeyboardEvent) => {
@@ -115,13 +160,30 @@ export default function LeadInteractionPanel({
   }, [mode, onClose]);
 
   const resetActivityForm = () => {
+    if (activityToEdit) {
+      setActivityType(activityToEdit.activityType || "CALL");
+      setActivitySubject(activityToEdit.subject || "");
+      setActivityDescription(activityToEdit.description || "");
+      setActivityNoteContent(activityToEdit.noteContent || "");
+      setActivityStartDate(activityToEdit.startDate ? activityToEdit.startDate.slice(0, 16) : "");
+      setActivityEndDate(activityToEdit.endDate ? activityToEdit.endDate.slice(0, 16) : "");
+      setActivityCompletedAt(activityToEdit.completedAt ? activityToEdit.completedAt.slice(0, 16) : "");
+      setActivityOutcome(activityToEdit.outcome || "");
+      setActivityImportant(Boolean(activityToEdit.isImportant));
+      setActivityStatus(mapStatusLabelToValue(activityToEdit.status));
+      return;
+    }
+
     setActivityType("CALL");
     setActivitySubject("");
     setActivityDescription("");
-    setActivityOutcome("");
+    setActivityNoteContent("");
     setActivityStartDate("");
+    setActivityEndDate("");
     setActivityCompletedAt("");
+    setActivityOutcome("");
     setActivityImportant(false);
+    setActivityStatus("0");
   };
 
   const resetTaskForm = () => {
@@ -138,16 +200,21 @@ export default function LeadInteractionPanel({
 
     try {
       const currentUser = getCurrentUser();
+      const subject = activitySubject.trim();
+      if (!subject) {
+        toast.error("Vui lòng nhập tiêu đề hoạt động.");
+        return;
+      }
+
       await createActivityMutation.mutateAsync({
         leadId: lead.id as number,
         payload: {
           activityType,
-          subject: activitySubject.trim() || undefined,
+          subject,
           description: activityDescription.trim() || undefined,
-          outcome: activityOutcome.trim() || undefined,
+          noteContent: activityNoteContent.trim() || undefined,
           startDate: toIsoOrUndefined(activityStartDate),
-          completedAt: toIsoOrUndefined(activityCompletedAt),
-          isImportant: activityImportant,
+          endDate: toIsoOrUndefined(activityEndDate),
           performedBy: currentUser.id,
         },
       });
@@ -159,12 +226,52 @@ export default function LeadInteractionPanel({
     }
   };
 
+  const handleUpdateActivity = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+
+    if (!activityToEdit?.id) {
+      return;
+    }
+
+    try {
+      const currentUser = getCurrentUser();
+      const subject = activitySubject.trim();
+      if (!subject) {
+        toast.error("Vui lòng nhập tiêu đề hoạt động.");
+        return;
+      }
+
+      await updateActivityMutation.mutateAsync({
+        leadId: lead.id as number,
+        activityId: activityToEdit.id,
+        payload: {
+          activityType,
+          subject,
+          description: activityDescription.trim() || undefined,
+          startDate: toIsoOrUndefined(activityStartDate),
+          endDate: toIsoOrUndefined(activityEndDate),
+          completedAt: toIsoOrUndefined(activityCompletedAt),
+          outcome: activityOutcome.trim() || undefined,
+          performedBy: currentUser.id,
+          updatedBy: currentUser.id,
+          isImportant: activityImportant,
+          status: Number(activityStatus),
+        },
+      });
+
+      toast.success("Đã cập nhật hoạt động.");
+      onClose?.();
+    } catch (error) {
+      toast.error(getApiErrorMessage(error));
+    }
+  };
+
   const handleCreateTask = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
     try {
       const currentUser = getCurrentUser();
-      await createMeetingMutation.mutateAsync({
+      await createTaskMutation.mutateAsync({
         leadId: lead.id as number,
         payload: {
           subject: taskSubject.trim() || undefined,
@@ -212,33 +319,35 @@ export default function LeadInteractionPanel({
         </div>
       </div>
 
-      <div className="mb-4 inline-flex rounded-sm border border-slate-300 bg-slate-50 p-0.5 text-[12px] font-medium text-slate-600">
-          <button
-            type="button"
-            onClick={() => setMode("activity")}
-            className={`rounded-sm px-3 py-1.5 transition flex items-center gap-1.5 ${
-              mode === "activity" ? "bg-white text-slate-900" : "hover:text-slate-900"
-            }`}
-            title={LEAD_SHORTCUTS.INTERACTION_ACTIVITY_TAB.label}
-          >
-            Log hoạt động
-            {mode !== "activity" && <KeyboardShortcutBadge shortcut={LEAD_SHORTCUTS.INTERACTION_ACTIVITY_TAB} />}
-          </button>
-          <button
-            type="button"
-            onClick={() => setMode("task")}
-            className={`rounded-sm px-3 py-1.5 transition flex items-center gap-1.5 ${
-              mode === "task" ? "bg-white text-slate-900" : "hover:text-slate-900"
-            }`}
-            title={LEAD_SHORTCUTS.INTERACTION_TASK_TAB.label}
-          >
-            Tạo nhắc việc
-            {mode !== "task" && <KeyboardShortcutBadge shortcut={LEAD_SHORTCUTS.INTERACTION_TASK_TAB} />}
-          </button>
-      </div>
+      {!isEditingActivity && (
+        <div className="mb-4 inline-flex rounded-sm border border-slate-300 bg-slate-50 p-0.5 text-[12px] font-medium text-slate-600">
+            <button
+              type="button"
+              onClick={() => setMode("activity")}
+              className={`rounded-sm px-3 py-1.5 transition flex items-center gap-1.5 ${
+                mode === "activity" ? "bg-white text-slate-900" : "hover:text-slate-900"
+              }`}
+              title={LEAD_SHORTCUTS.INTERACTION_ACTIVITY_TAB.label}
+            >
+              Log hoạt động
+              {mode !== "activity" && <KeyboardShortcutBadge shortcut={LEAD_SHORTCUTS.INTERACTION_ACTIVITY_TAB} />}
+            </button>
+            <button
+              type="button"
+              onClick={() => setMode("task")}
+              className={`rounded-sm px-3 py-1.5 transition flex items-center gap-1.5 ${
+                mode === "task" ? "bg-white text-slate-900" : "hover:text-slate-900"
+              }`}
+              title={LEAD_SHORTCUTS.INTERACTION_TASK_TAB.label}
+            >
+              Tạo nhắc việc
+              {mode !== "task" && <KeyboardShortcutBadge shortcut={LEAD_SHORTCUTS.INTERACTION_TASK_TAB} />}
+            </button>
+        </div>
+      )}
 
       {mode === "activity" ? (
-        <form onSubmit={handleCreateActivity} className="grid gap-x-3 gap-y-2 lg:grid-cols-2">
+        <form onSubmit={isEditingActivity ? handleUpdateActivity : handleCreateActivity} className="grid gap-x-3 gap-y-2 lg:grid-cols-2">
           <label className="space-y-1">
             <span className={labelClassName}>Loại tương tác</span>
             <select
@@ -273,44 +382,88 @@ export default function LeadInteractionPanel({
             />
           </label>
 
-          <label className="space-y-1">
-            <span className={labelClassName}>Kết quả</span>
-            <input
-              value={activityOutcome}
-              onChange={(event) => setActivityOutcome(event.target.value)}
-              className={inputClassName}
-              placeholder="Ví dụ: Hẹn gửi báo giá hôm nay"
-            />
+          {isEditingActivity && (
+            <>
+              <label className="space-y-1 lg:col-span-2">
+                <span className={labelClassName}>Kết quả</span>
+                <textarea
+                  value={activityOutcome}
+                  onChange={(event) => setActivityOutcome(event.target.value)}
+                  rows={3}
+                  className={textAreaClassName}
+                  placeholder="Kết quả sau tương tác"
+                />
+              </label>
+
+              <label className="flex items-center gap-2 lg:col-span-2">
+                <input
+                  type="checkbox"
+                  checked={activityImportant}
+                  onChange={(event) => setActivityImportant(event.target.checked)}
+                  className="h-3.5 w-3.5 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                />
+                <span className={labelClassName}>Đánh dấu quan trọng</span>
+              </label>
+            </>
+          )}
+
+              <div className="grid gap-3 lg:col-span-2 lg:grid-cols-[minmax(0,1fr)_220px]">
+                <label className="space-y-1">
+                  <span className={labelClassName}>Ghi chú</span>
+                  <input
+                    value={activityNoteContent}
+                    onChange={(event) => setActivityNoteContent(event.target.value)}
+                    className={inputClassName}
+                    placeholder="Ví dụ: Hẹn gửi báo giá hôm nay"
+                  />
+                </label>
+
+                <label className="space-y-1">
+                  <span className={labelClassName}>Trạng thái hoạt động</span>
+                  <select
+                    value={activityStatus}
+                    onChange={(event) => setActivityStatus(event.target.value)}
+                    className={inputClassName}
+                  >
+                    {ACTIVITY_STATUS_OPTIONS.map((option) => (
+                      <option key={option.value} value={String(option.value)}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              </div>
+
+              <label className="flex items-center gap-2 lg:col-span-2">
+                <input
+                  type="checkbox"
+                  checked={activityImportant}
+                  onChange={(event) => setActivityImportant(event.target.checked)}
+                  className="h-3.5 w-3.5 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                />
+                <span className={labelClassName}>Đánh dấu quan trọng</span>
           </label>
 
           <label className="space-y-1">
-            <span className={labelClassName}>Bắt đầu</span>
+
+          {!isEditingActivity && (
+            <label className="space-y-1">
+              <span className={labelClassName}>Ghi chú</span>
+              <input
+                value={activityNoteContent}
+                onChange={(event) => setActivityNoteContent(event.target.value)}
+                className={inputClassName}
+                placeholder="Ví dụ: Hẹn gửi báo giá hôm nay"
+              />
+            </label>
+          )}
+            <span className={labelClassName}>Kết thúc</span>
             <input
               type="datetime-local"
-              value={activityStartDate}
-              onChange={(event) => setActivityStartDate(event.target.value)}
+              value={activityEndDate}
+              onChange={(event) => setActivityEndDate(event.target.value)}
               className={inputClassName}
             />
-          </label>
-
-          <label className="space-y-1">
-            <span className={labelClassName}>Hoàn tất lúc</span>
-            <input
-              type="datetime-local"
-              value={activityCompletedAt}
-              onChange={(event) => setActivityCompletedAt(event.target.value)}
-              className={inputClassName}
-            />
-          </label>
-
-          <label className="flex items-center gap-2 text-[12px] font-medium text-slate-700 lg:col-span-2">
-            <input
-              type="checkbox"
-              checked={activityImportant}
-              onChange={(event) => setActivityImportant(event.target.checked)}
-              className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
-            />
-            Đánh dấu quan trọng
           </label>
 
           <div className="lg:col-span-2 flex items-center justify-end gap-3">
@@ -321,18 +474,24 @@ export default function LeadInteractionPanel({
               className="h-[30px] rounded-sm border border-slate-300 bg-white px-4 text-[12px] font-medium text-slate-700 transition hover:bg-slate-50 inline-flex items-center gap-1.5"
               title={LEAD_SHORTCUTS.INTERACTION_RESET.label}
             >
-              Reset form
+              {isEditingActivity ? "Khôi phục" : "Reset form"}
               <KeyboardShortcutBadge shortcut={LEAD_SHORTCUTS.INTERACTION_RESET} />
             </button>
             <button
               ref={submitActivityFormRef}
               type="submit"
-              disabled={createActivityMutation.isPending}
+              disabled={createActivityMutation.isPending || updateActivityMutation.isPending}
               className="h-[30px] rounded-sm bg-blue-600 px-4 text-[12px] font-medium text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60 inline-flex items-center gap-1.5"
               title={LEAD_SHORTCUTS.INTERACTION_SUBMIT.label}
             >
-              {createActivityMutation.isPending ? "Đang lưu..." : "Lưu log tương tác"}
-              {!createActivityMutation.isPending && (
+              {isEditingActivity
+                ? updateActivityMutation.isPending
+                  ? "Đang cập nhật..."
+                  : "Cập nhật hoạt động"
+                : createActivityMutation.isPending
+                ? "Đang lưu..."
+                : "Lưu log tương tác"}
+              {!createActivityMutation.isPending && !updateActivityMutation.isPending && (
                 <KeyboardShortcutBadge 
                   shortcut={LEAD_SHORTCUTS.INTERACTION_SUBMIT}
                 />
@@ -426,12 +585,12 @@ export default function LeadInteractionPanel({
             <button
               ref={submitTaskFormRef}
               type="submit"
-              disabled={createMeetingMutation.isPending}
+              disabled={createTaskMutation.isPending}
               className="h-[30px] rounded-sm bg-blue-600 px-4 text-[12px] font-medium text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60 inline-flex items-center gap-1.5"
               title={LEAD_SHORTCUTS.INTERACTION_SUBMIT.label}
             >
-              {createMeetingMutation.isPending ? "Đang tạo..." : "Tạo nhắc việc"}
-              {!createMeetingMutation.isPending && (
+              {createTaskMutation.isPending ? "Đang tạo..." : "Tạo nhắc việc"}
+              {!createTaskMutation.isPending && (
                 <KeyboardShortcutBadge 
                   shortcut={LEAD_SHORTCUTS.INTERACTION_SUBMIT}
                 />

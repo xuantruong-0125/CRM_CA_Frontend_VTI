@@ -1,4 +1,12 @@
-import type { CreateCustomerDTO, CustomerResponseDTO, CustomerStatus, CustomerTier, CustomerType, UpdateCustomerDTO } from "@/modules/customer/types/customer.types";
+import type {
+  CreateCustomerAddressDTO,
+  CreateCustomerDTO,
+  CustomerResponseDTO,
+  CustomerStatus,
+  CustomerTier,
+  CustomerType,
+  UpdateCustomerDTO,
+} from "@/modules/customer/types/customer.types";
 import type { CustomerFormValues } from "@/modules/customer/schemas/customer.schema";
 
 const statusAliasMap: Record<string, CustomerStatus> = {
@@ -45,6 +53,22 @@ export function normalizeCustomerTier(value?: string | null): CustomerTier {
   return tierAliasMap[value] ?? "SILVER";
 }
 
+export function getCustomerTaxCode(customer?: Partial<CustomerResponseDTO> | null) {
+  if (!customer) {
+    return undefined;
+  }
+
+  const rawCustomer = customer as Record<string, unknown>;
+  const candidate =
+    customer.taxCode ??
+    (rawCustomer.tax_code as string | undefined) ??
+    (rawCustomer.taxNo as string | undefined) ??
+    (rawCustomer.tax_number as string | undefined);
+
+  const trimmed = typeof candidate === "string" ? candidate.trim() : "";
+  return trimmed ? trimmed : undefined;
+}
+
 function cleanString(value?: string | null) {
   const trimmed = value?.trim();
   return trimmed ? trimmed : undefined;
@@ -85,5 +109,23 @@ export function toUpdateCustomerPayload(values: CustomerFormValues): UpdateCusto
     statusId: cleanNumber(values.statusId),
     tierId: cleanNumber(values.tierId),
     assignedTo: cleanNumber(values.assignedTo),
+  };
+}
+
+export function toCreateCustomerAddressPayload(
+  values: CustomerFormValues,
+  customerId: number
+): CreateCustomerAddressDTO | null {
+  const fullAddress = cleanString(values.fullAddress);
+  if (!fullAddress) {
+    return null;
+  }
+
+  return {
+    customerId,
+    addressType: cleanString(values.addressType) ?? "OFFICE",
+    fullAddress,
+    provinceId: cleanNumber(values.provinceId),
+    isPrimary: values.isPrimaryAddress ?? true,
   };
 }

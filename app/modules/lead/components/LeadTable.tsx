@@ -158,7 +158,7 @@ export default function LeadTable({
 }: LeadTableProps) {
   if (loading) {
     return (
-      <div className="rounded-lg border border-slate-200 bg-white p-4 text-[12px] text-slate-500">
+      <div className="rounded-3xl border border-slate-200 bg-white p-6 text-[12px] text-slate-500">
         Đang tải danh sách Lead...
       </div>
     );
@@ -166,16 +166,16 @@ export default function LeadTable({
 
   if (!leads.length) {
     return (
-      <div className="rounded-lg border border-slate-200 bg-white p-4 text-[12px] text-slate-500">
+      <div className="rounded-3xl border border-slate-200 bg-white p-6 text-[12px] text-slate-500">
         Không có dữ liệu lead.
       </div>
     );
   }
 
   return (
-    <div className="overflow-x-auto rounded-lg border border-slate-200 bg-white">
+    <div className="overflow-x-auto rounded-3xl border border-slate-200 bg-white">
       <table className="min-w-full border-collapse text-[12px] text-slate-700">
-        <thead className="border-b border-slate-200 bg-slate-50 text-left font-semibold text-slate-900">
+        <thead className="border-b border-slate-200 bg-[rgb(21,0,211)] text-left font-semibold text-white">
           <tr>
             <th className="whitespace-nowrap px-3 py-2">Tên liên hệ</th>
             <th className="whitespace-nowrap px-3 py-2">Công ty</th>
@@ -188,7 +188,7 @@ export default function LeadTable({
             <th className="whitespace-nowrap px-3 py-2 text-right">Thao tác</th>
           </tr>
         </thead>
-        <tbody>
+        <tbody className="bg-white">
           {leads.map((lead) => (
             <tr key={lead.id} className="border-b border-slate-100 hover:bg-slate-50/80">
               <td className="whitespace-nowrap px-3 py-2 align-middle font-medium text-slate-900">

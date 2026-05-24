@@ -40,6 +40,14 @@ export function useCustomerCount() {
   });
 }
 
+export function useCustomerSalesUsers() {
+  return useQuery({
+    queryKey: queryKeys.customer.salesUsers,
+    queryFn: () => customerApi.getSalesUsers(),
+    staleTime: 5 * 60 * 1000,
+  });
+}
+
 export function useCustomerAddresses(customerId?: number, enabled = true) {
   return useQuery({
     queryKey: queryKeys.customer.addresses(customerId ?? 0),

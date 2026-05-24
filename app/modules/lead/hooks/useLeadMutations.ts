@@ -6,7 +6,9 @@ import type {
   ConvertLeadRequest,
   CreateLeadRequest,
   CreateLeadActivityRequest,
-  CreateLeadMeetingRequest,
+  CreateLeadTaskRequest,
+  LeadActivityResponse,
+  UpdateLeadActivityRequest,
   UpdateLeadRequest,
 } from "@/modules/lead/types/lead.types";
 import { queryKeys } from "@/shared/constants/query-keys";
@@ -86,6 +88,40 @@ export function useCreateLeadActivity() {
       leadId: number;
       payload: CreateLeadActivityRequest;
     }) => leadApi.createActivity(leadId, payload),
+    onSuccess: (updatedActivity, variables) => {
+      queryClient.setQueryData<LeadActivityResponse[]>(
+        queryKeys.lead.activities(variables.leadId),
+        (currentActivities) =>
+          currentActivities?.map((activity) =>
+            activity.id === updatedActivity.id ? { ...activity, ...updatedActivity } : activity
+          ) ?? currentActivities
+      );
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.lead.activities(variables.leadId),
+      });
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.lead.activityStatistics(variables.leadId),
+      });
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.lead.detail(variables.leadId),
+      });
+    },
+  });
+}
+
+export function useUpdateLeadActivity() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      leadId,
+      activityId,
+      payload,
+    }: {
+      leadId: number;
+      activityId: number;
+      payload: UpdateLeadActivityRequest;
+    }) => leadApi.updateActivity(leadId, activityId, payload),
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({
         queryKey: queryKeys.lead.activities(variables.leadId),
@@ -100,7 +136,7 @@ export function useCreateLeadActivity() {
   });
 }
 
-export function useCreateLeadMeeting() {
+export function useCreateLeadTask() {
   const queryClient = useQueryClient();
 
   return useMutation({
@@ -109,9 +145,12 @@ export function useCreateLeadMeeting() {
       payload,
     }: {
       leadId: number;
-      payload: CreateLeadMeetingRequest;
-    }) => leadApi.createMeeting(leadId, payload),
+      payload: CreateLeadTaskRequest;
+    }) => leadApi.createLeadTask(leadId, payload),
     onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.lead.taskList(variables.leadId),
+      });
       queryClient.invalidateQueries({
         queryKey: queryKeys.lead.activities(variables.leadId),
       });
@@ -124,3 +163,5 @@ export function useCreateLeadMeeting() {
     },
   });
 }
+
+export const useCreateLeadMeeting = useCreateLeadTask;
