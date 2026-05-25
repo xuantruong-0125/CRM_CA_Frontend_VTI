@@ -42,7 +42,6 @@ export const MENU_CONFIG: MenuItem[] = [
         path: "/system/users",
         icon: Users,
         roles: ["IT"],
-        group: "Hệ thống",
     },
     {
         key: "quotes",
@@ -112,6 +111,20 @@ export const MENU_CONFIG: MenuItem[] = [
         key: "my-kpi",
         label: "KPI Của Tôi",
         path: "/my-kpi",
+        icon: Trophy,
+        roles: ["SALE", "MANAGER", "ADMIN"],
+    },
+    {
+        key: "lead",
+        label: "Khách hàng tiềm năng",
+        path: "/leads",
+        icon: Trophy,
+        roles: ["SALE", "MANAGER", "ADMIN"],
+    },
+    {
+        key: "customer",
+        label: "Khách hàng",
+        path: "/customers",
         icon: Trophy,
         roles: ["SALE", "MANAGER", "ADMIN"],
     },

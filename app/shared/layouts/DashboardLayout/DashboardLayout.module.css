@@ -1,5 +1,6 @@
 .container {
   display: flex;
+  align-items: flex-start;
   min-height: 100vh;
 }
 
@@ -15,4 +16,7 @@
 
 .collapsed {
   margin-left: 70px;
+  flex: 1;
+  padding: 20px;
+  background: #f5f6fa;
 }

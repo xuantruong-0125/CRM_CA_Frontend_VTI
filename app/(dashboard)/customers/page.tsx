@@ -1,5 +1,6 @@
-import { CustomerPage } from "@/modules/customers/CustomerPage";
 
-export default function Page() {
-  return <CustomerPage />;
+import CustomerListPage from "@/modules/customer/components/CustomerListPage";
+
+export default function CustomersPage() {
+  return <CustomerListPage />;
 }

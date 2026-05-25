@@ -86,7 +86,6 @@ export default function LoginPage() {
         password: "",
     });
 
-<<<<<<< HEAD
     // refs
     const usernameRef = useRef<HTMLInputElement>(null);
     const passwordRef = useRef<HTMLInputElement>(null);
@@ -96,9 +95,6 @@ export default function LoginPage() {
     useEffect(() => {
         usernameRef.current?.focus();
     }, []);
-=======
-    const [showPassword, setShowPassword] = useState(false);
->>>>>>> origin/feature/kpi_report
 
     const handleChange = (
         e: React.ChangeEvent<HTMLInputElement>
@@ -188,7 +184,6 @@ export default function LoginPage() {
                 </div>
 
                 <div className={styles.formGroup}>
-<<<<<<< HEAD
                     <label htmlFor="password">
                         Mật khẩu
                     </label>
@@ -205,27 +200,6 @@ export default function LoginPage() {
                         }
                         required
                     />
-=======
-                    <label htmlFor="password">Mật khẩu</label>
-                    <div className={styles.passwordContainer}>
-                        <input
-                            id="password"
-                            type={showPassword ? "text" : "password"}
-                            name="password"
-                            value={formData.password}
-                            onChange={handleChange}
-                            required
-                        />
-                        <button 
-                            type="button" 
-                            className={styles.toggleButton} 
-                            onClick={() => setShowPassword(!showPassword)}
-                            tabIndex={-1}
-                        >
-                            {showPassword ? "Ẩn" : "Hiện"}
-                        </button>
-                    </div>
->>>>>>> origin/feature/kpi_report
                 </div>
 
                 <button

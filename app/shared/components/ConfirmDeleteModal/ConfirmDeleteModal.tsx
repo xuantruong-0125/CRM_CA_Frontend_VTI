@@ -39,6 +39,10 @@ interface Props {
   onClose: () => void;
   onConfirm: () => void;
   loading?: boolean;
+  title?: string;
+  message?: string;
+  confirmLabel?: string;
+  cancelLabel?: string;
 }
 
 export default function ConfirmDeleteModal({
@@ -46,17 +50,19 @@ export default function ConfirmDeleteModal({
   onClose,
   onConfirm,
   loading = false,
+  title = "Xác nhận xóa",
+  message = "Bạn có chắc chắn muốn xóa?",
+  confirmLabel = "Xóa",
+  cancelLabel = "Hủy",
 }: Props) {
   if (!open) return null;
 
   return (
     <div className={styles.overlay}>
       <div className={styles.modal}>
-        <h3 className={styles.title}>Xác nhận xóa</h3>
+        <h3 className={styles.title}>{title}</h3>
 
-        <p className={styles.message}>
-          Bạn có chắc chắn muốn xóa?
-        </p>
+        <p className={styles.message}>{message}</p>
 
         <div className={styles.actions}>
           <button
@@ -64,7 +70,7 @@ export default function ConfirmDeleteModal({
             onClick={onClose}
             disabled={loading}
           >
-            Hủy
+            {cancelLabel}
           </button>
 
           <button
@@ -72,7 +78,7 @@ export default function ConfirmDeleteModal({
             onClick={onConfirm}
             disabled={loading}
           >
-            {loading ? "Đang xóa..." : "Xóa"}
+            {loading ? "Đang xóa..." : confirmLabel}
           </button>
         </div>
       </div>

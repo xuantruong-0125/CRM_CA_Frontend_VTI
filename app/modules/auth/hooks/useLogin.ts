@@ -229,20 +229,6 @@ export const useLogin = () => {
                 response.username
             );
 
-<<<<<<< HEAD
-=======
-            if (response.userId) {
-                localStorage.setItem("userId", response.userId.toString());
-            }
-            if (response.orgId) {
-                localStorage.setItem("orgId", response.orgId.toString());
-            }
-
-            // localStorage.setItem(
-            //     "role",
-            //     response.roles[0]
-            // );
->>>>>>> origin/feature/kpi_report
             localStorage.setItem(
                 "roles",
                 JSON.stringify(response.roles)
@@ -269,25 +255,16 @@ export const useLogin = () => {
                 case "IT":
                     router.push("/system/users");
                     break;
-<<<<<<< HEAD
 
                 case "SALE_MANAGER":
                 case "MANAGER":
                 case "SALE":
                     router.push("/quotes");
-=======
-                case "MANAGER":
-                    router.push("/reports");
-                    break;
-                case "SALE":
-                    router.push("/my-kpi");
->>>>>>> origin/feature/kpi_report
                     break;
 
                 default:
                     router.push("/");
             }
-<<<<<<< HEAD
 
             return response;
         } catch (err) {
@@ -305,13 +282,6 @@ export const useLogin = () => {
             }
 
             return null;
-=======
-        } catch (err: any) {
-            setError(
-                err.response?.data?.message ||
-                "Đăng nhập thất bại"
-            );
->>>>>>> origin/feature/kpi_report
         } finally {
             setLoading(false);
         }
