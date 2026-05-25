@@ -90,6 +90,15 @@
   flex: 1;
 }
 
+.groupLabel {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: rgba(255, 255, 255, 0.4);
+  padding: 16px 10px 6px;
+}
+
 .userBox {
   padding: 12px;
   border-top: 1px solid #eee;
@@ -133,6 +142,77 @@
 }
 
 
+/* Sub-menu group */
+.menuGroup {
+  display: flex;
+  flex-direction: column;
+}
+
+.menuGroupParent {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px;
+  width: 100%;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #fff;
+  text-align: left;
+  border-radius: 6px;
+}
+
+.menuGroupParent:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.menuGroupParentActive {
+  background: rgba(255, 255, 255, 0.15);
+  border-left: 3px solid #60a5fa;
+  padding-left: 7px;
+}
+
+.menuGroupParent .chevron {
+  margin-left: auto;
+  transition: transform 0.2s;
+  flex-shrink: 0;
+}
+
+.menuGroupParent .chevronOpen {
+  transform: rotate(90deg);
+}
+
+.subItems {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding-left: 12px;
+  overflow: hidden;
+}
+
+.subItem {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 10px;
+  font-size: 13px;
+  text-decoration: none;
+  color: rgba(255, 255, 255, 0.75);
+  border-radius: 6px;
+}
+
+.subItem:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+}
+
+.subItemActive {
+  background: rgba(255, 255, 255, 0.15);
+  border-left: 2px solid #93c5fd;
+  color: #fff;
+  padding-left: 8px;
+}
+
 /* COLLAPSE */
 .sidebar.collapsed .menuItem {
   justify-content: center;
@@ -144,4 +224,17 @@
 
 .sidebar.collapsed .header {
   margin-left: -6px;
+}
+
+.sidebar.collapsed .menuGroupParent {
+  justify-content: center;
+}
+
+.sidebar.collapsed .menuGroupParent span,
+.sidebar.collapsed .menuGroupParent .chevron {
+  display: none;
+}
+
+.sidebar.collapsed .subItems {
+  display: none;
 }

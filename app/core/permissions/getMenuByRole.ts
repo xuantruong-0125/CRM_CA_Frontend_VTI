@@ -1,6 +1,6 @@
-import { MENU_CONFIG } from "./menu.config";
+import { MENU_CONFIG, MenuItem } from "./menu.config";
 
-export const getMenuByRole = (role: string) => {
+export const getMenuByRole = (role: string): MenuItem[] => {
     return MENU_CONFIG.filter(menu =>
         menu.roles.includes(role)
     );

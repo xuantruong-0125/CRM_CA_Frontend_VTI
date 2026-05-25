@@ -28,3 +28,7 @@ body {
   padding: 0;
   background-color: #ffffff;
 }
+
+input, select, textarea, option {
+  color: #111827;
+}
