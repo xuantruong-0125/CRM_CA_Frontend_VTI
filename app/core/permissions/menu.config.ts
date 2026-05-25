@@ -36,21 +36,21 @@ export const MENU_CONFIG = [
         label: "Danh mục",
         path: "/categories",
         icon: Layers,
-        roles: ["ADMIN", "IT"],
+        roles: ["ADMIN", "IT", "PRODUCT_ADMIN"],
     },
     {
         key: "product",
         label: "Sản phẩm",
         path: "/products",
         icon: Package,
-        roles: ["ADMIN", "IT"],
+        roles: ["ADMIN", "IT", "PRODUCT_ADMIN"],
     },
     {
         key: "price",
         label: "Bảng giá",
         path: "/prices",
         icon: Banknote,
-        roles: ["ADMIN", "IT"],
+        roles: ["ADMIN", "IT", "PRODUCT_ADMIN"],
     },
     
     {
@@ -58,6 +58,6 @@ export const MENU_CONFIG = [
         label: "Liên hệ",
         path: "/contacts",
         icon: Phone,
-        roles: ["ADMIN", "IT"],
+        roles: ["ADMIN", "IT", "PRODUCT_ADMIN"],
     }
 ];
