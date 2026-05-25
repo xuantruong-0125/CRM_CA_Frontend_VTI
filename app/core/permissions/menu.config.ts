@@ -1,12 +1,24 @@
-import { Building2, ShieldCheck, Menu, Users } from "lucide-react";
+import { Building2, ShieldCheck, Menu, Users, FileText, GitBranch, Layers, AlertOctagon, TrendingUp } from "lucide-react";
+import { LucideIcon } from "lucide-react";
 
-export const MENU_CONFIG = [
+export interface MenuItem {
+    key: string;
+    label: string;
+    path: string;
+    icon: LucideIcon;
+    roles: string[];
+    group?: string;
+    children?: MenuItem[];
+}
+
+export const MENU_CONFIG: MenuItem[] = [
     {
         key: "organization",
         label: "Quản lý tổ chức",
         path: "/system/organizations",
         icon: Building2,
         roles: ["ADMIN"],
+        group: "Hệ thống",
     },
     {
         key: "role",
@@ -14,14 +26,15 @@ export const MENU_CONFIG = [
         path: "/system/roles",
         icon: ShieldCheck,
         roles: ["ADMIN", "IT"],
+        group: "Hệ thống",
     },
-
     {
         key: "menu",
         label: "Quản lý menu",
         path: "/system/menus",
         icon: Menu,
         roles: ["ADMIN"],
+        group: "Hệ thống",
     },
     {
         key: "user",
@@ -29,6 +42,27 @@ export const MENU_CONFIG = [
         path: "/system/users",
         icon: Users,
         roles: ["IT"],
+        group: "Hệ thống",
     },
-
+    {
+        key: "quotes",
+        label: "Báo giá",
+        path: "/quotes",
+        icon: FileText,
+        roles: ["ADMIN", "SALE", "SALE_MANAGER", "MANAGER", "ACCOUNTANT"],
+        group: "CRM",
+    },
+    {
+        key: "opportunities",
+        label: "Cơ hội",
+        path: "/opportunities",
+        icon: TrendingUp,
+        roles: ["ADMIN", "SALE", "SALE_MANAGER", "MANAGER"],
+        group: "CRM",
+        children: [
+            { key: "pipelines", label: "Quy trình bán hàng", path: "/pipelines", icon: GitBranch, roles: ["ADMIN", "SALE"], group: "CRM" },
+            { key: "pipelineStages", label: "Giai đoạn quy trình", path: "/pipeline-stages", icon: Layers, roles: ["ADMIN", "SALE"], group: "CRM" },
+            { key: "lossReasons", label: "Lý do thất bại", path: "/loss-reasons", icon: AlertOctagon, roles: ["ADMIN", "SALE"], group: "CRM" },
+        ],
+    },
 ];

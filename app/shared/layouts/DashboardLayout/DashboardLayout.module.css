@@ -1,13 +1,16 @@
 .container {
   display: flex;
+  min-height: 100vh;
 }
 
 .content {
+  height: 100vh;
   flex: 1;
   padding: 20px;
   background: #f5f6fa;
   margin-left: 220px;
   transition: all 0.3s ease;
+  min-height: 100vh;
 }
 
 .collapsed {

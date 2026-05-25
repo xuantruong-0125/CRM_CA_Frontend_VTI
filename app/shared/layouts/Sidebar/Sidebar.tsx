@@ -1,4 +1,5 @@
 "use client";
+import React from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useEffect, useState } from "react";
 import Link from "next/link";
@@ -9,6 +10,7 @@ import { getCurrentUser } from "@/core/auth/getCurrentUser";
 import { getMenuByRole } from "@/core/permissions/getMenuByRole";
 import { LogOut } from "lucide-react";
 import ConfirmLogoutModal from "@/shared/components/ConfirmLogOut/ConfirmLogoutModal";
+import { MenuItem } from "@/core/permissions/menu.config";
 export default function Sidebar({
     collapsed,
     onToggle,
@@ -23,15 +25,14 @@ export default function Sidebar({
     const router = useRouter();
     const [openLogoutModal, setOpenLogoutModal] = useState(false);
     const [loadingLogout, setLoadingLogout] = useState(false);
+    const [openGroup, setOpenGroup] = useState<string | null>(null);
 
     useEffect(() => {
         setMounted(true);
-
-        // load lần đầu
         setUser(getCurrentUser());
 
         const handleStorage = () => {
-            setUser(getCurrentUser()); // 🔥 cập nhật lại khi có thay đổi
+            setUser(getCurrentUser());
         };
 
         window.addEventListener("storage", handleStorage);
@@ -42,15 +43,18 @@ export default function Sidebar({
     }, []);
 
     useEffect(() => {
-        setMounted(true);
-    }, []);
+        if (!user) return;
+        const role = user.roles[0];
+        const menus = getMenuByRole(role);
+        for (const item of menus) {
+            if (item.children?.some(c => pathname === c.path || pathname.startsWith(c.path + "/"))) {
+                setOpenGroup(item.key);
+                break;
+            }
+        }
+    }, [pathname, user]);
 
-    // Tránh lỗi Hydration
     if (!mounted || !user) {
-        return null;
-    }
-
-    if (!user) {
         return null;
     }
 
@@ -103,12 +107,12 @@ export default function Sidebar({
 
 
             {/* MENU */}
-
             <nav className={styles.menu}>
-                {menus.map((item) => {
+                {/* {menus.map((item) => {
                     const Icon = item.icon;
-                    const isActive = pathname === item.path;
-
+                    const isActive =
+                        pathname === item.path ||
+                        pathname.startsWith(item.path + "/");
                     return (
                         <Link
                             key={item.key}
@@ -120,7 +124,88 @@ export default function Sidebar({
                             {!collapsed && <span>{item.label}</span>}
                         </Link>
                     );
-                })}
+                })} */}
+                {(() => {
+                    const rendered: React.ReactNode[] = [];
+                    let lastGroup: string | undefined = undefined;
+                    menus.forEach((item: MenuItem) => {
+                        const Icon = item.icon;
+                        const visibleChildren = item.children?.filter(c => c.roles.includes(role)) ?? [];
+                        const hasChildren = visibleChildren.length > 0;
+                        const isParentActive = pathname === item.path || pathname.startsWith(item.path + "/")
+                            || visibleChildren.some(c => pathname === c.path || pathname.startsWith(c.path + "/"));
+                        const isGroupOpen = openGroup === item.key;
+
+                        if (!collapsed && item.group && item.group !== lastGroup) {
+                            lastGroup = item.group;
+                            rendered.push(
+                                <div key={`group-${item.group}`} className={styles.groupLabel}>
+                                    {item.group}
+                                </div>
+                            );
+                        }
+
+                        if (hasChildren) {
+                            rendered.push(
+                                <div key={item.key} className={styles.menuGroup}>
+                                    <button
+                                        className={`${styles.menuGroupParent} ${isParentActive ? styles.menuGroupParentActive : ""}`}
+                                        onClick={() => {
+                                            if (!collapsed) setOpenGroup(isGroupOpen ? null : item.key);
+                                        }}
+                                    >
+                                        <Icon size={18} />
+                                        {!collapsed && <span>{item.label}</span>}
+                                        {!collapsed && (
+                                            <ChevronRight
+                                                size={14}
+                                                className={`${styles.chevron} ${isGroupOpen ? styles.chevronOpen : ""}`}
+                                            />
+                                        )}
+                                    </button>
+                                    {!collapsed && isGroupOpen && (
+                                        <div className={styles.subItems}>
+                                            <Link
+                                                href={item.path}
+                                                className={`${styles.subItem} ${pathname === item.path ? styles.subItemActive : ""}`}
+                                            >
+                                                <Icon size={14} />
+                                                <span>{item.label}</span>
+                                            </Link>
+                                            {visibleChildren.map(child => {
+                                                const ChildIcon = child.icon;
+                                                const isChildActive = pathname === child.path || pathname.startsWith(child.path + "/");
+                                                return (
+                                                    <Link
+                                                        key={child.key}
+                                                        href={child.path}
+                                                        className={`${styles.subItem} ${isChildActive ? styles.subItemActive : ""}`}
+                                                    >
+                                                        <ChildIcon size={14} />
+                                                        <span>{child.label}</span>
+                                                    </Link>
+                                                );
+                                            })}
+                                        </div>
+                                    )}
+                                </div>
+                            );
+                        } else {
+                            const isActive = pathname === item.path || pathname.startsWith(item.path + "/");
+                            rendered.push(
+                                <Link
+                                    key={item.key}
+                                    href={item.path}
+                                    className={`${styles.menuItem} ${isActive ? styles.active : ""}`}
+                                >
+                                    <Icon size={18} />
+                                    {!collapsed && <span>{item.label}</span>}
+                                </Link>
+                            );
+                        }
+                    });
+                    return rendered;
+                })()}
             </nav>
 
             {/* USER INFO */}
