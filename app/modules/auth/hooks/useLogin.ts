@@ -255,10 +255,6 @@ export const useLogin = () => {
                 case "IT":
                     router.push("/system/users");
                     break;
-
-                case "SALE_MANAGER":
-                case "SALES":
-                    router.push("/task");
                 case "MANAGER":
                 case "SALE":
                     router.push("/quotes");
