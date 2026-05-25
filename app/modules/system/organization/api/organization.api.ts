@@ -45,6 +45,11 @@ export const organizationApi = {
         return res.data;
     },
 
+    getAll: async (): Promise<Organization[]> => {
+        const res = await httpClient.get<Organization[]>(BASE_URL);
+        return res.data;
+    },
+
     create: async (
         data: OrganizationPayload
     ): Promise<Organization> => {

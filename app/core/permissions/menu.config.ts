@@ -1,4 +1,4 @@
-import { Building2, ShieldCheck, Menu, Users, FileText, GitBranch, Layers, AlertOctagon, TrendingUp, Package, Banknote, Phone } from "lucide-react";
+import { Building2, ShieldCheck, Menu, Users, FileText, GitBranch, Layers, AlertOctagon, TrendingUp, Package, Banknote, Phone, Target, BarChart3, Trophy } from "lucide-react";
 import { LucideIcon } from "lucide-react";
 
 export interface MenuItem {
@@ -93,5 +93,26 @@ export const MENU_CONFIG: MenuItem[] = [
         path: "/contacts",
         icon: Phone,
         roles: ["ADMIN", "IT"],
-    }
+    },
+    {
+        key: "kpi-config",
+        label: "Thiết lập KPI",
+        path: "/kpi-configs",
+        icon: Target,
+        roles: ["ADMIN", "IT", "MANAGER"],
+    },
+    {
+        key: "reports",
+        label: "Báo cáo KPI",
+        path: "/reports",
+        icon: BarChart3,
+        roles: ["ADMIN", "MANAGER"],
+    },
+    {
+        key: "my-kpi",
+        label: "KPI Của Tôi",
+        path: "/my-kpi",
+        icon: Trophy,
+        roles: ["SALE", "MANAGER", "ADMIN"],
+    },
 ];

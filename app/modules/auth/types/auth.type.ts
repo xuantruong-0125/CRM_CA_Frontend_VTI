@@ -8,6 +8,8 @@ export interface LoginResponse {
     refreshToken: string;
     userId:number;
     username: string;
+    userId: number;
+    orgId: number;
     fullName: string;
     roles: string[];
     scope: string;

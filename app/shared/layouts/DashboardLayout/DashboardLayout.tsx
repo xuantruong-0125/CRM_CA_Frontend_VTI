@@ -38,9 +38,8 @@ export default function DashboardLayout({
       />
 
       <div
-        className={`${styles.content} ${
-          collapsed ? styles.collapsed : ""
-        }`}
+        className={`${styles.content} ${collapsed ? styles.collapsed : ""
+          }`}
       >
         {children}
       </div>

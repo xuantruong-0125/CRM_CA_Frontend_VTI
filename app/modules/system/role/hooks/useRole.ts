@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { toast } from "react-toastify";
 import { Role, RolePayload } from "../types/role.type";
 import { getRoles } from "../useCases/getAll";
 import { createRole } from "../useCases/createRole";
@@ -9,8 +10,14 @@ export const useRole = () => {
   const [data, setData] = useState<Role[]>([]);
 
   const fetchData = async () => {
-    const res = await getRoles();
-    setData(res);
+    try {
+      const res = await getRoles();
+      setData(res || []);
+    } catch (error: any) {
+      console.error("Error fetching roles:", error);
+      toast.error(error?.message || "Không thể tải danh sách vai trò");
+      setData([]);
+    }
   };
 
   useEffect(() => {

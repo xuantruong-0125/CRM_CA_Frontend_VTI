@@ -210,9 +210,9 @@ export default function Sidebar({
 
             {/* USER INFO */}
             <div className={styles.userBox}>
-                {!collapsed && (
+                {user && (
                     <span className={styles.userInfo}>
-                        {user.roles.join(", ")} : {user.fullName}
+                        {user.roles?.join(", ")} : {user.fullName}
                     </span>
                 )}
 
