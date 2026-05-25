@@ -1,4 +1,4 @@
-import { Building2, ShieldCheck, Menu, Users, FileText, GitBranch, Layers, AlertOctagon, TrendingUp } from "lucide-react";
+import { Building2, ShieldCheck, Menu, Users, FileText, GitBranch, Layers, AlertOctagon, TrendingUp, Package, Banknote, Phone } from "lucide-react";
 import { LucideIcon } from "lucide-react";
 
 export interface MenuItem {
@@ -65,4 +65,33 @@ export const MENU_CONFIG: MenuItem[] = [
             { key: "lossReasons", label: "Lý do thất bại", path: "/loss-reasons", icon: AlertOctagon, roles: ["ADMIN", "SALE"], group: "CRM" },
         ],
     },
+    {
+        key: "category",
+        label: "Danh mục",
+        path: "/categories",
+        icon: Layers,
+        roles: ["ADMIN", "IT"],
+    },
+    {
+        key: "product",
+        label: "Sản phẩm",
+        path: "/products",
+        icon: Package,
+        roles: ["ADMIN", "IT"],
+    },
+    {
+        key: "price",
+        label: "Bảng giá",
+        path: "/prices",
+        icon: Banknote,
+        roles: ["ADMIN", "IT"],
+    },
+    
+    {
+        key: "contact",
+        label: "Liên hệ",
+        path: "/contacts",
+        icon: Phone,
+        roles: ["ADMIN", "IT"],
+    }
 ];
