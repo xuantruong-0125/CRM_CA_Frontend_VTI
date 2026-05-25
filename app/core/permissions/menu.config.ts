@@ -1,4 +1,5 @@
-import { Building2, ShieldCheck, Menu, Users, FileText, GitBranch, Layers, AlertOctagon, TrendingUp } from "lucide-react";
+import { Building2, ShieldCheck, Menu, Users, FileText, GitBranch, Layers, AlertOctagon, TrendingUp, Package, Banknote, Phone, Target, BarChart3, Trophy, CheckSquare, Calendar } from "lucide-react";
+
 import { LucideIcon } from "lucide-react";
 
 export interface MenuItem {
@@ -42,7 +43,6 @@ export const MENU_CONFIG: MenuItem[] = [
         path: "/system/users",
         icon: Users,
         roles: ["IT"],
-        group: "Hệ thống",
     },
     {
         key: "quotes",
@@ -64,5 +64,85 @@ export const MENU_CONFIG: MenuItem[] = [
             { key: "pipelineStages", label: "Giai đoạn quy trình", path: "/pipeline-stages", icon: Layers, roles: ["ADMIN", "SALE"], group: "CRM" },
             { key: "lossReasons", label: "Lý do thất bại", path: "/loss-reasons", icon: AlertOctagon, roles: ["ADMIN", "SALE"], group: "CRM" },
         ],
+    },
+    {
+        key: "category",
+        label: "Danh mục",
+        path: "/categories",
+        icon: Layers,
+        roles: ["ADMIN", "IT"],
+    },
+    {
+        key: "product",
+        label: "Sản phẩm",
+        path: "/products",
+        icon: Package,
+        roles: ["ADMIN", "IT"],
+    },
+    {
+        key: "price",
+        label: "Bảng giá",
+        path: "/prices",
+        icon: Banknote,
+        roles: ["ADMIN", "IT"],
+    },
+
+    {
+        key: "contact",
+        label: "Liên hệ",
+        path: "/contacts",
+        icon: Phone,
+        roles: ["ADMIN", "IT"],
+    },
+    {
+        key: "kpi-config",
+        label: "Thiết lập KPI",
+        path: "/kpi-configs",
+        icon: Target,
+        roles: ["ADMIN", "IT", "MANAGER"],
+    },
+    {
+        key: "reports",
+        label: "Báo cáo KPI",
+        path: "/reports",
+        icon: BarChart3,
+        roles: ["ADMIN", "MANAGER"],
+    },
+    {
+        key: "my-kpi",
+        label: "KPI Của Tôi",
+        path: "/my-kpi",
+        icon: Trophy,
+        roles: ["SALE", "MANAGER", "ADMIN"],
+    },
+    {
+        key: "lead",
+        label: "Khách hàng tiềm năng",
+        path: "/leads",
+        icon: Trophy,
+        roles: ["SALE", "MANAGER", "ADMIN"],
+    },
+    {
+        key: "customer",
+        label: "Khách hàng",
+        path: "/customers",
+        icon: Trophy,
+        roles: ["SALE", "MANAGER", "ADMIN"],
+    }, 
+    {
+        key: "tasks",
+        label: "Công việc",
+        path: "/task",
+        icon: CheckSquare,
+        roles: ["ADMIN", "SALE", "SALES_MANAGER", "MANAGER"],
+        group: "CRM",
+    },
+    {
+        key: "activities",
+        label: "Hoạt động",
+        path: "/activity",
+        icon: Calendar,
+        roles: ["ADMIN", "SALE", "SALES_MANAGER", "MANAGER"],
+        group: "CRM",
     },
 ];

@@ -223,7 +223,7 @@ export const useLogin = () => {
                 "userId",
                 response.userId.toString()
             );
-            
+
             localStorage.setItem(
                 "username",
                 response.username
@@ -255,8 +255,6 @@ export const useLogin = () => {
                 case "IT":
                     router.push("/system/users");
                     break;
-
-                case "SALE_MANAGER":
                 case "MANAGER":
                 case "SALE":
                     router.push("/quotes");

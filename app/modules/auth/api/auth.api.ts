@@ -10,6 +10,5 @@ export const loginApi = async (
         `${API_URL}/login`,
         payload
     );
-
     return response.data;
 };

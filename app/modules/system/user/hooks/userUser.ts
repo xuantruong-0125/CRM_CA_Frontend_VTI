@@ -141,6 +141,7 @@
 
 
 import { useEffect, useState } from "react";
+import { toast } from "react-toastify";
 import {
     User,
     UserPayload,
@@ -188,14 +189,25 @@ export const useUser = () => {
                 })
                 : await getUsers(currentPage);
 
-            setData(result.content);
+            setData(result.content || []);
 
             setPagination({
-                page: result.page,
-                size: result.size,
-                totalElements: result.totalElements,
-                totalPages: result.totalPages,
-                last: result.last,
+                page: result.page || 0,
+                size: result.size || 15,
+                totalElements: result.totalElements || 0,
+                totalPages: result.totalPages || 0,
+                last: result.last ?? true,
+            });
+        } catch (error: any) {
+            console.error("Error fetching users:", error);
+            toast.error(error?.message || "Không thể tải danh sách người dùng");
+            setData([]);
+            setPagination({
+                page: 0,
+                size: 15,
+                totalElements: 0,
+                totalPages: 0,
+                last: true,
             });
         } finally {
             setLoading(false);

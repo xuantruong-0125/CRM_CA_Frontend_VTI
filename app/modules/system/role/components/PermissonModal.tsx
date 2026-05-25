@@ -196,7 +196,7 @@ export default function PermissionModal({ role, onClose }: any) {
                 {/* ACTION */}
                 <div className="permission-actions-footer">
 
-                    <button className="btn-close" onClick={onClose}>
+                    <button className="btn-closed" onClick={onClose}>
                         Đóng
                     </button>
 

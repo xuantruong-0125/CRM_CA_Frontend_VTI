@@ -7,6 +7,7 @@
 
 .title {
     margin-bottom: 16px;
+    color: white;
     background-color: rgb(21, 0, 211);
     padding: 10px;
     padding-left: 25px;
@@ -237,7 +238,7 @@
     gap: 10px;
 }
 
-.userNum{
+.userNum {
     color: #6a6a6a !important;
     font-weight: bold;
 }
@@ -249,6 +250,7 @@
 .pagination button {
     border: none;
     background: #2850d5;
+    color: white;
     padding: 6px 10px;
     cursor: pointer;
     border-radius: 6px;
@@ -397,7 +399,7 @@
     padding: 0;
 }
 
-.modalHeader{
+.modalHeader {
     color: #000;
     font-weight: bold;
 }
@@ -512,6 +514,7 @@
         opacity: 0;
         transform: translateY(-25px);
     }
+
     to {
         opacity: 1;
         transform: translateY(0);
@@ -522,7 +525,7 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 10px ;
+    padding: 10px;
     padding-left: 20px;
     border-bottom: 1px solid #9c9c9c;
 }
@@ -590,4 +593,3 @@
     color: #b71c1c;
     transform: scale(1.15);
 }
-

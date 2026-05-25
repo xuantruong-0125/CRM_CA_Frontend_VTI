@@ -55,6 +55,19 @@ export const userApi = {
         return res.data;
     },
 
+    getUsers: async (): Promise<User[]> => {
+        const res = await httpClient.get<any>(API_URL);
+        // Nếu trả về dạng page { content: [...] }
+        if (res.data && res.data.content) {
+            return res.data.content;
+        }
+        // Nếu trả về dạng mảng trực tiếp [...]
+        if (Array.isArray(res.data)) {
+            return res.data;
+        }
+        return [];
+    },
+
     search: async (filters: UserFilter): Promise<UserPageResponse> => {
         const res = await httpClient.get(`${API_URL}/search`, {
             params: filters,

@@ -90,3 +90,32 @@
     border-color: #4a90e2;
     box-shadow: 0 0 0 2px rgba(74, 144, 226, 0.2);
 }
+
+.passwordContainer {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.passwordContainer input {
+    width: 100%;
+    padding-right: 40px;
+    margin-bottom: 0;
+}
+
+.toggleButton {
+    position: absolute;
+    right: 10px;
+    background: none !important;
+    border: none !important;
+    color: #666 !important;
+    cursor: pointer;
+    font-size: 14px;
+    width: auto !important;
+    padding: 0 !important;
+    margin: 0 !important;
+}
+
+.toggleButton:hover {
+    color: #333 !important;
+}

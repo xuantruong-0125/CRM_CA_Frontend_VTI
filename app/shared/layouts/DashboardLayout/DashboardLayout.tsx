@@ -20,6 +20,7 @@
 "use client";
 
 import { useState } from "react";
+
 import Sidebar from "@/shared/layouts/Sidebar/Sidebar";
 import styles from "./DashboardLayout.module.css";
 
@@ -38,9 +39,8 @@ export default function DashboardLayout({
       />
 
       <div
-        className={`${styles.content} ${
-          collapsed ? styles.collapsed : ""
-        }`}
+        className={`${styles.content} ${collapsed ? styles.collapsed : ""
+          }`}
       >
         {children}
       </div>

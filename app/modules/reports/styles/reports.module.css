@@ -1,0 +1,337 @@
+/* app/modules/reports/styles/reports.module.css */
+@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@200;400;600;700;800&display=swap');
+
+.reportPageContainer {
+  min-height: 100vh;
+  background-color: #f4f6fa;
+  padding-bottom: 2.5rem;
+  font-family: 'Manrope', sans-serif;
+}
+
+.reportNav {
+  display: flex;
+  border-bottom: 2px solid #34495e;
+  background-color: #2c3e50;
+}
+
+.reportNavHeader {
+  padding: 14px 20px;
+  font-size: 13px;
+  font-weight: 700;
+  color: white;
+  background: linear-gradient(to right, #2c3e50, #34495e);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 220px;
+}
+
+.reportNavLink {
+  color: #bdc3c7;
+  text-decoration: none;
+  padding: 14px 18px;
+  font-size: 13px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  transition: all 0.2s;
+  border-bottom: 3px solid transparent;
+  cursor: pointer;
+  background: transparent;
+  border-top: none;
+  border-left: none;
+  border-right: none;
+}
+
+.reportNavLink:hover {
+  color: white;
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+.reportNavLink.active {
+  color: #e67e22;
+  border-bottom-color: #e67e22;
+  background-color: rgba(230, 126, 34, 0.1);
+}
+
+.reportFilterBar {
+  background-color: white;
+  padding: 14px 24px;
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  border-bottom: 1px solid #e0e0e0;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+}
+
+.filterLabel {
+  font-weight: 600;
+  font-size: 13px;
+  color: #555;
+  white-space: nowrap;
+}
+
+.reportDropdownTrigger {
+  padding: 7px 14px;
+  border: 1px solid #d0d5dd;
+  border-radius: 8px;
+  font-size: 13px;
+  background-color: #fafafa;
+  cursor: pointer;
+  min-width: 220px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.reportDropdownTrigger.highlight {
+  border-color: #e67e22;
+  color: #e67e22;
+  background-color: white;
+  font-weight: 700;
+}
+
+.reportDropdownMenu {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  margin-top: 4px;
+  width: 100%;
+  background-color: white;
+  border: 1px solid #d0d5dd;
+  border-radius: 8px;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  z-index: 200;
+  max-height: 300px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.reportDropdownSearchWrap {
+  padding: 8px;
+  border-bottom: 1px solid #f3f4f6;
+  background-color: #f9fafb;
+  position: relative;
+}
+
+.reportDropdownSearchInput {
+  width: 100%;
+  padding: 6px 10px 6px 36px;
+  font-size: 13px;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  transition: all 0.2s;
+  outline: none;
+  color: #333 !important;
+  background-color: #fff !important;
+}
+
+.reportDropdownSearchInput:focus {
+  border-color: #e67e22;
+  box-shadow: 0 0 0 1px #e67e22;
+}
+
+.reportDropdownItem {
+  padding: 10px 12px;
+  font-size: 13px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  color: #333;
+}
+
+.reportDropdownItem:hover {
+  background-color: #f5f7fa;
+}
+
+.reportDropdownItem.active {
+  background-color: #eef3f8;
+  color: #e67e22;
+  font-weight: 700;
+}
+
+.reportDropdownItem.empty {
+  color: #9ca3af;
+  text-align: center;
+  font-style: italic;
+  cursor: default;
+}
+
+.reportDropdownItem.empty:hover {
+  background-color: transparent;
+}
+
+.reportSearchWrap {
+  position: relative;
+}
+
+.reportSearchInput {
+  padding: 7px 16px 7px 40px;
+  border: 1px solid #d0d5dd;
+  border-radius: 8px;
+  font-size: 13px;
+  background-color: #fafafa;
+  min-width: 250px;
+  transition: all 0.2s;
+  outline: none;
+  color: #333 !important;
+  background-color: #fff !important;
+}
+
+.reportSearchInput:focus {
+  border-color: #e67e22;
+  box-shadow: 0 0 0 1px #e67e22;
+}
+
+.reportTableWrap {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  border-radius: 10px;
+  overflow: hidden;
+  background-color: white;
+  min-width: 1200px;
+}
+
+.reportTableTh {
+  background-color: #34495e;
+  color: white;
+  padding: 10px 8px;
+  text-align: center;
+  font-weight: 700;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  border-right: 1px solid rgba(255, 255, 255, 0.1);
+  vertical-align: middle;
+}
+
+.reportTableOrgHeader {
+  font-weight: 700;
+  font-size: 12px;
+  color: #2c3e50;
+  padding: 8px 12px;
+  text-align: left;
+  position: sticky;
+  left: 0;
+  z-index: 2;
+  background-color: #e8ecf0;
+}
+
+.reportTableRow {
+  background-color: white;
+  transition: background-color 0.2s;
+  border-bottom: 1px solid #e8ecf0;
+}
+
+.reportTableRow:hover {
+  background-color: #eef3f8;
+}
+
+.reportTableRow:nth-child(even) {
+  background-color: #f8f9fa;
+}
+
+.reportTableRow:nth-child(even):hover {
+  background-color: #eef3f8;
+}
+
+.reportTableTd {
+  padding: 8px 10px;
+  text-align: center;
+  vertical-align: middle;
+  border-right: 1px solid #e8ecf0;
+  line-height: 1.4;
+}
+
+.dashboardCard {
+  background-color: white;
+  border-radius: 12px;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+  border: 1px solid #e8ecf0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.dashboardCardHeader {
+  background: linear-gradient(to bottom right, #f8f9fa, #eef1f5);
+  padding: 12px;
+  border-bottom: 2px solid #e67e22;
+  font-weight: 700;
+  font-size: 13px;
+  color: #2c3e50;
+  text-transform: uppercase;
+  letter-spacing: 0.025em;
+}
+
+.dashboardKpiRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 0;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.dashboardKpiRow:last-child {
+  border-bottom: none;
+}
+
+.dashboardKpiLabel {
+  font-size: 13px;
+  color: #555;
+  font-weight: 500;
+}
+
+.dashboardKpiValue {
+  display: flex;
+  align-items: baseline;
+  gap: 2px;
+}
+
+.title {
+    margin-bottom: 16px;
+    background-color: rgb(21, 0, 211);
+    padding: 10px;
+    padding-left: 25px;
+    border-radius: 10px;
+    text-align: left;
+    font-weight: bolder;
+    font-size: larger;
+    color: #fff;
+}
+
+.subMenuContainer {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 16px;
+    padding-left: 5px;
+}
+
+.subMenuItem {
+    padding: 8px 16px;
+    font-size: 14px;
+    font-weight: bold;
+    color: #4b5563;
+    background-color: #e5e7eb;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.subMenuItem:hover {
+    background-color: #d1d5db;
+    color: #1f2937;
+}
+
+.subMenuItem.active {
+    background-color: rgb(21, 0, 211);
+    color: #ffffff;
+}
+

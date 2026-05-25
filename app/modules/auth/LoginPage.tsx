@@ -109,7 +109,11 @@ export default function LoginPage() {
         e: React.FormEvent<HTMLFormElement>
     ) => {
         e.preventDefault();
-        await login(formData);
+        const trimmedData = {
+            username: formData.username.trim(),
+            password: formData.password.trim(),
+        };
+        await login(trimmedData);
     };
 
     // xử lý phím
