@@ -96,29 +96,25 @@ export default function ReportsPage() {
 
   return (
     <div className={styles.reportPageContainer}>
-      <nav className={styles.reportNav}>
-        <div className={styles.reportNavHeader}>
-          <Home size={18} className="opacity-80" />
-          {activeTab === "dashboard" ? "TỔNG QUAN KPI" : "BÁO CÁO CHI TIẾT KPI"}
-        </div>
-        <div className="flex">
-          <Link href="/kpi-configs" className={styles.reportNavLink}>
-            THIẾT LẬP KPI
-          </Link>
-          <button 
-            onClick={() => setActiveTab("detail")} 
-            className={`${styles.reportNavLink} ${activeTab === 'detail' ? styles.active : ''}`}
-          >
-            BÁO CÁO
-          </button>
-          <button 
-            onClick={() => setActiveTab("dashboard")} 
-            className={`${styles.reportNavLink} ${activeTab === 'dashboard' ? styles.active : ''}`}
-          >
-            TỔNG QUAN
-          </button>
-        </div>
-      </nav>
+      <h2 className={styles.title}>Báo cáo KPI</h2>
+
+      <div className={styles.subMenuContainer}>
+        <Link href="/kpi-configs" className={styles.subMenuItem}>
+          Thiết lập KPI
+        </Link>
+        <button 
+          onClick={() => setActiveTab("detail")} 
+          className={`${styles.subMenuItem} ${activeTab === 'detail' ? styles.active : ''}`}
+        >
+          Báo cáo
+        </button>
+        <button 
+          onClick={() => setActiveTab("dashboard")} 
+          className={`${styles.subMenuItem} ${activeTab === 'dashboard' ? styles.active : ''}`}
+        >
+          Tổng quan
+        </button>
+      </div>
 
       <div className={styles.reportFilterBar}>
         <div className="flex items-center gap-3">

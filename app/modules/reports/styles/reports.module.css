@@ -123,6 +123,8 @@
   border-radius: 4px;
   transition: all 0.2s;
   outline: none;
+  color: #333 !important;
+  background-color: #fff !important;
 }
 
 .reportDropdownSearchInput:focus {
@@ -172,6 +174,8 @@
   min-width: 250px;
   transition: all 0.2s;
   outline: none;
+  color: #333 !important;
+  background-color: #fff !important;
 }
 
 .reportSearchInput:focus {
@@ -285,3 +289,49 @@
   align-items: baseline;
   gap: 2px;
 }
+
+.title {
+    margin-bottom: 16px;
+    background-color: rgb(21, 0, 211);
+    padding: 10px;
+    padding-left: 25px;
+    border-radius: 10px;
+    text-align: left;
+    font-weight: bolder;
+    font-size: larger;
+    color: #fff;
+}
+
+.subMenuContainer {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 16px;
+    padding-left: 5px;
+}
+
+.subMenuItem {
+    padding: 8px 16px;
+    font-size: 14px;
+    font-weight: bold;
+    color: #4b5563;
+    background-color: #e5e7eb;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.subMenuItem:hover {
+    background-color: #d1d5db;
+    color: #1f2937;
+}
+
+.subMenuItem.active {
+    background-color: rgb(21, 0, 211);
+    color: #ffffff;
+}
+

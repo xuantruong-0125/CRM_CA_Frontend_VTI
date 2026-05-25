@@ -133,6 +133,6 @@
   display: none;
 }
 
-.sidebar.collapsed .header{
+.sidebar.collapsed .header {
   margin-left: -6px;
 }

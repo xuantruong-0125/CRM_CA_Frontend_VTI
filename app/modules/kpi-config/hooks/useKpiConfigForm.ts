@@ -83,12 +83,18 @@ export const useKpiConfigForm = (id?: number | string) => {
             const isUser = !!a.userId;
             const aid = a.userId || a.organizationId;
             const type = isUser ? 'user' : 'org';
+            
+            // 🔥 Tìm option tương ứng trong userOpts hoặc orgOpts để lấy label chuẩn (tên thật)
+            const matchedOpt = isUser
+              ? userOpts.find((u: any) => u.id === aid)
+              : orgOpts.find((o: any) => o.id === aid);
+
             return { 
               key: `${type}-${aid}`, 
-              label: isUser ? `NV #${aid}` : `Phòng ban #${aid}`, 
+              label: matchedOpt ? matchedOpt.label : (isUser ? `NV #${aid}` : `Phòng ban #${aid}`), 
               type, 
               id: aid, 
-              commissionPercent: a.commissionPercent || 0 
+              commissionPercent: a.commissionPercent !== undefined && a.commissionPercent !== null ? a.commissionPercent : 0 
             };
           });
           setSelectedAssignments(restored);

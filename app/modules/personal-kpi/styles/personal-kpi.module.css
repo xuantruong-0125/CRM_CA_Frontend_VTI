@@ -68,7 +68,8 @@
   border-bottom: 1px solid #f1f5f9;
   outline: none;
   font-size: 13px;
-  color: #2c3e50;
+  color: #2c3e50 !important;
+  background-color: #fff !important;
   font-family: 'Manrope', sans-serif;
 }
 
@@ -343,3 +344,44 @@
   color: #27ae60;
   font-weight: 800;
 }
+
+.title {
+    margin-bottom: 16px;
+    background-color: rgb(21, 0, 211);
+    padding: 10px;
+    padding-left: 25px;
+    border-radius: 10px;
+    text-align: left;
+    font-weight: bolder;
+    font-size: larger;
+    color: #fff;
+}
+
+.filterBar {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    flex-wrap: wrap;
+    margin: 24px 0;
+    padding: 20px;
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.filterGroup {
+    display: flex;
+    align-items: center;
+    min-width: 320px;
+    flex: 1;
+}
+
+.filterGroup label {
+    font-size: 14px;
+    font-weight: 600;
+    color: #374151;
+    white-space: nowrap;
+    margin-right: 10px;
+}
+

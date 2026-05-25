@@ -128,7 +128,7 @@ const KpiConfigPage: React.FC<KpiConfigPageProps> = ({ id }) => {
                     max="100" 
                     step="0.1"
                     placeholder="%" 
-                    value={s.commissionPercent || ''} 
+                    value={s.commissionPercent !== undefined && s.commissionPercent !== null ? s.commissionPercent : ''} 
                     onChange={(e) => handleCommissionChange(s.key, e.target.value)}
                     onClick={(e) => e.stopPropagation()}
                     style={{ width: '45px', padding: '0px 4px', border: 'none', borderBottom: '1px solid rgba(0,0,0,0.2)', background: 'transparent', color: '#333', fontSize: '13px', outline: 'none', fontWeight: 'bold' }}

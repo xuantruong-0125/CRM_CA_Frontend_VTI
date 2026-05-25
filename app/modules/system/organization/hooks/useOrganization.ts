@@ -12,8 +12,14 @@ export const useOrganization = () => {
   const [data, setData] = useState<Organization[]>([]);
 
   const fetchData = async () => {
-    const res = await getTree();
-    setData(res);
+    try {
+      const res = await getTree();
+      setData(res || []);
+    } catch (error: any) {
+      console.error("Error fetching organizations:", error);
+      toast.error(error?.message || "Không thể tải danh sách tổ chức");
+      setData([]);
+    }
   };
 
   useEffect(() => {

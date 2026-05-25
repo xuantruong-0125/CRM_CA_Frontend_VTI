@@ -72,56 +72,56 @@ const PersonalKpiPage = () => {
 
   return (
     <div className={styles.pageContainer}>
-      <header className={styles.header}>
-        <div className={styles.headerTitle}>
-          <h1>MỤC TIÊU KPI CỦA TÔI</h1>
-          <p>Theo dõi tiến độ thực tế và hoa hồng dự kiến theo thời gian thực</p>
-        </div>
+      <h2 className={styles.title}>Mục tiêu KPI của tôi</h2>
 
-        {/* CUSTOM SEARCHABLE DROPDOWN */}
-        <div className={styles.configSelector} ref={dropdownRef} onClick={() => setIsDropdownOpen(!isDropdownOpen)}>
-          <Calendar size={18} color="#64748b" />
-          <span style={{ flex: 1, fontWeight: 700, fontSize: '14px', color: '#2c3e50' }}>
-            {activeConfig?.name || "Chọn kỳ KPI..."}
-          </span>
-          <ChevronDown size={16} color="#64748b" />
+      <div className={styles.filterBar}>
+        <div className={styles.filterGroup}>
+          <label>Kỳ KPI</label>
+          {/* CUSTOM SEARCHABLE DROPDOWN */}
+          <div className={styles.configSelector} ref={dropdownRef} onClick={() => setIsDropdownOpen(!isDropdownOpen)}>
+            <Calendar size={18} color="#64748b" />
+            <span style={{ flex: 1, fontWeight: 700, fontSize: '14px', color: '#2c3e50' }}>
+              {activeConfig?.name || "Chọn kỳ KPI..."}
+            </span>
+            <ChevronDown size={16} color="#64748b" />
 
-          {isDropdownOpen && (
-            <div className={styles.dropdownMenu} onClick={(e) => e.stopPropagation()}>
-              <div style={{ position: 'relative' }}>
-                <Search size={14} color="#94a3b8" style={{ position: 'absolute', left: '12px', top: '12px' }} />
-                <input 
-                  autoFocus
-                  className={styles.searchInput}
-                  placeholder="Tìm kiếm kỳ KPI..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  style={{ paddingLeft: '35px' }}
-                />
+            {isDropdownOpen && (
+              <div className={styles.dropdownMenu} onClick={(e) => e.stopPropagation()}>
+                <div style={{ position: 'relative' }}>
+                  <Search size={14} color="#94a3b8" style={{ position: 'absolute', left: '12px', top: '12px' }} />
+                  <input 
+                    autoFocus
+                    className={styles.searchInput}
+                    placeholder="Tìm kiếm kỳ KPI..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    style={{ paddingLeft: '35px' }}
+                  />
+                </div>
+                <div className={styles.dropdownList}>
+                  {filteredConfigs.length > 0 ? (
+                    filteredConfigs.map(c => (
+                      <div 
+                        key={c.id} 
+                        className={`${styles.dropdownItem} ${c.id === selectedConfigId ? styles.active : ""}`}
+                        onClick={() => {
+                          setSelectedConfigId(c.id);
+                          setIsDropdownOpen(false);
+                          setSearchTerm("");
+                        }}
+                      >
+                        {c.name}
+                      </div>
+                    ))
+                  ) : (
+                    <div className={styles.noResult}>Không tìm thấy kết quả</div>
+                  )}
+                </div>
               </div>
-              <div className={styles.dropdownList}>
-                {filteredConfigs.length > 0 ? (
-                  filteredConfigs.map(c => (
-                    <div 
-                      key={c.id} 
-                      className={`${styles.dropdownItem} ${c.id === selectedConfigId ? styles.active : ""}`}
-                      onClick={() => {
-                        setSelectedConfigId(c.id);
-                        setIsDropdownOpen(false);
-                        setSearchTerm("");
-                      }}
-                    >
-                      {c.name}
-                    </div>
-                  ))
-                ) : (
-                  <div className={styles.noResult}>Không tìm thấy kết quả</div>
-                )}
-              </div>
-            </div>
-          )}
+            )}
+          </div>
         </div>
-      </header>
+      </div>
 
       <div className={styles.contentGrid}>
         <main>

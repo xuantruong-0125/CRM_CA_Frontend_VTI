@@ -25,6 +25,7 @@ const KpiConfigListPage: React.FC = () => {
   const [totalPages, setTotalPages] = useState(0);
   const [totalElements, setTotalElements] = useState(0);
   const [jumpPage, setJumpPage] = useState('');
+  const [inputPage, setInputPage] = useState(1);
   const [expandedRows, setExpandedRows] = useState<Set<number>>(new Set());
 
   const fetchData = async (keyword?: string, page: number = 0, size: number = 10) => {
@@ -38,6 +39,7 @@ const KpiConfigListPage: React.FC = () => {
       setTotalPages(dataResponse.totalPages);
       setTotalElements(dataResponse.totalElements);
       setCurrentPage(dataResponse.pageNumber);
+      setInputPage(dataResponse.pageNumber + 1);
 
       const oMap: Record<number, string> = {};
       orgs.forEach(o => oMap[o.id] = o.name);
@@ -197,50 +199,33 @@ const KpiConfigListPage: React.FC = () => {
 
   return (
     <div className={styles.kpiPageContainer} style={{ background: '#f0f2f5', minHeight: '100vh', paddingBottom: 40, fontFamily: "'Manrope', sans-serif" }}>
-      <div style={{
-        background: '#2c3e50',
-        padding: '18px 28px',
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        borderBottom: '3px solid #e67e22',
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <Clock size={22} color="#e67e22" strokeWidth={2.5} />
-          <span style={{ color: '#fff', fontWeight: 800, fontSize: 16, letterSpacing: 0.5, textTransform: 'uppercase' }}>
-            Quản lý cấu hình KPI
-          </span>
-        </div>
+      <h2 className={styles.title}>Quản lý cấu hình KPI</h2>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <div className={styles.searchContainer}>
-            <Search size={15} className={styles.searchIcon} />
+      <div className={styles.filterBar}>
+        <div className={styles.filterGroup}>
+          <label>Tìm kiếm</label>
+          <div className={styles.searchContainerV2}>
+            <Search size={15} className={styles.searchIcon} style={{ color: '#8a99b3', marginRight: 8 }} />
             <input
               type="text"
-              placeholder="Tìm kiếm..."
+              placeholder="Tìm kiếm cấu hình..."
               value={searchKeyword}
               onChange={(e) => setSearchKeyword(e.target.value)}
-              className={styles.searchInput}
-              style={{ color: '#fff' }}
+              className={styles.searchInputV2}
             />
             {searchKeyword && (
-              <button onClick={() => setSearchKeyword('')} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.6)', cursor: 'pointer', fontSize: 16 }}>×</button>
+              <button onClick={() => setSearchKeyword('')} className={styles.clearSearchBtn}>×</button>
             )}
           </div>
+        </div>
 
+        <div className={styles.filterActions}>
           <button
             onClick={() => router.push('/kpi-configs/create')}
-            className={`${styles.btn} ${styles.btnPrimary}`}
-            style={{
-              display: 'flex', alignItems: 'center', gap: 6,
-              background: '#e67e22', color: '#fff', border: 'none',
-              padding: '9px 18px', borderRadius: 8, fontWeight: 700,
-              fontSize: 13, cursor: 'pointer',
-              boxShadow: '0 2px 8px rgba(230,126,34,0.4)',
-              transition: 'all 0.15s',
-            }}
+            className={styles.addButton}
           >
-            <Plus size={16} /> Thêm mới
+            <Plus size={18} />
+            Thêm mới
           </button>
         </div>
       </div>
@@ -333,41 +318,83 @@ const KpiConfigListPage: React.FC = () => {
         </div>
 
         {totalPages > 0 && (
-          <div className={styles.paginationWrap}>
-            <div className={styles.paginationInfo}>
-              Hiển thị <strong style={{ color: '#334155' }}>{configs.length}</strong> / <strong style={{ color: '#334155' }}>{totalElements}</strong> cấu hình
+          <div className={styles.pagination}>
+            <span className={styles.userNum}>
+              Total: {totalElements} configs
+            </span>
+            {/* First page */}
+            <button
+              disabled={currentPage === 0}
+              onClick={() => handlePageChange(0)}
+            >
+              <ChevronsLeft size={18} color="white" />
+            </button>
+
+            {/* Prev */}
+            <button
+              disabled={currentPage === 0}
+              onClick={() => handlePageChange(currentPage - 1)}
+            >
+              <ChevronLeft size={18} color="white" />
+            </button>
+
+            {/* Info */}
+            <span>
+              Trang {currentPage + 1} / {totalPages}
+            </span>
+
+            {/* Input jump */}
+            <div className={styles.pageInput}>
+              <input
+                type="number"
+                min={1}
+                max={totalPages}
+                value={inputPage}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  setInputPage(value === "" ? 1 : Number(value));
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    let target = Number(inputPage);
+                    if (!isNaN(target)) {
+                      if (target < 1) target = 1;
+                      if (target > totalPages) target = totalPages;
+                      handlePageChange(target - 1);
+                    }
+                  }
+                }}
+              />
             </div>
-            <div className={styles.paginationControls}>
-              <button className={styles.pageBtn} disabled={currentPage === 0} onClick={() => handlePageChange(0)} title="Trang đầu">
-                <ChevronsLeft size={16} />
-              </button>
-              <button className={styles.pageBtn} disabled={currentPage === 0} onClick={() => handlePageChange(currentPage - 1)} title="Trang trước">
-                <ChevronLeft size={16} />
-              </button>
-              {(() => {
-                const maxVisible = 5;
-                let start = Math.max(0, currentPage - Math.floor(maxVisible / 2));
-                let end = Math.min(totalPages - 1, start + maxVisible - 1);
-                if (end - start + 1 < maxVisible) start = Math.max(0, end - maxVisible + 1);
-                const pages = [];
-                for (let i = start; i <= end; i++) pages.push(i);
-                return pages.map(idx => (
-                  <button key={idx} className={`${styles.pageBtn} ${currentPage === idx ? styles.active : ''}`} onClick={() => handlePageChange(idx)}>
-                    {idx + 1}
-                  </button>
-                ));
-              })()}
-              <button className={styles.pageBtn} disabled={currentPage === totalPages - 1} onClick={() => handlePageChange(currentPage + 1)} title="Trang sau">
-                <ChevronRight size={16} />
-              </button>
-              <button className={styles.pageBtn} disabled={currentPage === totalPages - 1} onClick={() => handlePageChange(totalPages - 1)} title="Trang cuối">
-                <ChevronsRight size={16} />
-              </button>
-              <div className={styles.paginationJump}>
-                <span>Trang:</span>
-                <input type="text" className={styles.jumpInput} value={jumpPage} onChange={(e) => setJumpPage(e.target.value.replace(/\D/g, ''))} onKeyDown={handleJumpPage} placeholder="..." />
-              </div>
-            </div>
+            <button 
+              onClick={() => {
+                let target = Number(inputPage);
+                if (!isNaN(target)) {
+                  if (target < 1) target = 1;
+                  if (target > totalPages) target = totalPages;
+                  handlePageChange(target - 1);
+                }
+              }}
+              style={{ color: 'white' }}
+            >
+              Đi
+            </button>
+
+            {/* Next */}
+            <button
+              disabled={currentPage === totalPages - 1}
+              onClick={() => handlePageChange(currentPage + 1)}
+            >
+              <ChevronRight size={18} color="white" />
+            </button>
+
+            {/* Last page */}
+            <button
+              disabled={currentPage === totalPages - 1}
+              onClick={() => handlePageChange(totalPages - 1)}
+            >
+              <ChevronsRight size={18} color="white" />
+            </button>
           </div>
         )}
       </div>
