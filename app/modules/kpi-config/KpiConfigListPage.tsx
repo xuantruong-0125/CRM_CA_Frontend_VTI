@@ -11,6 +11,7 @@ import { kpiConfigApi } from './api/kpi-config.api';
 import { organizationApi } from '../system/organization/api/organization.api';
 import { userApi } from '../system/user/api/user.api';
 import styles from './styles/kpi-config.module.css';
+import ConfirmDeleteModal from '@/shared/components/ConfirmDeleteModal/ConfirmDeleteModal';
 
 const KpiConfigListPage: React.FC = () => {
   const router = useRouter();
@@ -27,6 +28,8 @@ const KpiConfigListPage: React.FC = () => {
   const [jumpPage, setJumpPage] = useState('');
   const [inputPage, setInputPage] = useState(1);
   const [expandedRows, setExpandedRows] = useState<Set<number>>(new Set());
+  const [deleteId, setDeleteId] = useState<number | null>(null);
+  const [loadingDelete, setLoadingDelete] = useState(false);
 
   const fetchData = async (keyword?: string, page: number = 0, size: number = 10) => {
     try {
@@ -87,15 +90,18 @@ const KpiConfigListPage: React.FC = () => {
     }
   };
 
-  const handleDelete = async (id: number) => {
-    if (confirm('Bạn có chắc chắn muốn xóa cấu hình KPI này?')) {
-      try {
-        await kpiConfigApi.delete(id);
-        toast.success('Xóa thành công!');
-        fetchData(searchKeyword, currentPage, pageSize);
-      } catch (error) {
-        toast.error('Lỗi khi xóa cấu hình.');
-      }
+  const handleConfirmDelete = async () => {
+    if (!deleteId) return;
+    try {
+      setLoadingDelete(true);
+      await kpiConfigApi.delete(deleteId);
+      toast.success('Xóa thành công!');
+      setDeleteId(null);
+      fetchData(searchKeyword, currentPage, pageSize);
+    } catch (error) {
+      toast.error('Lỗi khi xóa cấu hình.');
+    } finally {
+      setLoadingDelete(false);
     }
   };
 
@@ -303,7 +309,7 @@ const KpiConfigListPage: React.FC = () => {
                         </button>
                         <button
                           title="Xóa"
-                          onClick={() => config.id && handleDelete(config.id)}
+                          onClick={() => config.id && setDeleteId(config.id)}
                           className={`${styles.btnIcon} ${styles.delete}`}
                         >
                           <Trash2 size={15} />
@@ -397,7 +403,13 @@ const KpiConfigListPage: React.FC = () => {
             </button>
           </div>
         )}
-      </div>
+      <ConfirmDeleteModal
+        open={!!deleteId}
+        onClose={() => setDeleteId(null)}
+        onConfirm={handleConfirmDelete}
+        loading={loadingDelete}
+      />
+    </div>
   );
 };
 
