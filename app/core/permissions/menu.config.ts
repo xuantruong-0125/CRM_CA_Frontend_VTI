@@ -70,21 +70,21 @@ export const MENU_CONFIG: MenuItem[] = [
         label: "Danh mục",
         path: "/categories",
         icon: Layers,
-        roles: ["ADMIN", "IT"],
+        roles: ["MANAGER"],
     },
     {
         key: "product",
         label: "Sản phẩm",
         path: "/products",
         icon: Package,
-        roles: ["ADMIN", "IT"],
+        roles: ["MANAGER"],
     },
     {
         key: "price",
         label: "Bảng giá",
         path: "/prices",
         icon: Banknote,
-        roles: ["ADMIN", "IT"],
+        roles: ["ADMIN"],
     },
 
     {
@@ -92,14 +92,14 @@ export const MENU_CONFIG: MenuItem[] = [
         label: "Liên hệ",
         path: "/contacts",
         icon: Phone,
-        roles: ["ADMIN", "IT"],
+        roles: ["SALE", "MANAGER"],
     },
     {
         key: "kpi-config",
         label: "Thiết lập KPI",
         path: "/kpi-configs",
         icon: Target,
-        roles: ["ADMIN", "IT", "MANAGER"],
+        roles: ["ADMIN", "MANAGER"],
     },
     {
         key: "reports",
@@ -134,7 +134,7 @@ export const MENU_CONFIG: MenuItem[] = [
         label: "Công việc",
         path: "/task",
         icon: CheckSquare,
-        roles: ["ADMIN", "SALE", "SALES_MANAGER", "MANAGER"],
+        roles: ["SALE", "SALES_MANAGER", "MANAGER"],
         group: "CRM",
     },
     {
@@ -142,7 +142,7 @@ export const MENU_CONFIG: MenuItem[] = [
         label: "Hoạt động",
         path: "/activity",
         icon: Calendar,
-        roles: ["ADMIN", "SALE", "SALES_MANAGER", "MANAGER"],
+        roles: [ "SALE", "SALES_MANAGER", "MANAGER"],
         group: "CRM",
     },
 ];
