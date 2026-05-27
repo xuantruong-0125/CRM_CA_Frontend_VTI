@@ -180,9 +180,14 @@ export const ProductPage = () => {
   };
 
   return (
-    <div className="p-4 bg-slate-50 min-h-screen">
+    <div className="flex flex-col min-h-screen bg-slate-50">
+      {/* Top Bar as requested */}
+      <div className="bg-[rgb(21,0,211)] text-white px-4 py-3 flex items-center justify-between">
+        <h1 className="text-[15px] font-bold">Quản lý sản phẩm</h1>
+      </div>
+
+      <div className="p-4 flex-1">
       <TableToolbar
-        title="Quản lý sản phẩm"
         onSearch={handleSearch}
         onFilterApply={handleApplyFilters}
         onFilterReset={handleResetFilters}
@@ -224,24 +229,24 @@ export const ProductPage = () => {
 
       {/* Shortcut Guide Footer */}
       <div className="mt-6 flex items-center gap-6 px-4 py-3 bg-white rounded-[5px] border border-slate-200 shadow-sm overflow-x-auto">
-        <div className="flex items-center gap-2 text-[10px] font-bold text-slate-500 uppercase tracking-widest shrink-0">
+        <div className="flex items-center gap-2 text-xs font-bold text-slate-500 uppercase tracking-widest shrink-0">
           <Keyboard size={14} className="text-slate-400" />
           Phím tắt bảng:
         </div>
         <div className="flex gap-6 shrink-0">
-          <div className="flex items-center gap-1.5 text-[11px] text-slate-600 whitespace-nowrap">
+          <div className="flex items-center gap-1.5 text-xs text-slate-600 whitespace-nowrap">
             <kbd className="px-1.5 py-0.5 bg-slate-50 border border-slate-200 rounded shadow-sm font-bold text-sky-600">Alt + N</kbd> Thêm (Alt+N)
           </div>
-          <div className="flex items-center gap-1.5 text-[11px] text-slate-600">
+          <div className="flex items-center gap-1.5 text-xs text-slate-600">
             <kbd className="px-1.5 py-0.5 bg-slate-50 border border-slate-200 rounded shadow-sm font-bold text-slate-700">/</kbd> Tìm kiếm
           </div>
-          <div className="flex items-center gap-1.5 text-[11px] text-slate-600">
+          <div className="flex items-center gap-1.5 text-xs text-slate-600">
             <kbd className="px-1.5 py-0.5 bg-slate-50 border border-slate-200 rounded shadow-sm font-bold text-slate-700">Alt + R</kbd> Làm mới
           </div>
-          <div className="flex items-center gap-1.5 text-[11px] text-slate-600">
+          <div className="flex items-center gap-1.5 text-xs text-slate-600">
             <kbd className="px-1.5 py-0.5 bg-slate-50 border border-slate-200 rounded shadow-sm font-bold text-rose-500">Del</kbd> Xóa mục chọn
           </div>
-          <div className="flex items-center gap-1.5 text-[11px] text-slate-600">
+          <div className="flex items-center gap-1.5 text-xs text-slate-600">
              <kbd className="px-1.5 py-0.5 bg-slate-50 border border-slate-200 rounded shadow-sm font-bold text-slate-700">Esc</kbd> Thoát nhập
           </div>
         </div>
@@ -255,6 +260,7 @@ export const ProductPage = () => {
         onClose={closeConfirm}
         onConfirm={handleConfirm}
       />
+      </div>
     </div>
   );
 };

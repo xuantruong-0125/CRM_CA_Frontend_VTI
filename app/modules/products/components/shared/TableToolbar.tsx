@@ -108,14 +108,14 @@ export const TableToolbar: React.FC<TableToolbarProps> = ({
             >
               <X size={14} />
             </button>
-            <span className="text-[12px] font-semibold text-sky-700 px-2 min-w-[70px] whitespace-nowrap">
+            <span className="text-xs font-semibold text-sky-700 px-2 min-w-[70px] whitespace-nowrap">
               Đã chọn {selectedCount}
             </span>
             <div className="h-4 w-px bg-sky-200 mx-1" />
             {onDeleteSelected && (
               <button
                 onClick={onDeleteSelected}
-                className="flex items-center gap-1 px-2 h-7 text-[12px] font-bold text-rose-600 hover:bg-rose-50 rounded-md transition-colors"
+                className="flex items-center gap-1 px-2 h-7 text-xs font-bold text-rose-600 hover:bg-rose-50 rounded-md transition-colors"
               >
                 <Trash2 size={13} />
                 <span>Xóa</span>
@@ -134,7 +134,7 @@ export const TableToolbar: React.FC<TableToolbarProps> = ({
           </div>
           <input
             type="text"
-            className="block w-full pl-9 pr-3 h-full bg-slate-50 border border-slate-200 text-slate-900 text-[13px] rounded-md focus:outline-none focus:ring-1 focus:ring-sky-500 focus:border-sky-500 focus:bg-white transition-all"
+            className="block w-full pl-9 pr-3 h-full bg-slate-50 border border-slate-200 text-slate-900 text-xs rounded-md focus:outline-none focus:ring-1 focus:ring-sky-500 focus:border-sky-500 focus:bg-white transition-all"
             placeholder={placeholder}
             onChange={(e) => onSearch(e.target.value)}
           />
@@ -195,7 +195,7 @@ export const TableToolbar: React.FC<TableToolbarProps> = ({
           {onCreate && (
             <button
               onClick={onCreate}
-              className="flex items-center gap-2 px-4 h-9 bg-sky-600 hover:bg-sky-700 text-white text-[13px] font-bold rounded-md transition-all active:scale-95 shadow-md shadow-sky-100 ml-1 whitespace-nowrap"
+              className="flex items-center gap-2 px-4 h-9 bg-sky-600 hover:bg-sky-700 text-white text-xs font-bold rounded-md transition-all active:scale-95 shadow-md shadow-sky-100 ml-1 whitespace-nowrap"
             >
               <Package size={17} />
               <span>{createLabel}</span>
