@@ -16,13 +16,13 @@ export const CategoryPage = () => {
   const [pageSize, setPageSize] = useState(20);
   const [keyword, setKeyword] = useState("");
   const [rowSelection, setRowSelection] = useState({});
-  const { 
-    isOpen: isConfirmOpen, 
-    isLoading: isConfirmLoading, 
-    options: confirmOptions, 
-    confirm: showConfirm, 
-    close: closeConfirm, 
-    handleConfirm 
+  const {
+    isOpen: isConfirmOpen,
+    isLoading: isConfirmLoading,
+    options: confirmOptions,
+    confirm: showConfirm,
+    close: closeConfirm,
+    handleConfirm
   } = useConfirm();
 
   const [columnVisibility, setColumnVisibility] = useState<Record<string, boolean>>({
@@ -160,79 +160,83 @@ export const CategoryPage = () => {
   };
 
   return (
-    <div className="p-4 bg-slate-50 min-h-screen">
-      <TableToolbar
-        title="Quản lý danh mục"
-        onSearch={handleSearch}
-        onCreate={() => router.push("/categories/create")}
-        createLabel="Thêm (Alt+N)"
-        placeholder="Tìm kiếm danh mục..."
-        selectedCount={selectedCount}
-        onClearSelection={handleClearSelection}
-        onDeleteSelected={performDeleteSelected}
-        columns={categoryColumns}
-        visibleColumns={columnVisibility}
-        onColumnToggle={handleColumnToggle}
-        onImport={handleImport}
-        onExport={handleExport}
-      />
-
-      <div className="relative">
-        {isLoading ? (
-          <div className="text-sm text-slate-500 py-10 text-center bg-white rounded-lg border border-slate-200">Đang tải dữ liệu...</div>
-        ) : isError ? (
-          <div className="text-sm text-rose-500 py-10 text-center bg-white rounded-lg border border-slate-200">Lỗi khi tải dữ liệu!</div>
-        ) : (
-          <CategoryTable 
-            data={data?.items || []} 
-            totalCount={data?.totalItems || 0}
-            totalPages={data?.totalPages || 0}
-            pageIndex={pageIndex}
-            pageSize={pageSize}
-            onPageChange={setPageIndex}
-            onPageSizeChange={setPageSize}
-            onEdit={handleEdit} 
-            onDelete={handleDelete}
-            rowSelection={rowSelection}
-            onRowSelectionChange={setRowSelection}
-            columnVisibility={columnVisibility}
-          />
-        )}
+    <div className="bg-slate-50 min-h-screen">
+      <div className="bg-[rgb(21,0,211)] text-white px-6 py-[10px] rounded-md mb-3 flex items-center">
+        <span className="text-[18px] font-bold tracking-[0.01em]">Danh mục</span>
       </div>
+      <div>
+        <TableToolbar
+          onSearch={handleSearch}
+          onCreate={() => router.push("/categories/create")}
+          createLabel="Thêm (Alt+N)"
+          placeholder="Tìm kiếm danh mục..."
+          selectedCount={selectedCount}
+          onClearSelection={handleClearSelection}
+          onDeleteSelected={performDeleteSelected}
+          columns={categoryColumns}
+          visibleColumns={columnVisibility}
+          onColumnToggle={handleColumnToggle}
+          onImport={handleImport}
+          onExport={handleExport}
+        />
 
-      {/* Shortcut Guide Footer */}
-      <div className="mt-6 flex items-center gap-6 px-4 py-3 bg-white rounded-[5px] border border-slate-200 shadow-sm overflow-x-auto">
-        <div className="flex items-center gap-2 text-[10px] font-bold text-slate-500 uppercase tracking-widest shrink-0">
-          <Keyboard size={14} className="text-slate-400" />
-          Phím tắt bảng:
+        <div className="relative">
+          {isLoading ? (
+            <div className="text-sm text-slate-500 py-10 text-center bg-white rounded-lg border border-slate-200">Đang tải dữ liệu...</div>
+          ) : isError ? (
+            <div className="text-sm text-rose-500 py-10 text-center bg-white rounded-lg border border-slate-200">Lỗi khi tải dữ liệu!</div>
+          ) : (
+            <CategoryTable
+              data={data?.items || []}
+              totalCount={data?.totalItems || 0}
+              totalPages={data?.totalPages || 0}
+              pageIndex={pageIndex}
+              pageSize={pageSize}
+              onPageChange={setPageIndex}
+              onPageSizeChange={setPageSize}
+              onEdit={handleEdit}
+              onDelete={handleDelete}
+              rowSelection={rowSelection}
+              onRowSelectionChange={setRowSelection}
+              columnVisibility={columnVisibility}
+            />
+          )}
         </div>
-        <div className="flex gap-6 shrink-0">
-          <div className="flex items-center gap-1.5 text-[11px] text-slate-600 whitespace-nowrap">
-            <kbd className="px-1.5 py-0.5 bg-slate-50 border border-slate-200 rounded shadow-sm font-bold text-sky-600">Alt + N</kbd> Thêm (Alt+N)
+
+        {/* Shortcut Guide Footer */}
+        <div className="mt-6 flex items-center gap-6 px-4 py-3 bg-white rounded-[5px] border border-slate-200 shadow-sm overflow-x-auto">
+          <div className="flex items-center gap-2 text-xs font-bold text-slate-500 uppercase tracking-widest shrink-0">
+            <Keyboard size={14} className="text-slate-400" />
+            Phím tắt bảng:
           </div>
-          <div className="flex items-center gap-1.5 text-[11px] text-slate-600">
-            <kbd className="px-1.5 py-0.5 bg-slate-50 border border-slate-200 rounded shadow-sm font-bold text-slate-700">/</kbd> Tìm kiếm
-          </div>
-          <div className="flex items-center gap-1.5 text-[11px] text-slate-600">
-            <kbd className="px-1.5 py-0.5 bg-slate-50 border border-slate-200 rounded shadow-sm font-bold text-slate-700">Alt + R</kbd> Làm mới
-          </div>
-          <div className="flex items-center gap-1.5 text-[11px] text-slate-600">
-            <kbd className="px-1.5 py-0.5 bg-slate-50 border border-slate-200 rounded shadow-sm font-bold text-rose-500">Del</kbd> Xóa mục chọn
-          </div>
-          <div className="flex items-center gap-1.5 text-[11px] text-slate-600">
-             <kbd className="px-1.5 py-0.5 bg-slate-50 border border-slate-200 rounded shadow-sm font-bold text-slate-700">Esc</kbd> Thoát nhập
+          <div className="flex gap-6 shrink-0">
+            <div className="flex items-center gap-1.5 text-xs text-slate-600 whitespace-nowrap">
+              <kbd className="px-1.5 py-0.5 bg-slate-50 border border-slate-200 rounded shadow-sm font-bold text-sky-600">Alt + N</kbd> Thêm (Alt+N)
+            </div>
+            <div className="flex items-center gap-1.5 text-xs text-slate-600">
+              <kbd className="px-1.5 py-0.5 bg-slate-50 border border-slate-200 rounded shadow-sm font-bold text-slate-700">/</kbd> Tìm kiếm
+            </div>
+            <div className="flex items-center gap-1.5 text-xs text-slate-600">
+              <kbd className="px-1.5 py-0.5 bg-slate-50 border border-slate-200 rounded shadow-sm font-bold text-slate-700">Alt + R</kbd> Làm mới
+            </div>
+            <div className="flex items-center gap-1.5 text-xs text-slate-600">
+              <kbd className="px-1.5 py-0.5 bg-slate-50 border border-slate-200 rounded shadow-sm font-bold text-rose-500">Del</kbd> Xóa mục chọn
+            </div>
+            <div className="flex items-center gap-1.5 text-xs text-slate-600">
+              <kbd className="px-1.5 py-0.5 bg-slate-50 border border-slate-200 rounded shadow-sm font-bold text-slate-700">Esc</kbd> Thoát nhập
+            </div>
           </div>
         </div>
+
+        <ConfirmDialog
+          isOpen={isConfirmOpen}
+          isLoading={isConfirmLoading}
+          title={confirmOptions.title}
+          message={confirmOptions.message}
+          onClose={closeConfirm}
+          onConfirm={handleConfirm}
+        />
       </div>
-
-      <ConfirmDialog
-        isOpen={isConfirmOpen}
-        isLoading={isConfirmLoading}
-        title={confirmOptions.title}
-        message={confirmOptions.message}
-        onClose={closeConfirm}
-        onConfirm={handleConfirm}
-      />
     </div>
   );
 };

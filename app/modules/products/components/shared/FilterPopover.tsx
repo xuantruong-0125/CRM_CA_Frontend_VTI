@@ -42,7 +42,7 @@ export const FilterPopover: React.FC<FilterPopoverProps> = ({
   };
 
   return (
-    <div className="absolute right-0 top-full mt-2 w-80 bg-white rounded-xl shadow-2xl border border-slate-200 z-50 p-5 animate-in fade-in zoom-in-95 duration-200 origin-top-right">
+    <div className="absolute right-0 top-full mt-2 w-80 bg-white rounded-xl shadow-2xl border border-slate-200 z-40 p-5 animate-in fade-in zoom-in-95 duration-200 origin-top-right">
       <div className="flex items-center justify-between mb-4 pb-2 border-b border-slate-50">
         <h3 className="text-sm font-bold text-slate-800">Bộ lọc tìm kiếm</h3>
         <button onClick={onClose} className="p-1 hover:bg-slate-100 rounded-full transition-colors">
@@ -70,7 +70,7 @@ export const FilterPopover: React.FC<FilterPopoverProps> = ({
             </button>
 
             {isCatOpen && (
-              <div className="absolute top-full left-0 w-full mt-1 bg-white border border-slate-200 rounded-lg shadow-xl z-[60] p-2 animate-in fade-in slide-in-from-top-1 duration-200">
+              <div className="absolute top-full left-0 w-full mt-1 bg-white border border-slate-200 rounded-lg shadow-xl z-40 p-2 animate-in fade-in slide-in-from-top-1 duration-200">
                 <div className="relative mb-2">
                   <Search size={14} className="absolute left-2.5 top-2.5 text-slate-400" />
                   <input

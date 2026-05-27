@@ -57,9 +57,14 @@ export const PricePage = () => {
   };
 
   return (
-    <div className="p-4 bg-slate-50 min-h-screen">
+    <div className="flex flex-col min-h-screen bg-slate-50">
+      {/* Top Bar as requested */}
+      <div className="bg-[rgb(21,0,211)] text-white px-4 py-3 flex items-center justify-between">
+        <h1 className="text-[15px] font-bold">Quản lý giá sản phẩm</h1>
+      </div>
+
+      <div className="p-4 flex-1">
       <TableToolbar
-        title="Quản lý giá sản phẩm"
         onSearch={handleSearch}
         placeholder="Tìm kiếm theo sản phẩm..."
         selectedCount={selectedCount}
@@ -91,6 +96,7 @@ export const PricePage = () => {
           columnVisibility={columnVisibility}
         />
       )}
+      </div>
     </div>
   );
 };

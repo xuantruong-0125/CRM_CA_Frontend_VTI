@@ -19,14 +19,14 @@ export const ContactPage = () => {
   const [rowSelection, setRowSelection] = useState({});
   const [filters, setFilters] = useState<any>({});
   const [isDataMasked, setIsDataMasked] = useState(false);
-  
-  const { 
-    isOpen: isConfirmOpen, 
-    isLoading: isConfirmLoading, 
-    options: confirmOptions, 
-    confirm: showConfirm, 
-    close: closeConfirm, 
-    handleConfirm 
+
+  const {
+    isOpen: isConfirmOpen,
+    isLoading: isConfirmLoading,
+    options: confirmOptions,
+    confirm: showConfirm,
+    close: closeConfirm,
+    handleConfirm
   } = useConfirm();
 
   const [columnVisibility, setColumnVisibility] = useState<Record<string, boolean>>({
@@ -144,9 +144,11 @@ export const ContactPage = () => {
   };
 
   return (
-    <div className="p-4 bg-slate-50 min-h-screen">
+    <div className="bg-slate-50 min-h-screen">
+      <div className="bg-[rgb(21,0,211)] text-white px-6 py-[10px] rounded-md mb-3 flex items-center">
+        <span className="text-[18px] font-bold tracking-[0.01em]">Quản lý liên hệ</span>
+      </div>
       <TableToolbar
-        title="Quản lý liên hệ"
         onSearch={handleSearch}
         onFilterApply={handleApplyFilters}
         onFilterReset={handleResetFilters}
@@ -170,15 +172,15 @@ export const ContactPage = () => {
         ) : isError ? (
           <div className="text-sm text-rose-500 py-10 text-center bg-white rounded-lg border border-slate-200">Lỗi khi tải dữ liệu!</div>
         ) : (
-          <ContactTable 
-            data={data?.items || []} 
+          <ContactTable
+            data={data?.items || []}
             totalCount={data?.totalItems || 0}
             totalPages={data?.totalPages || 0}
             pageIndex={pageIndex}
             pageSize={pageSize}
             onPageChange={setPageIndex}
             onPageSizeChange={setPageSize}
-            onEdit={handleEdit} 
+            onEdit={handleEdit}
             onDelete={handleDelete}
             rowSelection={rowSelection}
             onRowSelectionChange={setRowSelection}
