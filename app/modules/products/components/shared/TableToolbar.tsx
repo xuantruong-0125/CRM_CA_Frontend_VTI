@@ -7,7 +7,6 @@ import {
   X,
   Trash2,
   MoreVertical,
-  ChevronDown,
 } from "lucide-react";
 import { FilterPopover } from "./FilterPopover";
 import { SettingsPopover } from "./SettingsPopover";
@@ -18,7 +17,6 @@ interface ColumnOption {
 }
 
 interface TableToolbarProps {
-  title?: string;
   onSearch: (value: string) => void;
   onFilterApply?: (filters: any) => void;
   onFilterReset?: () => void;
@@ -47,7 +45,6 @@ interface TableToolbarProps {
 }
 
 export const TableToolbar: React.FC<TableToolbarProps> = ({
-  title,
   onSearch,
   onFilterApply,
   onFilterReset,
@@ -85,19 +82,9 @@ export const TableToolbar: React.FC<TableToolbarProps> = ({
   };
 
   return (
-    <div className="flex items-center gap-2 mb-4 bg-white p-2 rounded-lg border border-slate-200 shadow-sm overflow-visible h-14 relative">
-      {/* 1. Title Section (Left) */}
-      {title && (
-        <div className="flex items-center gap-1.5 px-3 mr-1 border-r border-slate-100 pr-4 cursor-pointer hover:bg-slate-50 h-full transition-colors group">
-          <h1 className="text-[14px] font-bold text-slate-800 whitespace-nowrap">
-            {title}
-          </h1>
-          <ChevronDown size={14} className="text-slate-400 group-hover:text-slate-600 transition-colors" />
-        </div>
-      )}
-
+    <div className="flex items-center gap-2 mb-3 bg-white px-4 py-2.5 rounded-xl border border-[#e5e7eb] shadow-sm overflow-visible relative">
       {/* Right Group: Selection, Search, Actions (Right Aligned) */}
-      <div className="flex items-center gap-3 ml-auto pr-1 flex-shrink-0 h-full">
+      <div className="flex items-center gap-3 flex-1 pr-1 h-full">
         {/* 2. Selection Actions Bar */}
         {isSelectedMode && (
           <div className="flex items-center bg-sky-50 border border-sky-100 rounded-md px-1 py-1 h-9 animate-in fade-in slide-in-from-left-2 duration-200 flex-shrink-0">
@@ -128,7 +115,7 @@ export const TableToolbar: React.FC<TableToolbarProps> = ({
         )}
 
         {/* 3. Search Input */}
-        <div className="relative w-full max-w-[280px] group h-9">
+        <div className="relative flex-1 group h-9">
           <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
             <Search className="h-4 w-4 text-slate-400 group-focus-within:text-sky-500 transition-colors" />
           </div>
