@@ -244,7 +244,7 @@ const KpiConfigListPage: React.FC = () => {
       }}>
           <table className={styles.kpiTable} style={{ fontSize: 12 }}>
             <thead>
-              <tr style={{ background: '#34495e' }}>
+              <tr>
                 <th style={thStyle}>ID</th>
                 <th style={{ ...thStyle, minWidth: 160, textAlign: 'left' }}>Tên cấu hình</th>
                 <th style={{ ...thStyle, minWidth: 130 }}>Thời gian</th>
@@ -414,14 +414,14 @@ const KpiConfigListPage: React.FC = () => {
 };
 
 const thStyle: React.CSSProperties = {
-  color: '#fff',
+  color: '#64748b',
   padding: '10px 8px',
   textAlign: 'center',
   fontWeight: 700,
   fontSize: 11,
   textTransform: 'uppercase',
   letterSpacing: '0.3px',
-  borderRight: '1px solid rgba(255,255,255,0.1)',
+  borderRight: '1px solid #e8ecf0',
   whiteSpace: 'nowrap',
 };
 
