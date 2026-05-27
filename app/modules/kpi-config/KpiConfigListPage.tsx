@@ -238,20 +238,22 @@ const KpiConfigListPage: React.FC = () => {
 
       <div style={{
         background: '#fff',
-        overflow: 'auto',
+        overflow: 'hidden',
+        borderRadius: '10px',
         boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
         borderBottom: '1px solid #e0e4ea',
       }}>
+        <div style={{ overflowX: 'auto' }}>
           <table className={styles.kpiTable} style={{ fontSize: 12 }}>
             <thead>
               <tr>
-                <th style={thStyle}>ID</th>
+                <th style={{ ...thStyle, borderTopLeftRadius: '10px' }}>ID</th>
                 <th style={{ ...thStyle, minWidth: 160, textAlign: 'left' }}>Tên cấu hình</th>
                 <th style={{ ...thStyle, minWidth: 130 }}>Thời gian</th>
                 <th style={{ ...thStyle, minWidth: 280, textAlign: 'left' }}>Mục tiêu KPI</th>
                 <th style={{ ...thStyle, minWidth: 160 }}>Đối tượng</th>
                 <th style={thStyle}>Trạng thái</th>
-                <th style={{ ...thStyle, minWidth: 100 }}>Thao tác</th>
+                <th style={{ ...thStyle, minWidth: 100, borderTopRightRadius: '10px', borderRight: 'none' }}>Thao tác</th>
               </tr>
             </thead>
             <tbody>
@@ -322,6 +324,7 @@ const KpiConfigListPage: React.FC = () => {
             </tbody>
           </table>
         </div>
+      </div>
 
         {totalPages > 0 && (
           <div className={styles.pagination}>
@@ -414,14 +417,13 @@ const KpiConfigListPage: React.FC = () => {
 };
 
 const thStyle: React.CSSProperties = {
-  color: '#64748b',
+  color: '#fff',
+  background: 'linear-gradient(to bottom right, #2563eb, #1d4ed8)',
   padding: '10px 8px',
   textAlign: 'center',
   fontWeight: 700,
-  fontSize: 11,
-  textTransform: 'uppercase',
-  letterSpacing: '0.3px',
-  borderRight: '1px solid #e8ecf0',
+  fontSize: 12,
+  borderRight: '1px solid rgba(255, 255, 255, 0.3)',
   whiteSpace: 'nowrap',
 };
 
