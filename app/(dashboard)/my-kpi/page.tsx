@@ -1,9 +1,10 @@
 // app/(dashboard)/my-kpi/page.tsx
 import PersonalKpiPage from "../../modules/personal-kpi/PersonalKpiPage";
 
-export const metadata = {
-  title: "KPI Của Tôi | CRM VTI",
-  description: "Trang theo dõi mục tiêu và tiến độ KPI cá nhân",
+import type { Metadata } from "next";
+export const metadata: Metadata = {
+    title: "CRM_VTI | KPI của tôi ",
+    description: "Trang quản lý KPi cá nhân",
 };
 
 export default function MyKpiPage() {

@@ -67,7 +67,7 @@ export default function QuoteListPage() {
     useEffect(() => { setPageInput(currentPage); }, [currentPage]);
 
     useEffect(() => {
-        quoteApi.getFormCustomers().then(setCustomers).catch(() => {});
+        quoteApi.getFormCustomers().then(setCustomers).catch(() => { });
     }, []);
 
     useEffect(() => {
@@ -167,19 +167,6 @@ export default function QuoteListPage() {
             <div className={styles.pageTopBar}>
                 <span className={styles.pageTopBarTitle}>Báo giá</span>
             </div>
-
-            <div className={styles.pageHeader}>
-                <div>
-                    <h1 className={styles.pageTitle}>Danh sách Báo giá</h1>
-                    <p className={styles.pageDescription}>Quản lý và theo dõi tất cả báo giá cho khách hàng.</p>
-                </div>
-                {(isSales || isAdmin) && (
-                    <button className={styles.btnPrimary} onClick={() => router.push("/quotes/new")} title="Phím tắt: Alt + N">
-                        <Plus size={16} /> Thêm (Alt+N)
-                    </button>
-                )}
-            </div>
-
             {/* Toolbar */}
             <div className={styles.toolbar}>
                 <div className={styles.statusTabs}>

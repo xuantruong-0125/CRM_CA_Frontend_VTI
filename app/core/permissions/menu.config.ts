@@ -49,7 +49,7 @@ export const MENU_CONFIG: MenuItem[] = [
         label: "Báo giá",
         path: "/quotes",
         icon: FileText,
-        roles: ["ADMIN", "SALE", "SALE_MANAGER", "MANAGER", "ACCOUNTANT"],
+        roles: ["ADMIN", "SALE", "MANAGER", "ACCOUNTANT"],
         group: "CRM",
     },
     {
@@ -57,7 +57,7 @@ export const MENU_CONFIG: MenuItem[] = [
         label: "Cơ hội",
         path: "/opportunities",
         icon: TrendingUp,
-        roles: ["ADMIN", "SALE", "SALE_MANAGER", "MANAGER"],
+        roles: ["ADMIN", "SALE", "MANAGER", ],
         group: "CRM",
         children: [
             { key: "pipelines", label: "Quy trình bán hàng", path: "/pipelines", icon: GitBranch, roles: ["ADMIN", "SALE"], group: "CRM" },
@@ -70,21 +70,21 @@ export const MENU_CONFIG: MenuItem[] = [
         label: "Danh mục",
         path: "/categories",
         icon: Layers,
-        roles: ["MANAGER"],
+        roles: ["MANAGER", "ADMIN", "DIRECTOR"],
     },
     {
         key: "product",
         label: "Sản phẩm",
         path: "/products",
         icon: Package,
-        roles: ["MANAGER"],
+        roles: ["MANAGER", "ADMIN", "DIRECTOR"],
     },
     {
         key: "price",
         label: "Bảng giá",
         path: "/prices",
         icon: Banknote,
-        roles: ["ADMIN"],
+        roles: ["MANAGER", "ADMIN"],
     },
 
     {
@@ -92,21 +92,21 @@ export const MENU_CONFIG: MenuItem[] = [
         label: "Liên hệ",
         path: "/contacts",
         icon: Phone,
-        roles: ["SALE", "MANAGER"],
+        roles: ["SALE", "MANAGER", "ADMIN"],
     },
     {
         key: "kpi-config",
         label: "Thiết lập KPI",
         path: "/kpi-configs",
         icon: Target,
-        roles: ["ADMIN", "MANAGER"],
+        roles: ["ADMIN", "MANAGER", "DIRECTOR"],
     },
     {
         key: "reports",
         label: "Báo cáo KPI",
         path: "/reports",
         icon: BarChart3,
-        roles: ["ADMIN", "MANAGER"],
+        roles: ["ADMIN", "MANAGER", "DIRECTOR"],
     },
     {
         key: "my-kpi",
@@ -134,7 +134,7 @@ export const MENU_CONFIG: MenuItem[] = [
         label: "Công việc",
         path: "/task",
         icon: CheckSquare,
-        roles: ["SALE", "SALES_MANAGER", "MANAGER"],
+        roles: ["SALE", "MANAGER", "ADMIN"],
         group: "CRM",
     },
     {
@@ -142,7 +142,7 @@ export const MENU_CONFIG: MenuItem[] = [
         label: "Hoạt động",
         path: "/activity",
         icon: Calendar,
-        roles: [ "SALE", "SALES_MANAGER", "MANAGER"],
+        roles: [ "SALE", "MANAGER", "ADMIN"],
         group: "CRM",
     },
 ];

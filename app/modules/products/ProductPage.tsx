@@ -181,8 +181,8 @@ export const ProductPage = () => {
 
   return (
     <div className="bg-slate-50 min-h-screen">
-      <div className="bg-[rgb(21,0,211)] text-white px-6 py-[10px] rounded-md mb-3 flex items-center">
-        <span className="text-[18px] font-bold tracking-[0.01em]">Sản phẩm</span>
+      <div className="mb-4 bg-[rgb(21,0,211)] px-4 py-[7px] rounded-[10px] text-left font-bold text-lg text-white">
+        Sản phẩm
       </div>
       <div>
         <TableToolbar

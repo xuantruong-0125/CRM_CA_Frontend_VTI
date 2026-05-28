@@ -7,6 +7,7 @@ import {
   X,
   Trash2,
   MoreVertical,
+  Plus,
 } from "lucide-react";
 import { FilterPopover } from "./FilterPopover";
 import { SettingsPopover } from "./SettingsPopover";
@@ -57,7 +58,7 @@ export const TableToolbar: React.FC<TableToolbarProps> = ({
   onDeleteSelected,
   columns = [],
   visibleColumns = {},
-  onColumnToggle = () => {},
+  onColumnToggle = () => { },
   onImport,
   onExport,
   isDataMasked,
@@ -132,11 +133,10 @@ export const TableToolbar: React.FC<TableToolbarProps> = ({
           <div className="relative h-full flex items-center">
             <button
               onClick={() => setIsFilterOpen(!isFilterOpen)}
-              className={`flex items-center justify-center w-9 h-9 border rounded-md transition-all active:scale-95 shadow-sm ${
-                isFilterOpen || Object.keys(currentFilters).length > 0
-                  ? "bg-sky-50 border-sky-500 text-sky-600"
-                  : "bg-white border-slate-200 text-slate-500 hover:text-sky-600 hover:bg-sky-50"
-              }`}
+              className={`flex items-center justify-center w-9 h-9 border rounded-md transition-all active:scale-95 shadow-sm ${isFilterOpen || Object.keys(currentFilters).length > 0
+                ? "bg-sky-50 border-sky-500 text-sky-600"
+                : "bg-white border-slate-200 text-slate-500 hover:text-sky-600 hover:bg-sky-50"
+                }`}
               title="Lọc"
             >
               <Filter size={17} />
@@ -151,15 +151,14 @@ export const TableToolbar: React.FC<TableToolbarProps> = ({
               />
             )}
           </div>
-          
+
           <div className="relative h-full flex items-center">
             <button
               onClick={() => setIsSettingsOpen(!isSettingsOpen)}
-              className={`flex items-center justify-center w-9 h-9 border rounded-md transition-all active:scale-95 shadow-sm ${
-                isSettingsOpen
-                  ? "bg-sky-50 border-sky-500 text-sky-600"
-                  : "bg-white border-slate-200 text-slate-500 hover:text-sky-600 hover:bg-sky-50"
-              }`}
+              className={`flex items-center justify-center w-9 h-9 border rounded-md transition-all active:scale-95 shadow-sm ${isSettingsOpen
+                ? "bg-sky-50 border-sky-500 text-sky-600"
+                : "bg-white border-slate-200 text-slate-500 hover:text-sky-600 hover:bg-sky-50"
+                }`}
               title="Cài đặt"
             >
               <Settings2 size={17} />
@@ -182,9 +181,9 @@ export const TableToolbar: React.FC<TableToolbarProps> = ({
           {onCreate && (
             <button
               onClick={onCreate}
-              className="flex items-center gap-2 px-4 h-9 bg-sky-600 hover:bg-sky-700 text-white text-xs font-bold rounded-md transition-all active:scale-95 shadow-md shadow-sky-100 ml-1 whitespace-nowrap"
+              className="flex items-center gap-1.5 px-4 py-2.5 bg-[rgb(0,164,22)] hover:bg-[rgb(5,190,30)] text-white !rounded-lg text-sm font-medium cursor-pointer transition-colors ml-1 whitespace-nowrap"
             >
-              <Package size={17} />
+              <Plus size={18} />
               <span>{createLabel}</span>
             </button>
           )}
