@@ -19,21 +19,25 @@ export const CustomerComboBox: React.FC<CustomerComboBoxProps> = ({
   const [search, setSearch] = useState("");
   const containerRef = useRef<HTMLDivElement>(null);
 
+  const safeCustomers = useMemo(() => (Array.isArray(customers) ? customers : []), [customers]);
+
   const selectedCustomer = useMemo(
-    () => customers.find((c) => c.id === value),
-    [customers, value]
+    () => safeCustomers.find((c) => c.id === value),
+    [safeCustomers, value]
   );
 
   const filteredCustomers = useMemo(() => {
-    let result = customers;
+    let result = safeCustomers;
     if (search.trim()) {
-      result = customers.filter((c) =>
-        c.name.toLowerCase().includes(search.toLowerCase()) ||
-        c.customerCode.toLowerCase().includes(search.toLowerCase())
-      );
+      const searchLower = search.toLowerCase();
+      result = safeCustomers.filter((c) => {
+        const name = c.name?.toLowerCase() || "";
+        const code = c.customerCode?.toLowerCase() || "";
+        return name.includes(searchLower) || code.includes(searchLower);
+      });
     }
     return result.slice(0, 10);
-  }, [customers, search]);
+  }, [safeCustomers, search]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {

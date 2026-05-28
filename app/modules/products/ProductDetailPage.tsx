@@ -11,6 +11,12 @@ import { useCategories } from "./hooks/useCategories";
 import { CategoryComboBox } from "./components/shared/CategoryComboBox";
 import { Info, DollarSign, Save, XCircle, AlertCircle, HelpCircle, Keyboard } from "lucide-react";
 
+const formatNumber = (num: number | string) => {
+  if (num === "" || num === null || num === undefined) return "";
+  const clean = num.toString().replace(/\D/g, "");
+  return clean ? Number(clean).toLocaleString("vi-VN") : "";
+};
+
 interface ProductDetailPageProps {
   initialData?: Product | null;
   isEditMode?: boolean;
@@ -125,9 +131,9 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({ initialDat
         if (!value) err = "Vui lòng chọn danh mục";
         break;
       case "basePrice":
-        if (value === "" || value === null) err = "Giá bán không được để trống";
-        else if (value <= 0) err = "Giá bán phải lớn hơn 0";
-        else if (!Number.isInteger(Number(value))) err = "Giá bán phải là số nguyên (VNĐ)";
+        if (value === "" || value === null) err = "Giá vốn không được để trống";
+        else if (value <= 0) err = "Giá vốn phải lớn hơn 0";
+        else if (!Number.isInteger(Number(value))) err = "Giá vốn phải là số nguyên (VNĐ)";
         break;
       case "taxRate":
         if (value === "" || value === null) err = "Thuế suất không được để trống";
@@ -156,7 +162,15 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({ initialDat
 
   const handlePriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    const val = name === "basePrice" || name === "taxRate" ? (value === "" ? "" : Number(value)) : value;
+    let val: any = value;
+    
+    if (name === "basePrice") {
+      const cleanValue = value.replace(/\D/g, "");
+      val = cleanValue === "" ? "" : Number(cleanValue);
+    } else if (name === "taxRate") {
+      val = value === "" ? "" : Number(value);
+    }
+    
     setPriceData((prev) => ({ ...prev, [name]: val }));
     validateField(name, val);
 
@@ -454,14 +468,16 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({ initialDat
                 <div className="space-y-6">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="flex flex-col gap-2">
-                      <label className="text-sm font-bold text-slate-700">Giá bán cơ bản (VND) <span className="text-rose-500">*</span></label>
+                      <label className="text-sm font-bold text-slate-700">Giá vốn (VND) <span className="text-rose-500">*</span></label>
                       <div className="relative group">
                         <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 font-bold group-focus-within:text-sky-500 transition-colors">₫</span>
                         <input
-                          type="number"
+                          type="text"
+                          inputMode="numeric"
                           name="basePrice"
-                          value={priceData.basePrice}
+                          value={formatNumber(priceData.basePrice)}
                           onChange={handlePriceChange}
+                          placeholder="0"
                           className={`w-full pl-8 pr-3 py-2 text-sm border ${validationErrors.basePrice ? 'border-rose-400 bg-rose-50' : 'border-slate-300'} rounded-[5px] focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 outline-none font-bold text-slate-900 h-[38px]`}
                         />
                       </div>
@@ -522,7 +538,7 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({ initialDat
                     Quy tắc định giá
                   </h4>
                   <ul className="text-[11px] text-slate-500 flex flex-wrap items-center gap-6 leading-relaxed italic">
-                    <li className="flex items-center gap-2"><div className="w-1 h-1 bg-sky-500 rounded-full shrink-0" /> Giá bán {'>'} 0, đơn vị VNĐ.</li>
+                    <li className="flex items-center gap-2"><div className="w-1 h-1 bg-sky-500 rounded-full shrink-0" /> Giá vốn {'>'} 0, đơn vị VNĐ.</li>
                     <li className="flex items-center gap-2"><div className="w-1 h-1 bg-sky-500 rounded-full shrink-0" /> Thuế suất: không giới hạn.</li>
                     <li className="flex items-center gap-2"><div className="w-1 h-1 bg-sky-500 rounded-full shrink-0" /> Ngày bắt đầu ≤ Ngày kết thúc.</li>
                     <li className="flex items-center gap-2"><div className="w-1 h-1 bg-sky-500 rounded-full shrink-0" /> Không chọn ngày quá khứ.</li>
