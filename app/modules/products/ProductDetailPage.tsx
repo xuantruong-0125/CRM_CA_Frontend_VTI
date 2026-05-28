@@ -409,8 +409,8 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({ initialDat
             )}
 
             {activeTab === "information" ? (
-              <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 animate-in fade-in slide-in-from-left-4 duration-300">
-                <div className="lg:col-span-9 space-y-6">
+              <div className="flex flex-col gap-6 animate-in fade-in slide-in-from-left-4 duration-300">
+                <div className="space-y-6">
                   <div className="flex flex-col gap-2">
                     <label className="text-sm font-bold text-slate-700">Mã SKU / Tham chiếu nội bộ <span className="text-rose-500">*</span></label>
                     <input
@@ -436,23 +436,22 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({ initialDat
                     {validationErrors.description && <p className="text-[11px] text-rose-500 font-bold">{validationErrors.description}</p>}
                   </div>
                 </div>
-                <div className="lg:col-span-3">
-                  <div className="bg-slate-50 p-5 rounded-[5px] border border-slate-100 h-fit">
-                    <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-4 flex items-center gap-2">
-                      <HelpCircle size={14} className="text-sky-500" />
-                      Quy tắc nhập liệu
-                    </h4>
-                    <ul className="text-[11px] text-slate-500 space-y-2.5 leading-relaxed italic">
-                      <li className="flex gap-2"><div className="w-1 h-1 bg-sky-500 rounded-full mt-1.5 shrink-0" /> Tên & SKU: tối đa 100 ký tự.</li>
-                      <li className="flex gap-2"><div className="w-1 h-1 bg-sky-500 rounded-full mt-1.5 shrink-0" /> SKU: chỉ hoa + số + "-" + "_".</li>
-                      <li className="flex gap-2"><div className="w-1 h-1 bg-sky-500 rounded-full mt-1.5 shrink-0" /> Mô tả: tối đa 500 ký tự.</li>
-                    </ul>
-                  </div>
+                
+                <div className="bg-slate-50 p-4 rounded-[5px] border border-slate-100 flex flex-col md:flex-row items-start md:items-center gap-4 md:gap-8">
+                  <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2 shrink-0">
+                    <HelpCircle size={14} className="text-sky-500" />
+                    Quy tắc nhập liệu
+                  </h4>
+                  <ul className="text-[11px] text-slate-500 flex flex-wrap items-center gap-6 leading-relaxed italic">
+                    <li className="flex items-center gap-2"><div className="w-1 h-1 bg-sky-500 rounded-full shrink-0" /> Tên & SKU: tối đa 100 ký tự.</li>
+                    <li className="flex items-center gap-2"><div className="w-1 h-1 bg-sky-500 rounded-full shrink-0" /> SKU: chỉ hoa + số + "-" + "_".</li>
+                    <li className="flex items-center gap-2"><div className="w-1 h-1 bg-sky-500 rounded-full shrink-0" /> Mô tả: tối đa 500 ký tự.</li>
+                  </ul>
                 </div>
               </div>
             ) : (
-              <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 animate-in fade-in slide-in-from-right-4 duration-300">
-                <div className="lg:col-span-9 space-y-6">
+              <div className="flex flex-col gap-6 animate-in fade-in slide-in-from-right-4 duration-300">
+                <div className="space-y-6">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="flex flex-col gap-2">
                       <label className="text-sm font-bold text-slate-700">Giá bán cơ bản (VND) <span className="text-rose-500">*</span></label>
@@ -516,19 +515,18 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({ initialDat
                     </div>
                   </div>
                 </div>
-                <div className="lg:col-span-3">
-                  <div className="bg-slate-50 p-5 rounded-[5px] border border-slate-100 h-fit">
-                    <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-4 flex items-center gap-2">
-                      <HelpCircle size={14} className="text-sky-500" />
-                      Quy tắc định giá
-                    </h4>
-                    <ul className="text-[11px] text-slate-500 space-y-2.5 leading-relaxed italic">
-                      <li className="flex gap-2"><div className="w-1 h-1 bg-sky-500 rounded-full mt-1.5 shrink-0" /> Giá bán {'>'} 0, đơn vị VNĐ.</li>
-                      <li className="flex gap-2"><div className="w-1 h-1 bg-sky-500 rounded-full mt-1.5 shrink-0" /> Thuế suất: không giới hạn.</li>
-                      <li className="flex gap-2"><div className="w-1 h-1 bg-sky-500 rounded-full mt-1.5 shrink-0" /> Ngày bắt đầu ≤ Ngày kết thúc.</li>
-                      <li className="flex gap-2"><div className="w-1 h-1 bg-sky-500 rounded-full mt-1.5 shrink-0" /> Không chọn ngày quá khứ.</li>
-                    </ul>
-                  </div>
+
+                <div className="bg-slate-50 p-4 rounded-[5px] border border-slate-100 flex flex-col md:flex-row items-start md:items-center gap-4 md:gap-8">
+                  <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2 shrink-0">
+                    <HelpCircle size={14} className="text-sky-500" />
+                    Quy tắc định giá
+                  </h4>
+                  <ul className="text-[11px] text-slate-500 flex flex-wrap items-center gap-6 leading-relaxed italic">
+                    <li className="flex items-center gap-2"><div className="w-1 h-1 bg-sky-500 rounded-full shrink-0" /> Giá bán {'>'} 0, đơn vị VNĐ.</li>
+                    <li className="flex items-center gap-2"><div className="w-1 h-1 bg-sky-500 rounded-full shrink-0" /> Thuế suất: không giới hạn.</li>
+                    <li className="flex items-center gap-2"><div className="w-1 h-1 bg-sky-500 rounded-full shrink-0" /> Ngày bắt đầu ≤ Ngày kết thúc.</li>
+                    <li className="flex items-center gap-2"><div className="w-1 h-1 bg-sky-500 rounded-full shrink-0" /> Không chọn ngày quá khứ.</li>
+                  </ul>
                 </div>
               </div>
             )}

@@ -153,10 +153,10 @@ export const ContactTable: React.FC<ContactTableProps> = ({
           const isPrimary = info.getValue() as boolean;
           return (
             <span
-              className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                isPrimary 
-                  ? "bg-sky-100 text-sky-700 border border-sky-200" 
-                  : "bg-slate-100 text-slate-500 border border-slate-200"
+              className={`inline-flex items-center px-[10px] py-[3px] rounded-[20px] text-[12px] font-semibold ${
+                isPrimary
+                  ? "bg-[#dbeafe] text-[#1e40af]"
+                  : "bg-[#f3f4f6] text-[#374151]"
               }`}
             >
               {isPrimary ? "LIÊN HỆ CHÍNH" : "LIÊN HỆ PHỤ"}
@@ -170,17 +170,17 @@ export const ContactTable: React.FC<ContactTableProps> = ({
         size: 100,
         minSize: 100,
         cell: ({ row }) => (
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1 justify-end">
             <button
               onClick={() => onEdit(row.original.id)}
-              className="p-1 text-sky-600 hover:bg-sky-50 rounded"
+              className="w-[30px] h-[30px] flex items-center justify-center border-0 bg-transparent rounded-md text-[#6b7280] hover:bg-[#f3f4f6] hover:text-[#111827] cursor-pointer transition-colors"
               title="Sửa"
             >
               <Edit size={16} />
             </button>
             <button
               onClick={() => onDelete(row.original.id)}
-              className="p-1 text-rose-600 hover:bg-rose-50 rounded"
+              className="w-[30px] h-[30px] flex items-center justify-center border-0 bg-transparent rounded-md text-[#6b7280] hover:bg-[#fee2e2] hover:text-[#dc2626] cursor-pointer transition-colors"
               title="Xóa"
             >
               <Trash2 size={16} />
@@ -207,18 +207,18 @@ export const ContactTable: React.FC<ContactTableProps> = ({
 
   return (
     <div className="space-y-3">
-      <div className="w-full overflow-x-auto bg-white border border-slate-200 rounded-md shadow-sm">
+      <div className="w-full overflow-x-auto bg-white border border-[#e5e7eb] rounded-xl shadow-[0_2px_8px_rgba(0,0,0,0.05)]">
         <table
           className="min-w-full text-xs text-left table-fixed border-separate border-spacing-0"
           style={{ width: table.getTotalSize() }}
         >
-          <thead className="text-slate-700 bg-slate-50 border-b border-slate-200">
+          <thead className="text-white">
             {table.getHeaderGroups().map((headerGroup) => (
               <tr key={headerGroup.id}>
                 {headerGroup.headers.map((header) => (
                   <th
                     key={header.id}
-                    className="relative py-1.5 px-2 font-semibold select-none group text-xs overflow-hidden border-r border-transparent hover:border-slate-200 transition-colors"
+                    className="relative py-2 px-3 font-bold select-none group text-[13px] overflow-hidden bg-gradient-to-br from-[#2563eb] to-[#1d4ed8] border-r border-white/30 transition-colors"
                     style={{ width: header.getSize() }}
                   >
                     {header.id === "select" ? (
@@ -230,12 +230,12 @@ export const ContactTable: React.FC<ContactTableProps> = ({
                           : flexRender(header.column.columnDef.header, header.getContext())}
                       </div>
                     )}
-                    
+
                     <div
                       onMouseDown={header.getResizeHandler()}
                       onTouchStart={header.getResizeHandler()}
-                      className={`absolute right-0 top-0 h-full w-1 cursor-col-resize select-none touch-none transition-all group-hover:bg-slate-300 hover:bg-sky-500 ${
-                        header.column.getIsResizing() ? "bg-sky-600 opacity-100" : "opacity-0 group-hover:opacity-100"
+                      className={`absolute right-0 top-0 h-full w-1 cursor-col-resize select-none touch-none transition-all group-hover:bg-blue-300 hover:bg-white ${
+                        header.column.getIsResizing() ? "bg-white opacity-100" : "opacity-0 group-hover:opacity-100"
                       }`}
                     />
                   </th>
@@ -248,12 +248,12 @@ export const ContactTable: React.FC<ContactTableProps> = ({
               table.getRowModel().rows.map((row) => (
                 <tr
                   key={row.id}
-                  className="border-b border-slate-100 hover:bg-slate-50 transition-colors text-slate-600"
+                  className="border-b border-[#e5e7eb] hover:bg-[#f9fafb] transition-colors text-[#111827] text-[13px]"
                 >
                   {row.getVisibleCells().map((cell) => (
                     <td
                       key={cell.id}
-                      className="py-1.5 px-2 whitespace-nowrap overflow-hidden"
+                      className="py-[6px] px-[10px] whitespace-nowrap overflow-hidden text-[13px] border-r border-black/10"
                       style={{ width: cell.column.getSize() }}
                     >
                       {flexRender(cell.column.columnDef.cell, cell.getContext())}

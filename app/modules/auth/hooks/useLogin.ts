@@ -259,7 +259,9 @@ export const useLogin = () => {
                 case "SALE":
                     router.push("/quotes");
                     break;
-
+                case "DIRECTOR":
+                    router.push("/kpi-configs");
+                    break;
                 default:
                     router.push("/");
             }

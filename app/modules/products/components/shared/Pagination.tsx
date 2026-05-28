@@ -73,34 +73,18 @@ export const Pagination: React.FC<PaginationProps> = ({
   return (
     <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-4 px-2">
       {/* Left side: record info */}
-      <div className="text-xs text-slate-500 font-medium">
-        Hiển thị <span className="text-slate-900">{Math.min(pageSize, totalCount)}</span>/<span className="text-slate-900">{totalCount}</span>
+      <div className="text-xs text-slate-600 font-medium">
+        Total: {totalCount} items
       </div>
 
       {/* Right side: controls */}
       <div className="flex flex-wrap items-center gap-3">
-        {/* Page size selector */}
-        <div className="flex items-center gap-2 mr-2">
-          <span className="text-[11px] text-slate-500 uppercase font-bold tracking-wider">Số dòng:</span>
-          <select
-            value={pageSize}
-            onChange={(e) => onPageSizeChange(Number(e.target.value))}
-            className="text-xs bg-white border border-slate-200 rounded px-1.5 py-1 focus:outline-none focus:ring-1 focus:ring-sky-500 text-slate-700 font-medium cursor-pointer hover:border-slate-300"
-          >
-            {[10, 20, 50, 100].map((size) => (
-              <option key={size} value={size}>
-                {size}
-              </option>
-            ))}
-          </select>
-        </div>
-
         {/* Navigation Buttons */}
-        <div className="flex items-center bg-slate-50 border border-slate-200 rounded p-0.5 shadow-sm">
+        <div className="flex items-center gap-1">
           <button
             onClick={() => onPageChange(1)}
             disabled={currentPage === 1}
-            className="p-1 text-slate-400 hover:text-sky-600 disabled:opacity-30 disabled:hover:text-slate-400 transition-colors"
+            className="p-1.5 text-slate-500 bg-slate-100 hover:bg-sky-500 hover:text-white rounded disabled:opacity-50 disabled:hover:bg-slate-100 disabled:hover:text-slate-500 transition-colors"
             title="Trang đầu"
           >
             <ChevronsLeft size={16} />
@@ -108,61 +92,51 @@ export const Pagination: React.FC<PaginationProps> = ({
           <button
             onClick={() => onPageChange(currentPage - 1)}
             disabled={currentPage === 1}
-            className="p-1 text-slate-400 hover:text-sky-600 disabled:opacity-30 disabled:hover:text-slate-400 transition-colors border-r border-slate-200 mr-1"
+            className="p-1.5 text-slate-500 bg-slate-100 hover:bg-sky-500 hover:text-white rounded disabled:opacity-50 disabled:hover:bg-slate-100 disabled:hover:text-slate-500 transition-colors"
             title="Trang trước"
           >
             <ChevronLeft size={16} />
           </button>
 
-          {/* Page numbers */}
-          <div className="flex items-center gap-0.5 mx-1">
-            {getPageNumbers().map((p, i) => (
-              <React.Fragment key={i}>
-                {p === "..." ? (
-                  <span className="px-1.5 text-slate-400 text-xs font-bold">...</span>
-                ) : (
-                  <button
-                    onClick={() => onPageChange(p as number)}
-                    className={`min-w-[28px] h-[28px] flex items-center justify-center text-xs font-semibold rounded transition-all ${
-                      currentPage === p
-                        ? "bg-sky-500 text-white shadow-sm"
-                        : "text-slate-600 hover:bg-white hover:text-sky-600"
-                    }`}
-                  >
-                    {p}
-                  </button>
-                )}
-              </React.Fragment>
-            ))}
+          <div className="text-xs text-slate-600 px-2 font-medium">
+            Trang {currentPage} / {totalPages}
           </div>
+
+          <input
+            type="text"
+            className="w-10 text-center text-xs border border-slate-300 rounded px-1 py-1 focus:outline-none focus:ring-1 focus:ring-sky-500 bg-slate-100"
+            onKeyDown={handleJumpToPage}
+          />
+          <button
+            className="px-2 py-1 text-xs bg-sky-600 text-white rounded hover:bg-sky-700 transition-colors"
+            onClick={(e) => {
+              const input = e.currentTarget.previousSibling as HTMLInputElement;
+              const val = parseInt(input.value);
+              if (!isNaN(val) && val >= 1 && val <= totalPages) {
+                onPageChange(val);
+                input.value = "";
+              }
+            }}
+          >
+            Đi
+          </button>
 
           <button
             onClick={() => onPageChange(currentPage + 1)}
-            disabled={currentPage === totalPages}
-            className="p-1 text-slate-400 hover:text-sky-600 disabled:opacity-30 disabled:hover:text-slate-400 transition-colors border-l border-slate-200 ml-1"
+            disabled={currentPage === totalPages || totalPages === 0}
+            className="p-1.5 text-slate-500 bg-slate-100 hover:bg-sky-500 hover:text-white rounded disabled:opacity-50 disabled:hover:bg-slate-100 disabled:hover:text-slate-500 transition-colors ml-1"
             title="Trang sau"
           >
             <ChevronRight size={16} />
           </button>
           <button
             onClick={() => onPageChange(totalPages)}
-            disabled={currentPage === totalPages}
-            className="p-1 text-slate-400 hover:text-sky-600 disabled:opacity-30 disabled:hover:text-slate-400 transition-colors"
+            disabled={currentPage === totalPages || totalPages === 0}
+            className="p-1.5 text-slate-500 bg-slate-100 hover:bg-sky-500 hover:text-white rounded disabled:opacity-50 disabled:hover:bg-slate-100 disabled:hover:text-slate-500 transition-colors"
             title="Trang cuối"
           >
             <ChevronsRight size={16} />
           </button>
-        </div>
-
-        {/* Jump to page */}
-        <div className="flex items-center gap-2">
-          <span className="text-[11px] text-slate-500 uppercase font-bold tracking-wider">Đến:</span>
-          <input
-            type="text"
-            placeholder="Số trang"
-            className="w-16 text-xs bg-white border border-slate-200 rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-sky-500 text-slate-700 placeholder:text-slate-300 font-medium"
-            onKeyDown={handleJumpToPage}
-          />
         </div>
       </div>
     </div>

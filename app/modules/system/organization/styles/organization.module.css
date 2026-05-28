@@ -67,10 +67,8 @@
   margin-top: 32px;
   height: 42px;
   border: none;
-  font-family: Manrope;
   font-size: medium;
 }
-
 
 .formActions {
   display: flex;

@@ -148,7 +148,7 @@ export const CustomerPage = () => {
   const totalPages = data?.totalPages || 0;
 
   return (
-    <div className="p-4 bg-slate-50 min-h-screen">
+    <div className="bg-slate-50 min-h-screen">
       <TableToolbar
         title="Quản lý khách hàng"
         onSearch={handleSearch}

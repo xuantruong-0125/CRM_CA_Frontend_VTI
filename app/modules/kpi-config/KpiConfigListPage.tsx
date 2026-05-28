@@ -11,6 +11,7 @@ import { kpiConfigApi } from './api/kpi-config.api';
 import { organizationApi } from '../system/organization/api/organization.api';
 import { userApi } from '../system/user/api/user.api';
 import styles from './styles/kpi-config.module.css';
+import ConfirmDeleteModal from '@/shared/components/ConfirmDeleteModal/ConfirmDeleteModal';
 
 const KpiConfigListPage: React.FC = () => {
   const router = useRouter();
@@ -27,6 +28,8 @@ const KpiConfigListPage: React.FC = () => {
   const [jumpPage, setJumpPage] = useState('');
   const [inputPage, setInputPage] = useState(1);
   const [expandedRows, setExpandedRows] = useState<Set<number>>(new Set());
+  const [deleteId, setDeleteId] = useState<number | null>(null);
+  const [loadingDelete, setLoadingDelete] = useState(false);
 
   const fetchData = async (keyword?: string, page: number = 0, size: number = 10) => {
     try {
@@ -87,15 +90,18 @@ const KpiConfigListPage: React.FC = () => {
     }
   };
 
-  const handleDelete = async (id: number) => {
-    if (confirm('Bạn có chắc chắn muốn xóa cấu hình KPI này?')) {
-      try {
-        await kpiConfigApi.delete(id);
-        toast.success('Xóa thành công!');
-        fetchData(searchKeyword, currentPage, pageSize);
-      } catch (error) {
-        toast.error('Lỗi khi xóa cấu hình.');
-      }
+  const handleConfirmDelete = async () => {
+    if (!deleteId) return;
+    try {
+      setLoadingDelete(true);
+      await kpiConfigApi.delete(deleteId);
+      toast.success('Xóa thành công!');
+      setDeleteId(null);
+      fetchData(searchKeyword, currentPage, pageSize);
+    } catch (error) {
+      toast.error('Lỗi khi xóa cấu hình.');
+    } finally {
+      setLoadingDelete(false);
     }
   };
 
@@ -232,20 +238,22 @@ const KpiConfigListPage: React.FC = () => {
 
       <div style={{
         background: '#fff',
-        overflow: 'auto',
+        overflow: 'hidden',
+        borderRadius: '10px',
         boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
         borderBottom: '1px solid #e0e4ea',
       }}>
+        <div style={{ overflowX: 'auto' }}>
           <table className={styles.kpiTable} style={{ fontSize: 12 }}>
             <thead>
-              <tr style={{ background: '#34495e' }}>
-                <th style={thStyle}>ID</th>
+              <tr>
+                <th style={{ ...thStyle, borderTopLeftRadius: '10px' }}>ID</th>
                 <th style={{ ...thStyle, minWidth: 160, textAlign: 'left' }}>Tên cấu hình</th>
                 <th style={{ ...thStyle, minWidth: 130 }}>Thời gian</th>
                 <th style={{ ...thStyle, minWidth: 280, textAlign: 'left' }}>Mục tiêu KPI</th>
                 <th style={{ ...thStyle, minWidth: 160 }}>Đối tượng</th>
                 <th style={thStyle}>Trạng thái</th>
-                <th style={{ ...thStyle, minWidth: 100 }}>Thao tác</th>
+                <th style={{ ...thStyle, minWidth: 100, borderTopRightRadius: '10px', borderRight: 'none' }}>Thao tác</th>
               </tr>
             </thead>
             <tbody>
@@ -303,7 +311,7 @@ const KpiConfigListPage: React.FC = () => {
                         </button>
                         <button
                           title="Xóa"
-                          onClick={() => config.id && handleDelete(config.id)}
+                          onClick={() => config.id && setDeleteId(config.id)}
                           className={`${styles.btnIcon} ${styles.delete}`}
                         >
                           <Trash2 size={15} />
@@ -316,6 +324,7 @@ const KpiConfigListPage: React.FC = () => {
             </tbody>
           </table>
         </div>
+      </div>
 
         {totalPages > 0 && (
           <div className={styles.pagination}>
@@ -397,19 +406,24 @@ const KpiConfigListPage: React.FC = () => {
             </button>
           </div>
         )}
-      </div>
+      <ConfirmDeleteModal
+        open={!!deleteId}
+        onClose={() => setDeleteId(null)}
+        onConfirm={handleConfirmDelete}
+        loading={loadingDelete}
+      />
+    </div>
   );
 };
 
 const thStyle: React.CSSProperties = {
   color: '#fff',
+  background: 'linear-gradient(to bottom right, #2563eb, #1d4ed8)',
   padding: '10px 8px',
   textAlign: 'center',
   fontWeight: 700,
-  fontSize: 11,
-  textTransform: 'uppercase',
-  letterSpacing: '0.3px',
-  borderRight: '1px solid rgba(255,255,255,0.1)',
+  fontSize: 12,
+  borderRight: '1px solid rgba(255, 255, 255, 0.3)',
   whiteSpace: 'nowrap',
 };
 

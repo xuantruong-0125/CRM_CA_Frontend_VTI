@@ -28,43 +28,45 @@ export const SettingsPopover: React.FC<SettingsPopoverProps> = ({
   onDataMaskToggle,
 }) => {
   return (
-    <div className="absolute top-full right-0 mt-2 w-72 bg-white border border-slate-200 rounded-xl shadow-2xl z-[100] animate-in fade-in slide-in-from-top-2 duration-200 overflow-hidden">
+    <div className="absolute top-full right-0 mt-2 w-72 bg-white border border-slate-200 rounded-xl shadow-2xl z-40 animate-in fade-in slide-in-from-top-2 duration-200 overflow-hidden">
       {/* Header */}
-      <div className="px-4 py-3 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
-        <h3 className="text-[13px] font-bold text-slate-700 uppercase tracking-wider">Cấu hình bảng</h3>
+      <div className="px-5 py-4 border-b border-slate-100 flex items-start justify-between bg-white">
+        <h3 className="text-xl font-normal text-slate-800 uppercase leading-tight max-w-[150px]">
+          Cấu hình bảng
+        </h3>
         <button
           onClick={onClose}
-          className="p-1 hover:bg-slate-200 rounded-full transition-colors text-slate-400"
+          className="p-1 hover:bg-slate-100 rounded-full transition-colors text-slate-400"
         >
-          <X size={16} />
+          <X size={18} />
         </button>
       </div>
 
       <div className="p-4 space-y-5">
         {/* Column Management */}
         <div>
-          <label className="block text-[11px] font-bold text-slate-400 mb-2 uppercase tracking-widest">
+          <label className="block text-[11px] font-bold text-slate-400 mb-3 uppercase tracking-widest">
             Hiển thị cột
           </label>
-          <div className="space-y-1.5 max-h-60 overflow-y-auto pr-1 custom-scrollbar">
+          <div className="grid grid-cols-2 gap-2 max-h-64 overflow-y-auto pr-1 custom-scrollbar">
             {columns.map((col) => (
               <label
                 key={col.id}
-                className="flex items-center gap-3 p-2 hover:bg-slate-50 rounded-lg cursor-pointer group transition-colors border border-transparent hover:border-slate-100"
+                className="flex flex-col p-2 bg-white border border-slate-200 rounded-lg cursor-pointer hover:border-sky-300 transition-colors group relative"
               >
-                <input
-                  type="checkbox"
-                  checked={visibleColumns[col.id] !== false}
-                  onChange={() => onColumnToggle(col.id)}
-                  className="w-4 h-4 rounded border-slate-300 text-sky-600 focus:ring-sky-500 cursor-pointer"
-                />
-                <span className="flex-1 text-[13px] text-slate-600 group-hover:text-slate-900 font-medium">
-                  {col.label}
-                </span>
-                {visibleColumns[col.id] !== false ? (
-                  <Eye size={14} className="text-sky-500 opacity-0 group-hover:opacity-100 transition-opacity" />
-                ) : (
-                  <EyeOff size={14} className="text-slate-300" />
+                <div className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={visibleColumns[col.id] !== false}
+                    onChange={() => onColumnToggle(col.id)}
+                    className="w-4 h-4 rounded border-slate-300 text-sky-600 focus:ring-sky-500 cursor-pointer shrink-0"
+                  />
+                  <span className="text-[11px] text-slate-600 group-hover:text-slate-900 whitespace-nowrap overflow-hidden text-ellipsis">
+                    {col.label}
+                  </span>
+                </div>
+                {visibleColumns[col.id] === false && (
+                  <EyeOff size={12} className="text-slate-300 mt-1 absolute bottom-1.5 left-2" />
                 )}
               </label>
             ))}
@@ -97,17 +99,17 @@ export const SettingsPopover: React.FC<SettingsPopoverProps> = ({
           <div className="grid grid-cols-2 gap-2">
             <button
               onClick={onImport}
-              className="flex items-center justify-center gap-2 px-3 py-2 bg-white border border-slate-200 rounded-lg text-[12px] font-bold text-slate-600 hover:bg-slate-50 hover:border-sky-200 hover:text-sky-600 transition-all active:scale-95"
+              className="flex flex-col items-center justify-center gap-1.5 p-3 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 hover:border-sky-200 transition-all active:scale-95 text-slate-700"
             >
-              <Upload size={14} />
-              Nhập Excel
+              <Upload size={16} className="text-slate-500" />
+              <span className="text-[12px] font-medium whitespace-nowrap">Nhập Excel</span>
             </button>
             <div className="relative group">
               <button
-                className="w-full flex items-center justify-center gap-2 px-3 py-2 bg-sky-600 text-white rounded-lg text-[12px] font-bold hover:bg-sky-700 transition-all active:scale-95 shadow-sm shadow-sky-100"
+                className="w-full flex flex-col items-center justify-center gap-1.5 p-3 bg-[#2d7dca] text-white rounded-lg hover:bg-[#256bb1] transition-all active:scale-95 shadow-sm"
               >
-                <Download size={14} />
-                Xuất file
+                <Download size={16} />
+                <span className="text-[12px] font-medium whitespace-nowrap">Xuất file</span>
               </button>
               
               {/* Export Dropdown on Hover */}

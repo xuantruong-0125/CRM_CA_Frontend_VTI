@@ -57,40 +57,46 @@ export const PricePage = () => {
   };
 
   return (
-    <div className="p-4 bg-slate-50 min-h-screen">
-      <TableToolbar
-        title="Quản lý giá sản phẩm"
-        onSearch={handleSearch}
-        placeholder="Tìm kiếm theo sản phẩm..."
-        selectedCount={selectedCount}
-        onClearSelection={handleClearSelection}
-        // Settings props
-        columns={priceColumns}
-        visibleColumns={columnVisibility}
-        onColumnToggle={handleColumnToggle}
-        onImport={handleImport}
-        onExport={handleExport}
-      />
+    <div className="flex flex-col min-h-screen bg-slate-50">
+      {/* Top Bar as requested */}
+      <div className="mb-4 bg-[rgb(21,0,211)] px-4 py-[7px] rounded-[10px] text-left font-bold text-lg text-white">
+        Quản lý giá sản phẩm
+      </div>
 
-      {isLoading ? (
-        <div className="text-sm text-slate-500">Đang tải dữ liệu...</div>
-      ) : isError ? (
-        <div className="text-sm text-rose-500">Lỗi khi tải dữ liệu!</div>
-      ) : (
-        <PriceTable 
-          data={data?.items || []} 
-          totalCount={data?.totalItems || 0}
-          totalPages={data?.totalPages || 0}
-          pageIndex={pageIndex}
-          pageSize={pageSize}
-          onPageChange={setPageIndex}
-          onPageSizeChange={setPageSize}
-          onRefresh={mutate} 
-          rowSelection={rowSelection}
-          onRowSelectionChange={setRowSelection}
-          columnVisibility={columnVisibility}
+      <div className="flex-1">
+        <TableToolbar
+          onSearch={handleSearch}
+          placeholder="Tìm kiếm theo sản phẩm..."
+          selectedCount={selectedCount}
+          onClearSelection={handleClearSelection}
+          // Settings props
+          columns={priceColumns}
+          visibleColumns={columnVisibility}
+          onColumnToggle={handleColumnToggle}
+          onImport={handleImport}
+          onExport={handleExport}
         />
-      )}
+
+        {isLoading ? (
+          <div className="text-sm text-slate-500">Đang tải dữ liệu...</div>
+        ) : isError ? (
+          <div className="text-sm text-rose-500">Lỗi khi tải dữ liệu!</div>
+        ) : (
+          <PriceTable
+            data={data?.items || []}
+            totalCount={data?.totalItems || 0}
+            totalPages={data?.totalPages || 0}
+            pageIndex={pageIndex}
+            pageSize={pageSize}
+            onPageChange={setPageIndex}
+            onPageSizeChange={setPageSize}
+            onRefresh={mutate}
+            rowSelection={rowSelection}
+            onRowSelectionChange={setRowSelection}
+            columnVisibility={columnVisibility}
+          />
+        )}
+      </div>
     </div>
   );
 };
