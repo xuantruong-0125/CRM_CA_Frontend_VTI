@@ -1,6 +1,6 @@
 "use client";
 import React, { useState, useEffect } from 'react';
-import { useRouter, useParams } from 'next/navigation';
+import { useRouter, useParams, useSearchParams } from 'next/navigation';
 import httpClient from '@/core/http/httpClient';
 import { toast } from 'react-toastify';
 import ConfirmDeleteModal from '@/shared/components/ConfirmDeleteModal/ConfirmDeleteModal';
@@ -30,6 +30,7 @@ const TaskDetailPage = () => {
     const router = useRouter();
     const params = useParams();
     const id = Number(params.id);
+    const searchParams = useSearchParams();
 
     const [taskDetail, setTaskDetail] = useState<any>(null);
     const [isLoading, setIsLoading] = useState(true);
@@ -49,6 +50,13 @@ const TaskDetailPage = () => {
         relatedToType: "",
         relatedToId: ""
     });
+    useEffect(() => {
+        if (taskDetail && searchParams.get('action') === 'edit' && taskDetail.status !== 'COMPLETED') {
+            handleOpenEditModal();
+            const newUrl = window.location.pathname;
+            window.history.replaceState({ path: newUrl }, '', newUrl);
+        }
+    }, [taskDetail, searchParams]);
     const handleOpenEditModal = () => {
         // Ép kiểu thời gian 
         const formatDateTimeForInput = (dateString: string) => {

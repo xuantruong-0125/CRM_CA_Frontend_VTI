@@ -230,49 +230,34 @@ const ActivityForm = ({ id }: Props) => {
             return dateStr.length === 16 ? `${dateStr}:00` : dateStr;
         };
 
-        //  Tạo basePayload gồm các trường LUÔN ĐƯỢC PHÉP thay đổi (dùng chung cho cả Thêm và Sửa)
-        const basePayload = {
+        const finalPayload = {
             subject: formData.subject,
-
             startDate: formatToSpringDateTime(formData.startDate),
             endDate: formatToSpringDateTime(formData.endDate),
-
             status: formData.status,
-            isImportant: formData.important === true || String(formData.important) === 'true',
+
+            important: formData.important === true || String(formData.important) === 'true',
 
             performedBy: Number(formData.performedBy),
             description: formData.description?.trim() === "" ? null : formData.description,
             outcome: formData.outcome?.trim() === "" ? null : formData.outcome,
-        };
-        //  Tách biệt Payload dựa trên Chế độ
-        let finalPayload;
 
-        if (isEditMode) {
-            finalPayload = { ...basePayload };
-        } else {
-            finalPayload = {
-                ...basePayload,
-                activityType: formData.activityType as any,
-                relatedToType: formData.relatedToType,
-                relatedToId: formData.relatedToId ? Number(formData.relatedToId) : null,
-            };
-        }
+            activityType: formData.activityType,
+            relatedToType: formData.relatedToType,
+            relatedToId: formData.relatedToId ? Number(formData.relatedToId) : null,
+        };
 
         try {
             if (isEditMode) {
                 await activityApi.updateActivity(id, finalPayload as any);
                 alert('Cập nhật thành công!');
-
                 router.replace(`/activity/${id}`);
             } else {
                 const savedData = await activityApi.createActivity(finalPayload as any);
                 alert('Thêm mới thành công!');
-
-
                 const newId = savedData.id || savedData.data?.id;
                 router.push(`/activity/${newId}`);
             }
-
         } catch (error) {
             console.error(error);
             alert('Hệ thống gặp lỗi trong quá trình lưu dữ liệu!');
@@ -285,12 +270,8 @@ const ActivityForm = ({ id }: Props) => {
 
     return (
         <div className="container-fluid py-4 bg-light min-vh-100">
-            <div className="container" style={{ maxWidth: '900px' }}>
+            <div className="container" style={{ maxWidth: '1100px' }}>
 
-                {/* Nút Quay lại */}
-                <div className="mb-3">
-
-                </div>
                 {isLocked && (
                     <div className="alert alert-success border-success-subtle shadow-sm d-flex align-items-center mb-4">
                         <i className="fa-solid fa-check-circle text-success fs-4 me-3"></i>
@@ -300,6 +281,7 @@ const ActivityForm = ({ id }: Props) => {
                         </div>
                     </div>
                 )}
+
                 <div className="card shadow-sm border-0 rounded-3">
                     <div className="card-header bg-white border-bottom p-4">
                         <h5 className="mb-0 text-primary fw-bold">
@@ -311,180 +293,127 @@ const ActivityForm = ({ id }: Props) => {
                     <div className="card-body p-4 p-md-5">
                         <form onSubmit={handleSubmit}>
 
-                            {/* --- NHÓM 1: THÔNG TIN CHUNG --- */}
-                            <h6 className="text-secondary fw-bold mb-3 border-bottom pb-2"><i className="fa-solid fa-circle-info me-2"></i>1. Thông tin chung</h6>
-                            <div className="row mb-4 g-3">
-                                <div className="col-md-8">
-                                    <label className="form-label text-muted small text-uppercase fw-bold">Chủ đề <span className="text-danger">*</span></label>
-                                    <input type="text" className="form-control focus-ring focus-ring-info" name="subject" value={formData.subject} onChange={handleChange} required maxLength={255} />
-                                </div>
-                                <div className="col-md-4">
-                                    <label className="form-label text-muted small text-uppercase fw-bold">
-                                        Loại hoạt động <span className="text-danger">*</span>
-                                        {/* Hiện icon ổ khóa nhỏ nếu đang ở chế độ sửa */}
-                                        {isEditMode && <i className="fa-solid fa-lock text-secondary ms-1" title="Không thể thay đổi loại hoạt động"></i>}
-                                    </label>
-                                    <select className="form-select focus-ring focus-ring-info"
-                                        name="activityType"
-                                        value={formData.activityType}
-                                        onChange={handleChange}
-                                        required
-                                        disabled={isEditMode}
-                                        title={isEditMode ? "Không thể thay đổi loại hoạt động sau khi đã tạo" : ""}
-                                    >
-                                        <option value="CALL">Cuộc gọi với khách</option>
-                                        <option value="MEETING">Cuộc gặp</option>
-                                        <option value="EMAIL_QUOTE">Email Báo giá</option>
-                                        <option value="EMAIL_TRANS">Email Giao dịch</option>
-                                    </select>
-                                </div>
-                            </div>
+                            <div className="row g-5">
 
-                            {/* --- NHÓM 2: THỜI GIAN & PHÂN CÔNG --- */}
-                            <h6 className="text-secondary fw-bold mb-3 border-bottom pb-2 mt-4"><i className="fa-regular fa-calendar-check me-2"></i>2. Thời gian & Phân công</h6>
-                            <div className="row mb-3 g-3">
-                                <div className="col-md-6">
-                                    <label className="form-label text-muted small text-uppercase fw-bold">Thời gian bắt đầu <span className="text-danger">*</span></label>
-                                    <input type="datetime-local" className="form-control focus-ring focus-ring-info" name="startDate" value={formData.startDate} onChange={handleChange} required />
-                                </div>
-                                <div className="col-md-6">
-                                    <label className="form-label text-muted small text-uppercase fw-bold">Thời gian kết thúc</label>
-                                    <input type="datetime-local" className="form-control focus-ring focus-ring-info" name="endDate" value={formData.endDate} onChange={handleChange} />
-                                </div>
-                            </div>
+                                <div className="col-lg-8">
+                                    <h6 className="text-secondary fw-bold mb-4 border-bottom pb-2">
+                                        <i className="fa-solid fa-file-lines me-2"></i>Nội dung công việc
+                                    </h6>
 
-                            <div className="row mb-4 g-3">
-                                <div className="col-md-6">
-                                    <label className="form-label text-muted small text-uppercase fw-bold">
-                                        Người thực hiện <span className="text-danger">*</span>
-                                        {!isManager && <i className="fa-solid fa-lock text-secondary ms-1" title="Bạn chỉ có thể tạo hoạt động cho chính mình"></i>}
-                                    </label>
-                                    <select className="form-select focus-ring focus-ring-info shadow-sm"
-                                        name="performedBy"
-                                        value={formData.performedBy}
-                                        onChange={handleChange}
-                                        required
-                                        disabled={isLocked || !isManager}>
-                                        <option value="">-- Chọn nhân viên phụ trách --</option>
-                                        {users.map((user) => (
-                                            <option key={user.id} value={user.id.toString()}>{user.fullName || user.name}</option>
-                                        ))}
-                                    </select>
-                                </div>
-                            </div>
-                            <div className="row mb-4 g-3">
-                                {/* --- LOẠI ĐỐI TƯỢNG (Dropdown 1) --- */}
-                                <div className="col-md-6">
-                                    <label className="form-label text-muted small text-uppercase fw-bold">
-                                        Liên kết với <span className="text-danger">*</span>
-                                        {isEditMode && <i className="fa-solid fa-lock text-secondary ms-1" title="Không thể đổi loại liên kết"></i>}
-                                    </label>
-                                    <select
-                                        className="form-select focus-ring focus-ring-info shadow-sm bg-white"
-                                        name="relatedToType"
-                                        value={formData.relatedToType}
-                                        onChange={(e) => {
-                                            setFormData({ ...formData, relatedToType: e.target.value, relatedToId: '' });
-                                        }}
-                                        required
-                                        disabled={isEditMode}
-                                    >
-                                        <option value="CUSTOMER">🏢 Khách hàng (Customer)</option>
-                                        <option value="LEAD">🎯 Tiềm năng (Lead)</option>
-                                        <option value="CONTACT">👤 Liên hệ (Contact)</option>
-                                        <option value="OPPORTUNITY">💰 Cơ hội (Opportunity)</option>
-                                    </select>
-                                </div>
-
-                                {/* --- ĐỐI TƯỢNG CỤ THỂ (Dropdown 2) --- */}
-                                <div className="col-md-6">
-                                    <label className="form-label text-muted small text-uppercase fw-bold">
-                                        Đối tượng cụ thể <span className="text-danger">*</span>
-                                        {isEditMode && <i className="fa-solid fa-lock text-secondary ms-1" title="Không thể đổi đối tượng"></i>}
-                                    </label>
-                                    <select
-                                        className="form-select focus-ring focus-ring-info shadow-sm bg-white"
-                                        name="relatedToId"
-                                        value={formData.relatedToId}
-                                        onChange={handleChange}
-                                        required
-                                        disabled={isLocked || isLoadingOptions || isEditMode}
-                                    >
-                                        <option value="">
-                                            {isLoadingOptions ? '⏳ Đang tải dữ liệu...' : '-- Chọn đối tượng cụ thể --'}
-                                        </option>
-
-                                        {relatedOptions.map(option => {
-                                            let displayName = "";
-                                            if (option.companyName && option.contactName) {
-                                                displayName = `${option.companyName} (${option.contactName})`;
-                                            } else {
-                                                displayName = option.companyName || option.contactName || option.fullName || option.name || option.subject || option.title || `Đối tượng #${option.id}`;
-                                            }
-                                            return (
-                                                <option key={option.id} value={option.id}>
-                                                    {displayName}
-                                                </option>
-                                            );
-                                        })}
-                                    </select>
-                                </div>
-                            </div>
-
-                            {/* --- NHÓM 3: KẾT QUẢ & NỘI DUNG --- */}
-                            <h6 className="text-secondary fw-bold mb-3 border-bottom pb-2 mt-4"><i className="fa-solid fa-list-check me-2"></i>3. Kết quả & Nội dung</h6>
-                            <div className="row mb-3 g-3 align-items-end">
-                                <div className="col-md-4">
-                                    <label className="form-label text-muted small text-uppercase fw-bold">Trạng thái</label>
-                                    <select className="form-select focus-ring focus-ring-info" name="status" value={formData.status} onChange={handleChange}>
-                                        <option value="PLANNED">Chưa hoàn thành</option>
-                                        <option value="COMPLETED">Đã hoàn thành</option>
-                                    </select>
-                                </div>
-                                <div className="col-md-5">
-                                    <label className="form-label text-muted small text-uppercase fw-bold">Kết quả (Outcome)</label>
-                                    <input type="text" className="form-control focus-ring focus-ring-info" name="outcome" value={formData.outcome} onChange={handleChange} placeholder="VD: Khách đồng ý mua..." />
-                                </div>
-                                <div className="col-md-3">
-                                    <div className={`p-2 border rounded ${formData.important ? 'bg-danger-subtle border-danger-subtle' : 'bg-light'} d-flex align-items-center justify-content-center h-100 transition-all`}>
-                                        <div className="form-check form-switch fs-5 mb-0" style={{ cursor: 'pointer' }}>
-                                            <input className="form-check-input" type="checkbox" role="switch" id="importantSwitch" name="important" checked={formData.important} onChange={handleChange} style={{ cursor: 'pointer' }} />
-                                            <label className={`form-check-label fs-6 ms-1 ${formData.important ? 'text-danger fw-bold' : 'text-muted'}`} htmlFor="importantSwitch" style={{ cursor: 'pointer' }}>Quan trọng</label>
-                                        </div>
+                                    <div className="mb-4">
+                                        <label className="form-label text-muted small text-uppercase fw-bold">Chủ đề <span className="text-danger">*</span></label>
+                                        <input type="text" className="form-control focus-ring focus-ring-info" name="subject" value={formData.subject} onChange={handleChange} required maxLength={255} />
                                     </div>
-                                </div>
-                            </div>
 
-                            <div className="mb-4">
-                                <label className="form-label text-muted small text-uppercase fw-bold">Mô tả chi tiết</label>
-                                <textarea className="form-control focus-ring focus-ring-info" name="description" value={formData.description} onChange={handleChange} rows={4} placeholder="Nhập nội dung trao đổi, ghi chú..."></textarea>
-                            </div>
-
-                            {/* --- AUDIT LOG CHỈ CHO CHẾ ĐỘ SỬA --- */}
-                            {isEditMode && (
-                                <div className="bg-light p-3 rounded-3 border text-muted small mb-4">
-                                    <div className="row">
+                                    <div className="row mb-4 g-3">
                                         <div className="col-md-6">
-                                            <i className="fa-solid fa-clock me-2"></i>
-                                            <strong>Tạo lúc:</strong> {auditData.createdAt ? new Date(auditData.createdAt).toLocaleString('vi-VN') : '---'}
+                                            <label className="form-label text-muted small text-uppercase fw-bold">Bắt đầu lúc <span className="text-danger">*</span></label>
+                                            <input type="datetime-local" className="form-control focus-ring focus-ring-info shadow-sm" name="startDate" value={formData.startDate} onChange={handleChange} required />
                                         </div>
-                                        <div className="col-md-6 border-start">
-                                            <i className="fa-solid fa-clock-rotate-left me-2"></i>
-                                            <strong>Cập nhật lần cuối:</strong> {auditData.updatedAt ? new Date(auditData.updatedAt).toLocaleString('vi-VN') : '---'}
+                                        <div className="col-md-6">
+                                            <label className="form-label text-muted small text-uppercase fw-bold">Kết thúc lúc</label>
+                                            <input type="datetime-local" className="form-control focus-ring focus-ring-info shadow-sm" name="endDate" value={formData.endDate} onChange={handleChange} />
                                         </div>
                                     </div>
+
+                                    <div className="mb-4">
+                                        <label className="form-label text-muted small text-uppercase fw-bold">Kết quả đạt được (Outcome)</label>
+                                        <input type="text" className="form-control focus-ring focus-ring-info" name="outcome" value={formData.outcome} onChange={handleChange} placeholder="VD: Khách đồng ý mua..." />
+                                    </div>
+
+                                    <div className="mb-4">
+                                        <label className="form-label text-muted small text-uppercase fw-bold">Mô tả chi tiết</label>
+                                        <textarea className="form-control focus-ring focus-ring-info" name="description" value={formData.description} onChange={handleChange} rows={6} placeholder="Nhập nội dung trao đổi, ghi chú..."></textarea>
+                                    </div>
                                 </div>
-                            )}
 
-                            <hr className="my-4 text-muted" />
+                                <div className="col-lg-4">
+                                    <div className="bg-light p-4 rounded-3 border shadow-sm h-100">
+                                        <h6 className="text-secondary fw-bold mb-4 border-bottom pb-2">
+                                            <i className="fa-solid fa-gear me-2"></i>Cài đặt & Phân loại
+                                        </h6>
 
-                            {/* NÚT LƯU & HỦY */}
+                                        <div className="mb-4">
+                                            <label className="form-label text-muted small text-uppercase fw-bold">Tiến độ</label>
+                                            <select className="form-select focus-ring focus-ring-info mb-3 shadow-sm border-white" name="status" value={formData.status} onChange={handleChange}>
+                                                <option value="PLANNED">⏳ Chưa hoàn thành</option>
+                                                <option value="COMPLETED">✅ Đã hoàn thành</option>
+                                            </select>
+
+                                            <div className={`p-2 border rounded shadow-sm ${formData.important ? 'bg-danger-subtle border-danger-subtle' : 'bg-white border-white'} transition-all`}>
+                                                <div className="form-check form-switch fs-5 mb-0 d-flex align-items-center">
+                                                    <input className="form-check-input mt-0" type="checkbox" role="switch" id="importantSwitch" name="important" checked={formData.important} onChange={handleChange} style={{ cursor: 'pointer' }} />
+                                                    <label className={`form-check-label fs-6 ms-2 ${formData.important ? 'text-danger fw-bold' : 'text-muted'}`} htmlFor="importantSwitch" style={{ cursor: 'pointer' }}>Đánh dấu Quan trọng</label>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div className="mb-4">
+                                            <label className="form-label text-muted small text-uppercase fw-bold">
+                                                Loại hoạt động <span className="text-danger">*</span>
+                                                {isEditMode && <i className="fa-solid fa-lock text-secondary ms-1" title="Không thể đổi sau khi đã tạo"></i>}
+                                            </label>
+                                            <select className="form-select focus-ring focus-ring-info shadow-sm border-white" name="activityType" value={formData.activityType} onChange={handleChange} required disabled={isEditMode}>
+                                                <option value="CALL">📞 Cuộc gọi với khách</option>
+                                                <option value="MEETING">🤝 Cuộc gặp</option>
+                                                <option value="EMAIL_QUOTE">📧 Email Báo giá</option>
+                                                <option value="EMAIL_TRANS">📧 Email Giao dịch</option>
+                                            </select>
+                                        </div>
+
+                                        <div className="mb-4">
+                                            <label className="form-label text-muted small text-uppercase fw-bold">
+                                                Người phụ trách <span className="text-danger">*</span>
+                                            </label>
+                                            <select className="form-select focus-ring focus-ring-info shadow-sm border-white" name="performedBy" value={formData.performedBy} onChange={handleChange} required disabled={isLocked || !isManager}>
+                                                <option value="">-- Chọn nhân sự --</option>
+                                                {users.map((user) => (
+                                                    <option key={user.id} value={user.id.toString()}>{user.fullName || user.name}</option>
+                                                ))}
+                                            </select>
+                                        </div>
+
+                                        <div className="mb-4">
+                                            <label className="form-label text-muted small text-uppercase fw-bold">
+                                                Liên kết với <span className="text-danger">*</span>
+                                            </label>
+                                            <select className="form-select focus-ring focus-ring-info shadow-sm border-white mb-2" name="relatedToType" value={formData.relatedToType} onChange={(e) => { setFormData({ ...formData, relatedToType: e.target.value, relatedToId: '' }); }} required disabled={isEditMode}>
+                                                <option value="CUSTOMER">🏢 Khách hàng</option>
+                                                <option value="LEAD">🎯 Tiềm năng</option>
+                                                <option value="CONTACT">👤 Liên hệ</option>
+                                                <option value="OPPORTUNITY">💰 Cơ hội</option>
+                                            </select>
+
+                                            <select className="form-select focus-ring focus-ring-info shadow-sm border-white" name="relatedToId" value={formData.relatedToId} onChange={handleChange} required disabled={isLocked || isLoadingOptions || isEditMode}>
+                                                <option value="">{isLoadingOptions ? '⏳ Đang tải dữ liệu...' : '-- Chọn đối tượng cụ thể --'}</option>
+                                                {relatedOptions.map(option => {
+                                                    let displayName = "";
+                                                    if (option.companyName && option.contactName) {
+                                                        displayName = `${option.companyName} (${option.contactName})`;
+                                                    } else {
+                                                        displayName = option.companyName || option.contactName || option.fullName || option.name || option.subject || option.title || `Đối tượng #${option.id}`;
+                                                    }
+                                                    return (
+                                                        <option key={option.id} value={option.id}>
+                                                            {displayName}
+                                                        </option>
+                                                    );
+                                                })}
+                                            </select>
+                                        </div>
+
+                                    </div>
+                                </div>
+                            </div>
+
+                            <hr className="my-5 text-muted" />
+
                             <div className="d-flex justify-content-end gap-3">
                                 <button type="button" onClick={() => router.back()} className="btn btn-light border shadow-sm px-4 text-secondary fw-medium">
                                     Hủy bỏ
                                 </button>
                                 {!isLocked && (
-                                    <button type="submit" className="btn btn-primary px-4 shadow-sm fw-medium" disabled={isSaving}>
+                                    <button type="submit" className="btn btn-primary px-5 shadow-sm fw-bold" disabled={isSaving}>
                                         {isSaving ? <><i className="fa-solid fa-spinner fa-spin me-2"></i>Đang lưu...</> : <><i className="fa-solid fa-floppy-disk me-2"></i>{isEditMode ? 'Cập nhật thay đổi' : 'Lưu hoạt động'}</>}
                                     </button>
                                 )}

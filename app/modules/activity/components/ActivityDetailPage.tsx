@@ -219,8 +219,14 @@ const ActivityDetailPage = () => {
                                     <label className="text-muted small fw-semibold mb-1">Công ty / Đối tượng</label>
                                     <div className="text-primary fw-medium">
                                         <i className="fa-solid fa-building me-1"></i>
-                                        {activity.relatedToId ? `Khách hàng #${activity.relatedToId}` : <span className="text-muted fst-italic">Không có</span>}
-                                    </div>
+                                        {activity.relatedToName ? (
+                                            activity.relatedToName
+                                        ) : activity.relatedToId ? (
+                                            `${activity.relatedToType} #${activity.relatedToId}`
+                                        ) : (
+                                            <span className="text-muted fst-italic">Không có</span>
+                                        )}                                    
+                                        </div>
                                 </div>
 
                                 {/* Hàng 2 */}

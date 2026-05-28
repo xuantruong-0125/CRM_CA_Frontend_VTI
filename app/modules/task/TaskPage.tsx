@@ -4,8 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react';
 // import axios from 'axios';
 
-import { useRouter } from 'next/navigation';
-import Link from 'next/link';
+import { useRouter, useParams, useSearchParams } from 'next/navigation';
 
 import httpClient from '@/core/http/httpClient';
 
@@ -335,19 +334,21 @@ const TaskPage = () => {
     };
 
     return (
-        <div className="container-fluid py-4 bg-light min-vh-100">
-            <div className="d-flex justify-content-between align-items-center mb-4 w-100">
-                {/* Tiêu đề bên trái */}
-                <div className="d-flex align-items-center gap-3">
-                    <h5 className="text-uppercase mb-0 fw-bold text-white px-4 py-2 rounded shadow-sm"
-                        style={{ backgroundColor: 'rgb(21, 0, 211)', fontSize: '15px', letterSpacing: '0.5px' }}>
-                        <i className="fa-solid fa-list-check me-2"></i>QUẢN LÝ CÔNG VIỆC
-                    </h5>
+        <div className="container-fluid px-0 bg-white min-vh-100">
+            <div className="mb-3">
+                <h5 className="text-uppercase mb-0 fw-bold text-white px-4 py-2 rounded-xl  shadow-sm d-inline-block"
+                    style={{ backgroundColor: 'rgb(21, 0, 211)', fontSize: '15px', letterSpacing: '0.5px' }}>
+                    <i className="fa-solid fa-list-check me-2"></i>QUẢN LÝ CÔNG VIỆC
+                </h5>
+            </div>
 
+            <div className="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
+
+                <div className="d-flex align-items-center gap-2">
                     {isManager && (
-                        <div className="d-flex gap-2">
+                        <>
                             <button
-                                className="btn btn-success btn-sm rounded-pill px-3 shadow-sm fw-medium"
+                                className="btn btn-success btn-sm rounded-xl px-3 shadow-sm fw-medium"
                                 onClick={() => setShowCreateModal(true)}
                             >
                                 <i className="fa-solid fa-plus me-1"></i> Giao việc mới
@@ -355,23 +356,78 @@ const TaskPage = () => {
 
                             {selectedTaskIds.length > 0 && (
                                 <button
-                                    className="btn btn-danger btn-sm rounded-pill px-3 shadow-sm fw-medium slide-in"
+                                    className="btn btn-danger btn-sm rounded-xl px-3 shadow-sm fw-medium slide-in"
                                     onClick={handleDeleteSelected}
                                 >
                                     <i className="fa-solid fa-trash-can me-1"></i> Xóa ({selectedTaskIds.length})
                                 </button>
                             )}
-                        </div>
+                        </>
                     )}
+                </div>
+
+                <div className="d-flex align-items-center bg-white p-1 rounded-xl border shadow-sm" style={{ fontSize: '13px' }}>
+                    <span className="text-muted fw-medium mx-2">
+                        <i className="fa-solid fa-filter me-1"></i>Trạng thái:
+                    </span>
+
+                    <button
+                        type="button"
+                        className={`btn btn-sm rounded-xl px-3 py-1 ${filters.status === '' ? 'btn-secondary fw-bold shadow-sm' : 'btn-light text-muted border-0'}`}
+                        onClick={() => setFilters({ ...filters, status: '', page: 0 })}
+                    >
+                        Tất cả
+                    </button>
+
+                    <button
+                        type="button"
+                        className={`btn btn-sm rounded-xl px-3 py-1 mx-1 ${filters.status === 'NOT_STARTED' ? 'btn-secondary fw-bold shadow-sm' : 'btn-light text-muted border-0'}`}
+                        onClick={() => setFilters({ ...filters, status: 'NOT_STARTED', page: 0 })}
+                    >
+                        Chưa bắt đầu
+                    </button>
+
+                    <button
+                        type="button"
+                        className={`btn btn-sm rounded-xl px-3 py-1 ${filters.status === 'IN_PROGRESS' ? 'btn-primary fw-bold shadow-sm text-white' : 'btn-light text-muted border-0'}`}
+                        onClick={() => setFilters({ ...filters, status: 'IN_PROGRESS', page: 0 })}
+                    >
+                        Đang làm
+                    </button>
+
+                    <button
+                        type="button"
+                        className={`btn btn-sm rounded-xl px-3 py-1 mx-1 ${filters.status === 'DEFERRED' ? 'btn-dark fw-bold shadow-sm text-white' : 'btn-light text-muted border-0'}`}
+                        onClick={() => setFilters({ ...filters, status: 'DEFERRED', page: 0 })}
+                    >
+                        Tạm hoãn
+                    </button>
+
+                    <button
+                        type="button"
+                        className={`btn btn-sm rounded-xl px-3 py-1 ${filters.status === 'COMPLETED' ? 'btn-success fw-bold shadow-sm text-white' : 'btn-light text-muted border-0'}`}
+                        onClick={() => setFilters({ ...filters, status: 'COMPLETED', page: 0 })}
+                    >
+                        Đã xong
+                    </button>
+
+                    <button
+                        type="button"
+                        className={`btn btn-sm rounded-xl px-3 py-1 ms-1 ${filters.status === 'CANCELED' ? 'btn-danger fw-bold shadow-sm text-white' : 'btn-light text-muted border-0'}`}
+                        onClick={() => setFilters({ ...filters, status: 'CANCELED', page: 0 })}
+                    >
+                        Đã hủy
+                    </button>
                 </div>
             </div>
 
-            <div className="mb-4">
-                <div className="row g-3 align-items-end">
+            <div className="mb-4 p-3 bg-light border rounded-3 shadow-sm">
+                <div className="d-flex flex-wrap align-items-end gap-3">
 
-                    <div className="col-md-3">
-                        <label className="form-label small small fw-semibold text-muted mb-1 ps-1">Tìm kiếm</label>
-                        <div className="input-group input-group-sm border bg-white rounded-pill overflow-hidden shadow-sm focus-within-ring">
+                    {/* 1. Ô Tìm kiếm */}
+                    <div className="flex-grow-1" style={{ minWidth: '220px' }}>
+                        <label className="form-label small fw-semibold text-muted mb-1 ps-1">Tìm kiếm</label>
+                        <div className="input-group input-group-sm border bg-white rounded-3 overflow-hidden shadow-sm focus-within-ring">
                             <span className="input-group-text bg-white border-0 text-muted ps-3">
                                 <i className="fa-solid fa-magnifying-glass"></i>
                             </span>
@@ -385,10 +441,11 @@ const TaskPage = () => {
                         </div>
                     </div>
 
-                    <div className="col-md-2">
+                    {/* 2. Thời hạn công việc */}
+                    <div style={{ minWidth: '180px' }}>
                         <label className="form-label small fw-semibold text-muted mb-1 ps-1">Thời hạn công việc</label>
                         <select
-                            className="form-select form-select-sm border border-white bg-white rounded-pill shadow-sm cursor-pointer"
+                            className="form-select form-select-sm border border-white bg-white rounded-3 shadow-sm cursor-pointer"
                             value={dateFilterType}
                             onChange={(e) => {
                                 setDateFilterType(e.target.value);
@@ -402,49 +459,45 @@ const TaskPage = () => {
                             <option value="TODAY">⏳ Hôm nay</option>
                             <option value="THIS_WEEK">📅 Tuần này</option>
                             <option value="THIS_MONTH">📊 Tháng này</option>
-                            <option value="CUSTOM">⚙️ Tùy chỉnh...</option>
+                            <option value="CUSTOM">⚙️ Tùy chỉnh ngày...</option>
                         </select>
                     </div>
 
+                    {/* 3. Tùy chỉnh khoảng ngày */}
                     {dateFilterType === "CUSTOM" && (
-                        <div className="col-md-4 animate-fade-in">
-                            <label className="form-label small fw-semibold text-muted mb-1 ps-1">Khoảng ngày lọc</label>
-                            <div className="d-flex gap-2 align-items-center">
-                                <input
-                                    type="date"
-                                    className="form-control form-control-sm border border-white bg-white rounded-pill shadow-sm"
-                                    value={fromDate}
-                                    onChange={(e) => setFromDate(e.target.value)}
-                                />
-                                <span className="text-muted small fw-medium">đến</span>
-                                <input
-                                    type="date"
-                                    className="form-control form-control-sm border border-white bg-white rounded-pill shadow-sm"
-                                    value={toDate}
-                                    onChange={(e) => setToDate(e.target.value)}
-                                />
-                                <button className="btn btn-sm btn-primary rounded-pill px-3 shadow-sm flex-shrink-0 fw-medium" onClick={handleApplyDateFilter}>
-                                    Lọc
-                                </button>
+                        <div className="d-flex align-items-center gap-2 animate-fade-in" style={{ minWidth: '320px' }}>
+                            <div className="flex-grow-1">
+                                <label className="form-label small fw-semibold text-muted mb-1 ps-1">Từ ngày</label>
+                                <input type="date" className="form-control form-control-sm border border-white bg-white rounded-3 shadow-sm" value={fromDate} onChange={(e) => setFromDate(e.target.value)} />
+                            </div>
+                            <div className="flex-grow-1">
+                                <label className="form-label small fw-semibold text-muted mb-1 ps-1">Đến ngày</label>
+                                <input type="date" className="form-control form-control-sm border border-white bg-white rounded-3 shadow-sm" value={toDate} onChange={(e) => setToDate(e.target.value)} />
+                            </div>
+                            <div className="align-self-end">
+                                <button className="btn btn-sm btn-primary rounded-3 px-3 shadow-sm fw-medium" onClick={handleApplyDateFilter}>Lọc</button>
                             </div>
                         </div>
                     )}
 
-                    <div className="col-md-auto ms-auto d-flex align-items-center gap-2">
-                        <div style={{ width: '130px' }}>
-                            <select
-                                className="form-select form-select-sm border border-white bg-white rounded-pill shadow-sm cursor-pointer"
-                                value={filters.priority}
-                                onChange={(e) => setFilters({ ...filters, priority: e.target.value, page: 0 })}
-                            >
-                                <option value="">Độ ưu tiên</option>
-                                <option value="URGENT">🚨 Khẩn cấp</option>
-                                <option value="HIGH">🔥 Cao</option>
-                                <option value="NORMAL">⚡ Bình thường</option>
-                                <option value="LOW">💤 Thấp</option>
-                            </select>
-                        </div>
+                    {/* 4. Độ ưu tiên */}
+                    <div style={{ minWidth: '140px' }}>
+                        <label className="form-label small fw-semibold text-muted mb-1 ps-1">Độ ưu tiên</label>
+                        <select
+                            className="form-select form-select-sm border border-white bg-white rounded-3 shadow-sm cursor-pointer"
+                            value={filters.priority}
+                            onChange={(e) => setFilters({ ...filters, priority: e.target.value, page: 0 })}
+                        >
+                            <option value="">-- Tất cả --</option>
+                            <option value="URGENT">🚨 Khẩn cấp</option>
+                            <option value="HIGH">🔥 Cao</option>
+                            <option value="NORMAL">⚡ Bình thường</option>
+                            <option value="LOW">💤 Thấp</option>
+                        </select>
+                    </div>
 
+                    {/* 5. Nút Làm mới */}
+                    <div className="align-self-end ms-auto">
                         <button
                             type="button"
                             className="btn btn-sm btn-white bg-white text-secondary border rounded-circle d-flex align-items-center justify-content-center shadow-sm"
@@ -454,15 +507,7 @@ const TaskPage = () => {
                                 setDateFilterType("ALL");
                                 setFromDate("");
                                 setToDate("");
-                                setFilters({
-                                    subject: '',
-                                    status: '',
-                                    priority: '',
-                                    page: 0,
-                                    size: 10,
-                                    fromDate: '',
-                                    toDate: ''
-                                });
+                                setFilters({ subject: '', status: '', priority: '', page: 0, size: 10, fromDate: '', toDate: '' });
                             }}
                         >
                             <i className="fa-solid fa-rotate-right"></i>
@@ -470,69 +515,25 @@ const TaskPage = () => {
                     </div>
 
                 </div>
-
-                <div className="d-flex align-items-center bg-white p-1 rounded-pill border shadow-sm mt-3" style={{ width: 'fit-content', fontSize: '13px' }}>
-                    <span className="text-muted fw-medium mx-2"><i className="fa-solid fa-filter me-1"></i>Trạng thái:</span>
-                    <button
-                        type="button"
-                        className={`btn btn-sm rounded-pill px-3 py-1 ${filters.status === '' ? 'btn-secondary fw-bold shadow-sm' : 'btn-light text-muted border-0'}`}
-                        onClick={() => setFilters({ ...filters, status: '', page: 0 })}
-                    >
-                        Tất cả
-                    </button>
-                    <button
-                        type="button"
-                        className={`btn btn-sm rounded-pill px-3 py-1 mx-1 ${filters.status === 'NOT_STARTED' ? 'btn-secondary fw-bold shadow-sm' : 'btn-light text-muted border-0'}`}
-                        onClick={() => setFilters({ ...filters, status: 'NOT_STARTED', page: 0 })}
-                    >
-                        Chưa bắt đầu
-                    </button>
-                    <button
-                        type="button"
-                        className={`btn btn-sm rounded-pill px-3 py-1 ${filters.status === 'IN_PROGRESS' ? 'btn-primary fw-bold shadow-sm text-white' : 'btn-light text-muted border-0'}`}
-                        onClick={() => setFilters({ ...filters, status: 'IN_PROGRESS', page: 0 })}
-                    >
-                        Đang làm
-                    </button>
-                    <button
-                        type="button"
-                        className={`btn btn-sm rounded-pill px-3 py-1 mx-1 ${filters.status === 'DEFERRED' ? 'btn-dark fw-bold shadow-sm text-white' : 'btn-light text-muted border-0'}`}
-                        onClick={() => setFilters({ ...filters, status: 'DEFERRED', page: 0 })}
-                    >
-                        Tạm hoãn
-                    </button>
-                    <button
-                        type="button"
-                        className={`btn btn-sm rounded-pill px-3 py-1 ${filters.status === 'COMPLETED' ? 'btn-success fw-bold shadow-sm text-white' : 'btn-light text-muted border-0'}`}
-                        onClick={() => setFilters({ ...filters, status: 'COMPLETED', page: 0 })}
-                    >
-                        Đã xong
-                    </button>
-                    <button
-                        type="button"
-                        className={`btn btn-sm rounded-pill px-3 py-1 ms-1 ${filters.status === 'CANCELED' ? 'btn-danger fw-bold shadow-sm text-white' : 'btn-light text-muted border-0'}`}
-                        onClick={() => setFilters({ ...filters, status: 'CANCELED', page: 0 })}
-                    >
-                        Đã hủy
-                    </button>
-                </div>
-
             </div>
-            {error && (
-                <div className="alert alert-danger shadow-sm border-0 py-2 mb-4">
-                    <i className="fa-solid fa-triangle-exclamation me-2"></i> {error}
-                </div>
-            )}
+            {
+                error && (
+                    <div className="alert alert-danger shadow-sm border-0 py-2 mb-4">
+                        <i className="fa-solid fa-triangle-exclamation me-2"></i> {error}
+                    </div>
+                )
+            }
 
             {/* 3. BẢNG DỮ LIỆU */}
-            <div className="table-responsive shadow-sm rounded-3 bg-white border border-light overflow-hidden">
-                <table className="table table-hover align-middle mb-0" style={{ fontSize: '14px' }}>
-                    <thead className="bg-light"
-                        style={{
-                            borderBottom: '2px solid #dee2e6'
-                        }}>
+            <div className="table-responsive shadow-sm rounded-3 bg-white border border-light">
+                <table className="table table-hover table-bordered align-middle mb-0" style={{ fontSize: '14px' }}>
+                    <thead style={{
+                        background: 'linear-gradient(135deg, #2563eb, #1d4ed8)',
+                        fontSize: '15px',
+                        whiteSpace: 'nowrap'
+                    }}>
                         <tr>
-                            <th className="fw-semibold px-3 py-3" style={{ width: '8%', backgroundColor: 'transparent' }} >
+                            <th className="fw-bold px-3 py-3 text-white" style={{ width: '4%', background: 'transparent', borderBottom: 'none' }} >
                                 <div className="d-flex align-items-center gap-2">
                                     <input
                                         className="form-check-input shadow-sm cursor-pointer m-0"
@@ -543,14 +544,14 @@ const TaskPage = () => {
                                     />
                                 </div>
                             </th>
-                            <th className="fw-semibold py-3" style={{ width: '22%', backgroundColor: 'transparent' }}>Chủ đề công việc</th>
-                            <th className="fw-semibold py-3" style={{ width: '15%', backgroundColor: 'transparent' }}>Trạng thái & Tiến độ</th>
-                            <th className="fw-semibold py-3" style={{ width: '8%', backgroundColor: 'transparent' }}>Ưu tiên</th>
-                            <th className="fw-semibold py-3" style={{ width: '15%', backgroundColor: 'transparent' }}>Thời hạn (Start - Due)</th>
-                            <th className="fw-semibold py-3" style={{ width: '12%', backgroundColor: 'transparent' }}>Liên hệ</th>
-                            <th className="fw-semibold py-3" style={{ width: '12%', backgroundColor: 'transparent' }}>Liên quan đến</th>
-                            <th className="fw-semibold py-3" style={{ width: '10%', backgroundColor: 'transparent' }}>Phân công cho</th>
-                            <th className="fw-semibold text-center py-3" style={{ width: '7%', backgroundColor: 'transparent' }}>Chi tiết</th>
+                            <th className="fw-bold py-3 text-white" style={{ width: '20%', background: 'transparent', borderBottom: 'none' }}>Chủ đề công việc</th>
+                            <th className="fw-bold py-3 text-white" style={{ width: '14%', background: 'transparent', borderBottom: 'none' }}>Trạng thái & Tiến độ</th>
+                            <th className="fw-bold py-3 text-white" style={{ width: '8%', background: 'transparent', borderBottom: 'none' }}>Ưu tiên</th>
+                            <th className="fw-bold py-3 text-white" style={{ width: '15%', background: 'transparent', borderBottom: 'none' }}>Thời hạn</th>
+                            <th className="fw-bold py-3 text-white" style={{ width: '11%', background: 'transparent', borderBottom: 'none' }}>Liên hệ</th>
+                            <th className="fw-bold py-3 text-white" style={{ width: '12%', background: 'transparent', borderBottom: 'none' }}>Liên quan </th>
+                            <th className="fw-bold py-3 text-white" style={{ width: '10%', background: 'transparent', borderBottom: 'none' }}>Phân công </th>
+                            <th className="fw-bold text-center py-3 text-white" style={{ width: '6%', background: 'transparent', borderBottom: 'none' }}>Chi tiết</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -574,10 +575,15 @@ const TaskPage = () => {
                                                 checked={selectedTaskIds.includes(task.id)}
                                                 onChange={() => handleSelectOne(task.id)}
                                             />
-                                            {/* Dùng thẻ Link nếu Duy đã làm trang Edit, tạm thời dùng button */}
-                                            <button className="btn btn-sm btn-light border text-warning shadow-sm" title="Chỉnh sửa nhanh">
-                                                <i className="fa-solid fa-pen-to-square"></i>
-                                            </button>
+                                            {task.status !== 'COMPLETED' && (
+                                                <button className="btn btn-sm btn-light border text-warning shadow-sm" title="Chỉnh sửa nhanh"
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        router.push(`/task/${task.id}?action=edit`);
+                                                    }}>
+                                                    <i className="fa-solid fa-pen-to-square"></i>
+                                                </button>
+                                            )}
                                         </div>
                                     </td>
 
@@ -647,18 +653,17 @@ const TaskPage = () => {
                                     </td>
 
                                     {/* CỘT CUỐI: XEM CHI TIẾT */}
-                                    <td className="text-center">
+                                    <td className="text-center align-middle">
                                         <button
-                                            className="btn btn-sm btn-outline-info rounded-pill px-3 shadow-sm fw-medium"
+                                            className="btn btn-sm btn-outline-info rounded-circle shadow-sm d-inline-flex align-items-center justify-content-center"
+                                            style={{ width: '32px', height: '32px' }}
                                             title="Xem chi tiết công việc"
                                             onClick={(e) => {
                                                 e.stopPropagation();
-
-
                                                 router.push(`/task/${task.id}`);
                                             }}
                                         >
-                                            Xem <i className="fa-solid fa-arrow-right ms-1 text-sm"></i>
+                                            <i className="fa-solid fa-info"></i>
                                         </button>
                                     </td>
                                 </tr>
@@ -669,7 +674,7 @@ const TaskPage = () => {
             </div>
 
             {/* 5. PHÂN TRANG (PAGINATION) */}
-            <div className="d-flex justify-content-between align-items-center mt-4 pb-5 w-100">
+            <div className="d-flex justify-content-between align-items-center mt-4 pb-5">
 
                 {/* 💡 PHẦN 1: Hiển thị tổng số lượng (Nằm bên TRÁI, ngang mép trái của bảng) */}
                 <div className="text-muted small fw-medium bg-white px-3 py-2 rounded shadow-sm border border-light">
@@ -772,7 +777,7 @@ const TaskPage = () => {
                     setFilters({ ...filters, page: 0 });
                 }}
             />
-        </div>
+        </div >
     );
 };
 

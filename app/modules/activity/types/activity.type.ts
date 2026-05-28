@@ -15,6 +15,7 @@ export interface IActivity {
 
   relatedToId: number;
   relatedToType: RelatedToType;
+  relatedToName: string;
   startDate: string;
   status: ActivityStatus;
   subject: string;

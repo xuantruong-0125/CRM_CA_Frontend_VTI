@@ -23,6 +23,43 @@ const getActivityTypeLabel = (type: string | number) => {
     }
 };
 
+const renderRelatedToBadge = (type: string, name: string, id: number) => {
+    if (!type && !name && !id) return <span className="text-muted fst-italic small">---</span>;
+
+    const safeType = (type || '').toUpperCase();
+    const displayName = name || (id ? `${safeType} #${id}` : '---');
+
+    const badgeClass = "badge border px-2 py-1 d-inline-block text-truncate";
+    const badgeStyle = { maxWidth: '140px', verticalAlign: 'bottom' };
+
+    switch (safeType) {
+        case 'CUSTOMER':
+            return (
+                <span className={`${badgeClass} bg-info-subtle text-info border-info-subtle`} style={badgeStyle} title={displayName}>
+                    <i className="fa-solid fa-building me-1"></i> {displayName}
+                </span>
+            );
+        case 'LEAD':
+            return (
+                <span className={`${badgeClass} bg-warning-subtle text-warning border-warning-subtle`} style={badgeStyle} title={displayName}>
+                    <i className="fa-solid fa-filter me-1"></i> {displayName}
+                </span>
+            );
+        case 'DEAL':
+        case 'OPPORTUNITY':
+            return (
+                <span className={`${badgeClass} bg-success-subtle text-success border-success-subtle`} style={badgeStyle} title={displayName}>
+                    <i className="fa-solid fa-handshake me-1"></i> {displayName}
+                </span>
+            );
+        default:
+            return (
+                <span className={`${badgeClass} bg-light text-secondary border-light`} style={badgeStyle} title={displayName}>
+                    <i className="fa-solid fa-link me-1"></i> {displayName}
+                </span>
+            );
+    }
+};
 
 const ActivityPage = () => {
     const { activities, isLoading, setFilters, error, refetch } = useActivity();
@@ -252,35 +289,40 @@ const ActivityPage = () => {
 
     };
 
+
     if (isLoading) return <div className="p-4 text-center">Đang tải dữ liệu...</div>;
     if (error) return <div className="p-4 text-danger">Lỗi: {error}</div>;
     return (
-        <div className="container-fluid py-4 bg-light min-vh-100">
+        <div className="container-fluid px-0 bg-white min-vh-100">
             <div className="card shadow-sm border-0 rounded-3">
-                <div className="card-body p-4">
+                <div className="card-body p-0">
 
                     {/* HEADER TITLE & QUẢN LÝ TRẠNG THÁI */}
                     <div className="d-flex justify-content-between align-items-center mb-4">
                         {/* BÊN TRÁI: Tiêu đề và Nút hành động */}
                         <div className="d-flex align-items-center gap-3">
-                            <h5 className="text-uppercase mb-0 fw-bold text-white px-4 py-2 rounded shadow-sm"
-                                style={{ backgroundColor: 'rgb(21, 0, 211)', letterSpacing: '0.5px' }}>
+                            <h5 className="text-uppercase mb-0 fw-bold text-white px-4 py-2 rounded-xl  shadow-sm d-inline-block"
+                                style={{ backgroundColor: 'rgb(21, 0, 211)', fontSize: '15px', letterSpacing: '0.5px' }}>
                                 <i className="fa-solid fa-list-check text-primary me-2"></i>Tất cả hoạt động
                             </h5>
+                        </div>
 
-                            <Link href="/activity/create" className="btn btn-primary btn-sm rounded-pill px-3 shadow-sm fw-medium">
+
+                    </div>
+                    <div className="d-flex justify-content-between align-items-center mb-4">
+                        <div className="d-flex align-items-center gap-2">
+                            <Link href="/activity/create" className="btn btn-success btn-sm rounded-xl px-3 shadow-sm fw-medium">
                                 <i className="fa-solid fa-plus me-1"></i> Thêm mới
                             </Link>
 
                             {selectedIds.length > 0 && (
-                                <button type="button" className="btn btn-danger btn-sm rounded-pill px-3 shadow-sm fw-medium fade-in" onClick={handleDeleteMultiple}>
+                                <button type="button" className="btn btn-danger btn-sm rounded-xl px-3 shadow-sm fw-medium fade-in" onClick={handleDeleteMultiple}>
                                     <i className="fa-solid fa-trash-can me-1"></i> Xóa ({selectedIds.length})
                                 </button>
                             )}
                         </div>
 
-                        {/* BÊN PHẢI: Nút Lọc Trạng Thái Nhanh */}
-                        <div className="d-flex align-items-center bg-light p-1 rounded-pill shadow-sm border" style={{ fontSize: '13px' }}>
+                        <div className="d-flex align-items-center bg-light p-1 rounded-xl shadow-sm border" style={{ fontSize: '13px' }}>
                             <span className="text-muted fw-medium ms-3 me-2">
                                 <i className="fa-solid fa-filter me-1"></i>Trạng thái:
                             </span>
@@ -288,7 +330,7 @@ const ActivityPage = () => {
                             <button
                                 type="button"
                                 onClick={() => handleStatusQuickFilter('')}
-                                className={`btn btn-sm rounded-pill px-3 py-1 ${localFilters.status === '' ? 'btn-secondary fw-bold shadow-sm' : 'btn-light text-muted border-0'}`}
+                                className={`btn btn-sm rounded-xl px-3 py-1 ${localFilters.status === '' ? 'btn-secondary fw-bold shadow-sm' : 'btn-light text-muted border-0'}`}
                             >
                                 Tất cả
                             </button>
@@ -296,7 +338,7 @@ const ActivityPage = () => {
                             <button
                                 type="button"
                                 onClick={() => handleStatusQuickFilter('0')}
-                                className={`btn btn-sm rounded-pill px-3 py-1 mx-1 ${localFilters.status === '0' ? 'btn-warning text-dark fw-bold shadow-sm' : 'btn-light text-muted border-0'}`}
+                                className={`btn btn-sm rounded-xl px-3 py-1 mx-1 ${localFilters.status === '0' ? 'btn-warning text-dark fw-bold shadow-sm' : 'btn-light text-muted border-0'}`}
                             >
                                 <i className="fa-solid fa-spinner fa-spin me-1"></i>Chưa xong
                             </button>
@@ -304,14 +346,13 @@ const ActivityPage = () => {
                             <button
                                 type="button"
                                 onClick={() => handleStatusQuickFilter('1')}
-                                className={`btn btn-sm rounded-pill px-3 py-1 ${localFilters.status === '1' ? 'btn-success fw-bold shadow-sm text-white' : 'btn-light text-muted border-0'}`}
+                                className={`btn btn-sm rounded-xl px-3 py-1 ${localFilters.status === '1' ? 'btn-success fw-bold shadow-sm text-white' : 'btn-light text-muted border-0'}`}
                             >
                                 <i className="fa-solid fa-check-double me-1"></i>Đã xong
                             </button>
                         </div>
                     </div>
 
-                    {/* KHUNG BỘ LỌC DỮ LIỆU (ĐẦY ĐỦ) */}
                     <div className="d-flex flex-wrap align-items-end gap-3 mb-4 p-3 bg-light border rounded">
 
                         {/* 1. Ô Tìm kiếm */}
@@ -393,40 +434,44 @@ const ActivityPage = () => {
 
                     {/* TABLE DATA (STYLE MỚI GIỐNG TASK) */}
                     <div className="table-responsive shadow-sm rounded-3 bg-white border border-light">
-                        <table className="table table-hover align-middle mb-0" style={{ fontSize: '14px' }}>
-                            <thead className="table-light text-muted" style={{ borderBottom: '2px solid #dee2e6' }}>
+                        <table className="table table-hover table-bordered align-middle mb-0" style={{ fontSize: '14px' }}>
+                            <thead style={{
+                                background: 'linear-gradient(135deg, #2563eb, #1d4ed8)',
+                                fontSize: '15px',
+                                whiteSpace: 'nowrap'
+                            }}>
                                 <tr>
-                                    <th className="fw-semibold px-3 py-3" style={{ width: '4%', backgroundColor: 'transparent' }}>
+                                    <th className="fw-bold px-3 py-3 text-white" style={{ width: '4%', background: 'transparent', borderBottom: 'none' }}>
                                         <input className="form-check-input shadow-sm cursor-pointer m-0" type="checkbox" onChange={handleSelectAll} title="Chọn tất cả" />
                                     </th>
-                                    <th className="fw-semibold py-3" style={{ width: '22%', backgroundColor: 'transparent' }}>Chủ đề</th>
+                                    <th className="fw-bold py-3 text-white" style={{ width: '18%', background: 'transparent', borderBottom: 'none' }}>Chủ đề</th>
                                     <th
-                                        className="fw-semibold py-3"
-                                        style={{ width: '13%', cursor: 'pointer', userSelect: 'none', backgroundColor: 'transparent' }}
+                                        className="fw-bold py-3 text-white"
+                                        style={{ width: '12%', cursor: 'pointer', userSelect: 'none', background: 'transparent', borderBottom: 'none' }}
                                         onClick={() => handleSort('startDate')}
                                     >
                                         <div className="d-flex align-items-center">
                                             Thời gian
                                             <span className="ms-2 d-flex flex-column" style={{ fontSize: '10px', lineHeight: '1' }}>
-                                                {/* Mũi tên lên (Tăng dần) - Xanh lên khi được chọn */}
-                                                <i className={`fa-solid fa-caret-up ${sortConfig.key === 'startDate' && sortConfig.direction === 'asc' ? 'text-primary' : 'text-muted'}`}></i>
-                                                {/* Mũi tên xuống (Giảm dần) - Xanh lên khi được chọn */}
-                                                <i className={`fa-solid fa-caret-down ${sortConfig.key === 'startDate' && sortConfig.direction === 'desc' ? 'text-primary' : 'text-muted'}`}></i>
+                                                <i className={`fa-solid fa-caret-up ${sortConfig.key === 'startDate' && sortConfig.direction === 'asc' ? 'text-warning' : 'text-white-50'}`}></i>
+                                                <i className={`fa-solid fa-caret-down ${sortConfig.key === 'startDate' && sortConfig.direction === 'desc' ? 'text-warning' : 'text-white-50'}`}></i>
                                             </span>
                                         </div>
                                     </th>
+                                    <th className="fw-bold py-3 text-center text-white" style={{ width: '10%', background: 'transparent', borderBottom: 'none' }}>Trạng thái</th>
+                                    <th className="fw-bold py-3 text-center text-white" style={{ width: '7%', background: 'transparent', borderBottom: 'none' }}>Quan trọng</th>
+                                    <th className="fw-bold py-3 text-white" style={{ width: '16%', background: 'transparent', borderBottom: 'none' }}>Nội dung</th>
 
-                                    <th className="fw-semibold py-3 text-center" style={{ width: '10%', backgroundColor: 'transparent' }}>Trạng thái</th>
-                                    <th className="fw-semibold py-3 text-center" style={{ width: '8%', backgroundColor: 'transparent' }}>Quan trọng</th>
-                                    <th className="fw-semibold py-3" style={{ width: '18%', backgroundColor: 'transparent' }}>Nội dung</th>
-                                    <th className="fw-semibold py-3" style={{ width: '12%', backgroundColor: 'transparent' }}>Phụ trách</th>
-                                    <th className="fw-semibold text-center py-3" style={{ width: '13%', backgroundColor: 'transparent' }}>Hành động</th>
+                                    <th className="fw-bold py-3 text-white" style={{ width: '15%', background: 'transparent', borderBottom: 'none' }}>Liên quan đến</th>
+
+                                    <th className="fw-bold py-3 text-white" style={{ width: '12%', background: 'transparent', borderBottom: 'none' }}>Phụ trách</th>
+                                    <th className="fw-bold text-center py-3 text-white" style={{ width: '6%', background: 'transparent', borderBottom: 'none' }}>Chi tiết</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {!activities.content || activities.content.length === 0 ? (
                                     <tr>
-                                        <td colSpan={8} className="text-center text-muted py-5">
+                                        <td colSpan={9} className="text-center text-muted py-5">
                                             <i className="fa-regular fa-folder-open fs-1 mb-3"></i>
                                             <p className="mb-0">Không có dữ liệu hoạt động nào.</p>
                                         </td>
@@ -435,14 +480,21 @@ const ActivityPage = () => {
                                     activities.content.map((act: any) => (
                                         <tr key={act.id} className="transition-all" style={{ cursor: 'pointer' }}>
 
-                                            {/* Cột 1: Checkbox */}
-                                            <td className="px-3" onClick={(e) => e.stopPropagation()}>
-                                                <input
-                                                    className="form-check-input shadow-sm cursor-pointer m-0"
-                                                    type="checkbox"
-                                                    checked={selectedIds.includes(act.id)}
-                                                    onChange={() => handleSelectRow(act.id)}
-                                                />
+                                            <td className="px-3 align-middle" onClick={(e) => e.stopPropagation()}>
+                                                <div className="d-flex align-items-center gap-2" style={{ minWidth: '75px' }}>
+                                                    <input
+                                                        className="form-check-input shadow-sm cursor-pointer m-0"
+                                                        type="checkbox"
+                                                        checked={selectedIds.includes(act.id)}
+                                                        onChange={() => handleSelectRow(act.id)}
+                                                    />
+
+                                                    {act.status !== 'COMPLETED' && (
+                                                        <Link href={`/activity/edit/${act.id}`} className="btn btn-sm btn-light border text-warning shadow-sm" title="Chỉnh sửa">
+                                                            <i className="fa-solid fa-pen-to-square"></i>
+                                                        </Link>
+                                                    )}
+                                                </div>
                                             </td>
 
                                             {/* Cột 2: Chủ đề */}
@@ -496,23 +548,27 @@ const ActivityPage = () => {
                                                 </div>
                                             </td>
 
-                                            {/* Cột 7: Phụ trách */}
+                                            <td className="align-middle">
+                                                {renderRelatedToBadge(act.relatedToType, act.relatedToName, act.relatedToId)}
+                                            </td>
+
+
                                             <td>
                                                 <div className="fw-medium text-primary small mb-1">
                                                     <i className="fa-regular fa-circle-user me-1"></i> {act.performedBy?.name || 'Chưa gán'}
                                                 </div>
                                             </td>
-
-                                            {/* Cột 8: Hành động (Sửa / Xem) */}
-                                            <td className="text-center" onClick={(e) => e.stopPropagation()}>
-                                                <div className="d-flex justify-content-center gap-2">
-                                                    <Link href={`/activity/edit/${act.id}`} className="btn btn-sm btn-light border text-warning shadow-sm" title="Chỉnh sửa">
-                                                        <i className="fa-solid fa-pen-to-square"></i>
-                                                    </Link>
-                                                    <Link href={`/activity/${act.id}`} className="btn btn-sm btn-outline-info rounded-pill px-3 shadow-sm fw-medium" title="Xem chi tiết">
-                                                        Xem <i className="fa-solid fa-arrow-right ms-1 text-sm"></i>
-                                                    </Link>
-                                                </div>
+                                            {/* CỘT 8: Nút Xem Chi Tiết */}
+                                            <td className="text-center align-middle" onClick={(e) => e.stopPropagation()}>
+                                                {/* 🚀 Gọt nút thành hình tròn (rounded-circle) và ép kích thước 32x32 cho nhỏ nhắn */}
+                                                <Link
+                                                    href={`/activity/${act.id}`}
+                                                    className="btn btn-sm btn-outline-info rounded-circle shadow-sm d-inline-flex align-items-center justify-content-center"
+                                                    style={{ width: '32px', height: '32px' }}
+                                                    title="Xem chi tiết"
+                                                >
+                                                    <i className="fa-solid fa-info"></i>
+                                                </Link>
                                             </td>
                                         </tr>
                                     ))
