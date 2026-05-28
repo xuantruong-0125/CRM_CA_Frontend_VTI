@@ -37,12 +37,41 @@ export const contactApi = {
 
 export const customerApi = {
   getCustomers: async (): Promise<Customer[]> => {
-    const response = await httpClient.get<ApiResponse<PageResponse<Customer>>>('/api/v1/customers');
-    return response.data.data.items;
+    const response = await httpClient.get<any>('/api/customers', {
+      params: { size: 1000 }
+    });
+    const resData = response.data;
+    if (!resData) return [];
+    
+    // Spring Page object has content field containing list of items
+    if (Array.isArray(resData.content)) {
+      return resData.content;
+    }
+    
+    // In case of ApiResponse wrapping
+    if (resData.data) {
+      if (Array.isArray(resData.data.content)) {
+        return resData.data.content;
+      }
+      if (Array.isArray(resData.data.items)) {
+        return resData.data.items;
+      }
+      if (Array.isArray(resData.data)) {
+        return resData.data;
+      }
+    }
+    
+    // In case of direct array
+    if (Array.isArray(resData)) {
+      return resData;
+    }
+    
+    return [];
   },
-  
+
   createCustomer: async (data: Partial<Customer>): Promise<Customer> => {
-    const response = await httpClient.post<ApiResponse<Customer>>('/api/v1/customers', data);
-    return response.data.data;
+    const response = await httpClient.post<any>('/api/customers', data);
+    return response.data?.data ?? response.data;
   }
 };
+

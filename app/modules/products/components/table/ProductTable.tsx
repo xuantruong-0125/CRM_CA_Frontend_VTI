@@ -11,6 +11,13 @@ import { Edit, Trash2 } from "lucide-react";
 import { IndeterminateCheckbox } from "../shared/IndeterminateCheckbox";
 import { Pagination } from "../shared/Pagination";
 
+const getImageUrl = (path: string | null | undefined) => {
+  if (!path) return "";
+  if (path.startsWith("http")) return path;
+  if (path.startsWith("/uploads")) return `http://localhost:8080${path}`;
+  return path;
+};
+
 interface ProductTableProps {
   data: Product[];
   totalCount: number;
@@ -80,22 +87,25 @@ export const ProductTable: React.FC<ProductTableProps> = ({
         accessorKey: "imageUrl",
         header: "Ảnh",
         size: 60,
-        cell: (info) => (
-          <div className="flex items-center justify-center w-10 h-10 rounded-md overflow-hidden bg-slate-100 border border-slate-200">
-            {info.getValue() ? (
-              <img
-                src={info.getValue() as string}
-                alt="Product"
-                className="w-full h-full object-cover"
-                onError={(e) => {
-                  (e.target as HTMLImageElement).src = "https://placehold.co/100x100?text=No+Image";
-                }}
-              />
-            ) : (
-              <div className="text-[10px] text-slate-400 font-bold uppercase">No Pic</div>
-            )}
-          </div>
-        ),
+        cell: (info) => {
+          const val = info.getValue() as string;
+          return (
+            <div className="flex items-center justify-center w-10 h-10 rounded-md overflow-hidden bg-slate-100 border border-slate-200">
+              {val ? (
+                <img
+                  src={getImageUrl(val)}
+                  alt="Product"
+                  className="w-full h-full object-cover"
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).src = "https://placehold.co/100x100?text=No+Image";
+                  }}
+                />
+              ) : (
+                <div className="text-[10px] text-slate-400 font-bold uppercase">No Pic</div>
+              )}
+            </div>
+          );
+        },
       },
       {
         accessorKey: "skuCode",

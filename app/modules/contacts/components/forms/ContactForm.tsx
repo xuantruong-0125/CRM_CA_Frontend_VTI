@@ -75,13 +75,13 @@ export const ContactForm: React.FC<ContactFormProps> = ({ initialData, isEditMod
       setIsLoading(false);
     }
   };
-
+  console.log(customers);
   return (
     <div className="max-w-3xl mx-auto bg-white p-6 border border-slate-200 rounded-md shadow-sm">
       <h2 className="text-lg font-semibold text-slate-800 mb-6">
         {isEditMode ? "Sửa thông tin liên hệ" : "Thêm mới liên hệ"}
       </h2>
-      
+
       {error && (
         <div className="mb-4 p-3 bg-rose-50 text-rose-700 text-sm rounded border border-rose-200">
           {error}

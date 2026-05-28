@@ -152,7 +152,7 @@ export const PriceTable: React.FC<PriceTableProps> = ({
       },
       {
         accessorKey: "basePrice",
-        header: "Giá nhập (Cơ bản)",
+        header: "Giá vốn",
         size: 150,
         minSize: 100,
         cell: ({ row }) => {
