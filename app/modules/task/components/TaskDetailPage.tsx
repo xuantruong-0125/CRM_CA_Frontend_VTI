@@ -2,6 +2,8 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import httpClient from '@/core/http/httpClient';
+import { toast } from 'react-toastify';
+import ConfirmDeleteModal from '@/shared/components/ConfirmDeleteModal/ConfirmDeleteModal';
 
 interface INote {
     id: number;
@@ -14,11 +16,11 @@ interface INote {
     };
 }
 const MOCK_CONTACTS: Record<number, { id: number, name: string }[]> = {
-    201: [ // Nếu chọn Chị Lan - Đại lý cấp 1 (ID: 201)
+    2: [
         { id: 1, name: "Anh Tú - Trợ lý chị Lan" },
         { id: 2, name: "Chị Hoa - Kế toán" }
     ],
-    202: [ // Nếu chọn Công ty Cổ phần XYZ (ID: 202)
+    8: [
         { id: 3, name: "Nguyễn Văn Giám Đốc" },
         { id: 4, name: "Trần Trưởng Phòng IT" }
     ]
@@ -27,13 +29,11 @@ const MOCK_CONTACTS: Record<number, { id: number, name: string }[]> = {
 const TaskDetailPage = () => {
     const router = useRouter();
     const params = useParams();
-    // ÉP KIỂU SANG SỐ
     const id = Number(params.id);
 
-    // 1. Khai báo các State cần thiết
-    const [taskDetail, setTaskDetail] = useState<any>(null); // Ban đầu chưa có data thì để null
-    const [isLoading, setIsLoading] = useState(true); // Trạng thái đang tải
-    const [error, setError] = useState<string | null>(null); // Trạng thái 
+    const [taskDetail, setTaskDetail] = useState<any>(null);
+    const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
     const [users, setUsers] = useState<any[]>([]);
 
 
@@ -49,7 +49,6 @@ const TaskDetailPage = () => {
         relatedToType: "",
         relatedToId: ""
     });
-    // 2. Hàm xử lý mở Modal
     const handleOpenEditModal = () => {
         // Ép kiểu thời gian 
         const formatDateTimeForInput = (dateString: string) => {
@@ -61,7 +60,6 @@ const TaskDetailPage = () => {
             return localISOTime;
         };
 
-        // Nhồi dữ liệu từ taskDetail vào editFormData
         setEditFormData({
             subject: taskDetail.subject || "",
             description: taskDetail.description || "",
@@ -74,7 +72,6 @@ const TaskDetailPage = () => {
             relatedToId: taskDetail.relatedToId || ""
         });
 
-        // Mở Popup lên
         setIsEditModalOpen(true);
     };
     useEffect(() => {
@@ -95,7 +92,6 @@ const TaskDetailPage = () => {
             }
         };
 
-        // Chỉ gọi API khi form Edit được bật lên
         if (isEditModalOpen) {
             fetchUsers();
         }
@@ -106,14 +102,15 @@ const TaskDetailPage = () => {
 
     const [newNoteContent, setNewNoteContent] = useState(""); // State để gõ note mới
     const [isSubmittingNote, setIsSubmittingNote] = useState(false);
-    //  state để quản lý thanh kéo tiến độ
     const [progress, setProgress] = useState(0);
 
     const [activeTab, setActiveTab] = useState('notes');
-    // state để chứa mảng lịch sử trả về từ API
     const [histories, setHistories] = useState<any[]>([]);
 
     const [refreshTrigger, setRefreshTrigger] = useState(0);
+
+    const [noteIdToDelete, setNoteIdToDelete] = useState<number | null>(null);
+    const [isDeletingNote, setIsDeletingNote] = useState(false);
 
     useEffect(() => {
         if (taskDetail) {
@@ -123,55 +120,46 @@ const TaskDetailPage = () => {
 
     // HÀM 1: XỬ LÝ KHI KÉO THANH TIẾN ĐỘ
     const handleProgressChange = async (newProgress: number) => {
-        setProgress(newProgress); // Cập nhật màn hình tức thì
-
+        setProgress(newProgress);
         try {
             const newStatus = newProgress === 100 ? 'COMPLETED' : (newProgress === 0 ? 'NOT_STARTED' : 'IN_PROGRESS');
 
-            // Gửi API cập nhật (Duy kiểm tra xem Backend dùng PUT hay PATCH nhé)
             await httpClient.patch(`/api/v1/tasks/${id}`, {
                 progressPercent: newProgress,
                 status: newStatus
             });
 
-            // Cập nhật lại state tổng
             setTaskDetail((prev: any) => ({ ...prev, progressPercent: newProgress, status: newStatus }));
 
         } catch (error) {
             console.error("Lỗi cập nhật tiến độ:", error);
             alert("Không thể cập nhật tiến độ lúc này!");
-            // Nếu lỗi thì trả lại % cũ
             setProgress(taskDetail.progressPercent || 0);
         }
     };
     const handleStatusChange = async (e: React.ChangeEvent<HTMLSelectElement>) => {
         const newStatus = e.target.value;
 
-        // Nếu chọn "Đã xong" thì gọi luôn cái hàm Hoàn thành lúc nãy cho tiện
         if (newStatus === 'COMPLETED') {
             handleCompleteTask();
             return;
         }
 
         try {
-            // Tự động đồng bộ tiến độ: Nếu "Chưa bắt đầu" thì tiến độ về 0%
             let updatedProgress = taskDetail.progressPercent;
             if (newStatus === 'NOT_STARTED') updatedProgress = 0;
 
-            // Gọi API PATCH cập nhật trạng thái
             await httpClient.patch(`/api/v1/tasks/${id}`, {
                 status: newStatus,
                 progressPercent: updatedProgress
             });
 
-            // Cập nhật lại UI cục bộ
             setTaskDetail((prev: any) => ({
                 ...prev,
                 status: newStatus,
                 progressPercent: updatedProgress
             }));
 
-            // Nếu có state thanh kéo thì cập nhật luôn
             if (typeof setProgress === 'function') {
                 setProgress(updatedProgress);
             }
@@ -207,24 +195,21 @@ const TaskDetailPage = () => {
             try {
                 setIsLoading(true);
 
-                // DÙNG PROMISE.ALL ĐỂ GỌI 2 API SONG SONG CÙNG 1 LÚC
                 const [taskResponse, noteResponse, historyResponse] = await Promise.all([
                     httpClient.get(`/api/v1/tasks/${id}`),
-                    httpClient.get(`/api/v1/notes/task/${id}`),
+                    httpClient.get(`/api/v1/notes?notableType=TASK&notableId=${id}`).catch(() => ({ data: [] })),
                     httpClient.get(`/api/v1/tasks/${id}/histories`)
                 ]);
 
-                // Hứng dữ liệu sau khi cả 2 API đều đã chạy xong
                 setTaskDetail(taskResponse.data);
 
                 const dbProgress = taskResponse.data.progressPercent || 0;
                 setProgress(dbProgress);
 
-                setNotes(noteResponse.data); // Hoặc noteResponse.data.content nếu backend phân trang
-                // LƯU LỊCH SỬ VÀO STATE
+                setNotes(noteResponse.data);
                 setHistories(historyResponse.data);
-
                 setError(null);
+
             } catch (err) {
                 console.error("Lỗi khi lấy dữ liệu:", err);
                 setError("Không thể tải thông tin chi tiết hoặc ghi chú.");
@@ -260,21 +245,23 @@ const TaskDetailPage = () => {
             </div>
         );
     }
-    const handleDeleteNote = async (noteId: number) => {
-        // 1. Cảnh báo người dùng trước khi xóa (giống bên Activity)
-        const isConfirm = window.confirm("Bạn có chắc chắn muốn xóa ghi chú này không? Hành động này không thể hoàn tác.");
-        if (!isConfirm) return;
+    const handleConfirmDeleteNote = async () => {
+        if (!noteIdToDelete) return;
 
+        setIsDeletingNote(true);
         try {
-            // 2. Gọi API DELETE
-            await httpClient.delete(`/api/v1/notes/${noteId}`);
+            await httpClient.delete(`/api/v1/notes/${noteIdToDelete}`);
 
-            // 3. Cập nhật State (sử dụng prevNotes để đảm bảo an toàn dữ liệu)
-            setNotes(prevNotes => prevNotes.filter(note => note.id !== noteId));
+            // Xóa thành công thì lọc bỏ ghi chú đó ra khỏi giao diện hiện tại
+            setNotes(prevNotes => prevNotes.filter(note => note.id !== noteIdToDelete));
 
+            setNoteIdToDelete(null);
+            toast.success("Đã xóa ghi chú thành công!");
         } catch (error) {
             console.error("Lỗi khi xóa ghi chú:", error);
-            alert("Hệ thống gặp lỗi khi xóa ghi chú. Vui lòng thử lại sau.");
+            toast.error("Hệ thống gặp lỗi khi xóa ghi chú.");
+        } finally {
+            setIsDeletingNote(false);
         }
     };
 
@@ -318,10 +305,10 @@ const TaskDetailPage = () => {
     // Từ điển dịch giá trị trạng thái (Status Values)
     const statusDictionary: any = {
         'NOT_STARTED': 'Chưa bắt đầu',
-        'IN_PROGRESS': 'Đang làm',
-        'COMPLETED': 'Đã xong',
+        'IN_PROGRESS': 'Đang thực hiện',
         'DEFERRED': 'Hoãn lại',
-        'CANCELLED': 'Đã hủy'
+        'COMPLETED': 'Đã xong',
+        'CANCELED': 'Đã hủy'
     };
 
     // Hàm phiên dịch tự động
@@ -505,7 +492,6 @@ const TaskDetailPage = () => {
                                                 </div>
                                             )}
 
-                                            {/* BỌC 3 TRƯỜNG NÀY VÀO 1 DÒNG (ROW) MỚI ĐỂ BẢO VỆ BỐ CỤC KHÔNG BỊ XÔ LỆCH */}
                                             <div className="col-12 mt-1">
                                                 <div className="row">
                                                     <div className="col-md-4 mb-2">
@@ -544,7 +530,6 @@ const TaskDetailPage = () => {
                                                 </div>
                                             </div>
 
-                                            {/* Hàng cuối: Mô tả chi tiết */}
                                             <div className="col-md-12 mt-3">
                                                 <label className="form-label fw-semibold text-secondary small mb-1">Mô tả chi tiết</label>
                                                 <textarea
@@ -622,13 +607,58 @@ const TaskDetailPage = () => {
                                     </div>
                                 </div>
 
-                                {/* KHÁCH HÀNG */}
-
+                                {/* KHÁCH HÀNG (ĐỐI TƯỢNG LIÊN QUAN) */}
                                 <div className="col-md-6">
-                                    <label className="text-muted small fw-semibold mb-1">Khách hàng liên hệ</label>
+                                    <label className="text-muted small fw-semibold mb-1">Công ty / Đối tượng</label>
+                                    <div className="text-primary fw-medium">
+                                        <i className="fa-solid fa-building me-1"></i>
+                                        {taskDetail.relatedToName ? (
+                                            taskDetail.relatedToName
+                                        ) : taskDetail.relatedToId ? (
+                                            `${taskDetail.relatedToType} #${taskDetail.relatedToId}`
+                                        ) : (
+                                            <span className="text-muted fst-italic">Không có</span>
+                                        )}
+                                    </div>
+                                </div>
+                                {/* TRẠNG THÁI */}
+                                <div className="col-md-6">
+                                    <label className="text-muted small fw-semibold mb-1">Trạng thái</label>
+                                    <div>
+                                        <select
+                                            className={`form-select form-select-sm shadow-sm border-0 fw-medium cursor-pointer ${taskDetail.status === 'COMPLETED' ? 'bg-success text-white' :
+                                                taskDetail.status === 'IN_PROGRESS' ? 'bg-primary text-white' :
+                                                    taskDetail.status === 'DEFERRED' ? 'bg-warning text-dark' :
+                                                        taskDetail.status === 'CANCELLED' ? 'bg-danger text-white' :
+                                                            'bg-secondary text-white'
+                                                }`}
+                                            style={{ width: 'fit-content' }}
+                                            value={taskDetail.status || 'NOT_STARTED'}
+                                            onChange={handleStatusChange}
+                                            disabled={isLocked}
+                                        >
+                                            <option value="NOT_STARTED" className="bg-white text-dark">Chưa bắt đầu</option>
+                                            <option value="IN_PROGRESS" className="bg-white text-dark">Đang thực hiện</option>
+                                            <option value="DEFERRED" className="bg-white text-dark">Hoãn lại</option>
+                                            <option value="COMPLETED" className="bg-white text-dark">Đã xong</option>
+                                            <option value="CANCELED" className="bg-white text-dark">Đã hủy</option>
+
+
+                                        </select>
+                                    </div>
+                                </div>
+                                {/* NGƯỜI LIÊN HỆ */}
+                                <div className="col-md-6">
+                                    <label className="text-muted small fw-semibold mb-1">Người liên hệ</label>
                                     <div className="text-info fw-medium">
                                         <i className="fa-regular fa-address-book me-1"></i>
-                                        {taskDetail.contactId ? `ID Liên hệ: ${taskDetail.contactId}` : <span className="text-muted fst-italic">Không có</span>}
+                                        {taskDetail.contactName ? (
+                                            taskDetail.contactName
+                                        ) : taskDetail.contactId ? (
+                                            `ID Liên hệ: ${taskDetail.contactId}`
+                                        ) : (
+                                            <span className="text-muted fst-italic">Không có</span>
+                                        )}
                                     </div>
                                 </div>
 
@@ -650,30 +680,7 @@ const TaskDetailPage = () => {
                                     </div>
                                 </div>
 
-                                {/* TRẠNG THÁI */}
-                                <div className="col-md-6">
-                                    <label className="text-muted small fw-semibold mb-1">Trạng thái</label>
-                                    <div>
-                                        <select
-                                            className={`form-select form-select-sm shadow-sm border-0 fw-medium cursor-pointer ${taskDetail.status === 'COMPLETED' ? 'bg-success text-white' :
-                                                taskDetail.status === 'IN_PROGRESS' ? 'bg-primary text-white' :
-                                                    taskDetail.status === 'DEFERRED' ? 'bg-warning text-dark' :
-                                                        taskDetail.status === 'CANCELLED' ? 'bg-danger text-white' :
-                                                            'bg-secondary text-white'
-                                                }`}
-                                            style={{ width: 'fit-content' }}
-                                            value={taskDetail.status || 'NOT_STARTED'}
-                                            onChange={handleStatusChange}
-                                            disabled={isLocked} // Khóa luôn cái ô chọn này nếu Task đã hoàn thành
-                                        >
-                                            <option value="NOT_STARTED" className="bg-white text-dark">Chưa bắt đầu</option>
-                                            <option value="IN_PROGRESS" className="bg-white text-dark">Đang làm</option>
-                                            <option value="COMPLETED" className="bg-white text-dark">Đã xong</option>
-                                            <option value="DEFERRED" className="bg-white text-dark">Hoãn lại</option>
-                                            <option value="CANCELLED" className="bg-white text-dark">Đã hủy</option>
-                                        </select>
-                                    </div>
-                                </div>
+
                                 {/* THANH KÉO TIẾN ĐỘ */}
                                 <div className="col-12 mt-3 pt-3 border-top">
                                     <div className="d-flex justify-content-between align-items-center mb-2">
@@ -830,7 +837,7 @@ const TaskDetailPage = () => {
                                                             className="btn btn-link text-danger p-0 position-absolute top-0 end-0 mt-2 me-2 opacity-50"
                                                             style={{ fontSize: '14px', textDecoration: 'none' }}
                                                             title="Xóa ghi chú"
-                                                            onClick={() => handleDeleteNote(note.id)}
+                                                            onClick={() => setNoteIdToDelete(note.id)}
                                                         >
                                                             <i className="fa-solid fa-xmark"></i>
                                                         </button>
@@ -879,6 +886,16 @@ const TaskDetailPage = () => {
                     </div>
                 </div>
             </div>
+            <ConfirmDeleteModal
+                open={noteIdToDelete !== null} // Mở khi noteIdToDelete có giá trị số
+                onClose={() => setNoteIdToDelete(null)} // Đóng khi set về null
+                onConfirm={handleConfirmDeleteNote} // Gọi hàm xóa ghi chú ở Bước 2
+                loading={isDeletingNote}
+                title="Xóa Ghi Chú"
+                message="Bạn có chắc chắn muốn xóa ghi chú này không? Hành động này không thể hoàn tác."
+                confirmLabel="Đồng ý xóa"
+                cancelLabel="Hủy bỏ"
+            />
         </div>
     );
 };

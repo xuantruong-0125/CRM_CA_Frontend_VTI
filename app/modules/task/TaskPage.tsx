@@ -17,7 +17,43 @@ interface ITaskFilter {
     subject?: string;
     status?: string;
     priority?: string;
+    fromDate?: string;
+    toDate?: string;
 }
+
+const renderRelatedToBadge = (type: string, name: string) => {
+    if (!type || !name) return <span className="text-muted fst-italic small">---</span>;
+
+    const safeType = type.toUpperCase();
+
+    switch (safeType) {
+        case 'CUSTOMER':
+            return (
+                <span className="badge bg-info-subtle text-info border border-info-subtle px-2 py-1" title="Khách hàng">
+                    <i className="fa-solid fa-building me-1"></i> {name}
+                </span>
+            );
+        case 'LEAD':
+            return (
+                <span className="badge bg-warning-subtle text-warning border border-warning-subtle px-2 py-1" title="Khách hàng tiềm năng">
+                    <i className="fa-solid fa-filter me-1"></i> {name}
+                </span>
+            );
+        case 'DEAL':
+        case 'OPPORTUNITY':
+            return (
+                <span className="badge bg-success-subtle text-success border border-success-subtle px-2 py-1" title="Cơ hội kinh doanh">
+                    <i className="fa-solid fa-handshake me-1"></i> {name}
+                </span>
+            );
+        default:
+            return (
+                <span className="badge bg-light text-secondary border px-2 py-1">
+                    <i className="fa-solid fa-link me-1"></i> {name}
+                </span>
+            );
+    }
+};
 
 const TaskPage = () => {
 
@@ -31,6 +67,12 @@ const TaskPage = () => {
     const [selectedTaskIds, setSelectedTaskIds] = useState<number[]>([]);
 
     const [showCreateModal, setShowCreateModal] = useState(false);
+
+
+    // State quản lý bộ lọc thời gian
+    const [dateFilterType, setDateFilterType] = useState("ALL");
+    const [fromDate, setFromDate] = useState("");
+    const [toDate, setToDate] = useState("");
 
     const [filters, setFilters] = useState<ITaskFilter>({
         page: 0,
@@ -79,6 +121,8 @@ const TaskPage = () => {
                     subject: filters.subject || undefined,
                     status: filters.status || undefined,
                     priority: filters.priority || undefined,
+                    fromDate: filters.fromDate ? filters.fromDate : undefined,
+                    toDate: filters.toDate ? filters.toDate : undefined,
                     page: filters.page,
                     size: filters.size
                 }
@@ -92,7 +136,7 @@ const TaskPage = () => {
             } else if (Array.isArray(response.data)) {
                 setTasks(response.data);
                 setTotalElements(response.data.length);
-                setTotalPages(1); // Nếu trả về mảng thường thì mặc định là 1 trang
+                setTotalPages(1);
             }
         } catch (err: any) {
             console.error("Lỗi fetch:", err);
@@ -103,7 +147,6 @@ const TaskPage = () => {
     };
 
     useEffect(() => {
-        // Chỉ lưu session và gọi API lấy Task khi UI đã Mount xong (tránh lỗi)
         if (isMounted) {
             sessionStorage.setItem('taskFilters', JSON.stringify(filters));
             fetchTasks();
@@ -120,8 +163,66 @@ const TaskPage = () => {
         const value = e.target.value;
         setFilters(prev => ({ ...prev, subject: value, page: 0 }));
     };
+    const handleApplyDateFilter = () => {
+        const formatLocalDate = (date: Date | null) => {
+            if (!date) return "";
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        };
 
-    // ĐÃ BỔ SUNG: Kiểu dữ liệu (newPage: number) cho TypeScript khỏi báo lỗi đỏ
+        let finalFromDate = "";
+        let finalToDate = "";
+        const now = new Date();
+
+        if (dateFilterType === "OVERDUE") {
+            const yesterday = new Date(now);
+            yesterday.setDate(now.getDate() - 1);
+            finalToDate = formatLocalDate(yesterday);
+
+        } else if (dateFilterType === "TODAY") {
+            finalFromDate = formatLocalDate(now);
+            finalToDate = formatLocalDate(now);
+
+        } else if (dateFilterType === "THIS_WEEK") {
+            const day = now.getDay();
+            const diffToMonday = now.getDate() - day + (day === 0 ? -6 : 1);
+
+            const monday = new Date(now);
+            monday.setDate(diffToMonday);
+
+            const sunday = new Date(monday);
+            sunday.setDate(monday.getDate() + 6);
+
+            finalFromDate = formatLocalDate(monday);
+            finalToDate = formatLocalDate(sunday);
+
+        } else if (dateFilterType === "THIS_MONTH") {
+            const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
+            const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+
+            finalFromDate = formatLocalDate(firstDay);
+            finalToDate = formatLocalDate(lastDay);
+
+        } else if (dateFilterType === "CUSTOM") {
+            if (fromDate && toDate && new Date(fromDate) > new Date(toDate)) {
+                alert("Từ ngày không được lớn hơn Đến ngày!");
+                return;
+            }
+            finalFromDate = fromDate;
+            finalToDate = toDate;
+        }
+
+
+        setFilters(prev => ({
+            ...prev,
+            fromDate: finalFromDate || '',
+            toDate: finalToDate || '',
+            page: 0
+        }));
+    };
+
     const handlePageChange = (newPage: number) => {
         setFilters(prev => ({ ...prev, page: newPage }));
     };
@@ -136,13 +237,11 @@ const TaskPage = () => {
                 return <span className="badge bg-secondary-subtle text-secondary border border-secondary-subtle px-2 py-1"><i className="fa-solid fa-pause me-1"></i>Chưa bắt đầu</span>;
             case 'IN_PROGRESS':
                 return <span className="badge bg-primary-subtle text-primary border border-primary-subtle px-2 py-1"><i className="fa-solid fa-spinner fa-spin me-1"></i>Đang làm</span>;
-            case 'WAITING':
-                return <span className="badge bg-warning-subtle text-warning border border-warning-subtle px-2 py-1"><i className="fa-regular fa-clock me-1"></i>Đang chờ</span>;
             case 'DEFERRED':
                 return <span className="badge bg-dark-subtle text-dark border border-dark-subtle px-2 py-1"><i className="fa-solid fa-circle-pause me-1"></i>Tạm hoãn</span>;
             case 'COMPLETED':
                 return <span className="badge bg-success-subtle text-success border border-success-subtle px-2 py-1"><i className="fa-solid fa-check-double me-1"></i>Hoàn thành</span>;
-            case 'CANCELLED':
+            case 'CANCELED':
                 return <span className="badge bg-danger-subtle text-danger border border-danger-subtle px-2 py-1"><i className="fa-solid fa-ban me-1"></i>Đã hủy</span>;
             default:
                 return <span className="badge bg-light text-dark border px-2 py-1">{status || 'Chưa rõ'}</span>;
@@ -237,114 +336,106 @@ const TaskPage = () => {
 
     return (
         <div className="container-fluid py-4 bg-light min-vh-100">
-            {/* 1. HEADER */}
-            <div className="d-flex justify-content-between align-items-center mb-4">
+            <div className="d-flex justify-content-between align-items-center mb-4 w-100">
+                {/* Tiêu đề bên trái */}
                 <div className="d-flex align-items-center gap-3">
                     <h5 className="text-uppercase mb-0 fw-bold text-white px-4 py-2 rounded shadow-sm"
-                        style={{ backgroundColor: 'rgb(21, 0, 211)' }}>
+                        style={{ backgroundColor: 'rgb(21, 0, 211)', fontSize: '15px', letterSpacing: '0.5px' }}>
                         <i className="fa-solid fa-list-check me-2"></i>QUẢN LÝ CÔNG VIỆC
                     </h5>
+
                     {isManager && (
                         <div className="d-flex gap-2">
-                            <div>
-                                <button
-                                    className="btn btn-success btn-sm rounded-pill px-3 shadow-sm"
-                                    onClick={() => setShowCreateModal(true)} // Bấm vào là bật Form
-                                >
-                                    <i className="fa-solid fa-plus me-1"></i> Giao việc mới
-                                </button>
-                            </div>
+                            <button
+                                className="btn btn-success btn-sm rounded-pill px-3 shadow-sm fw-medium"
+                                onClick={() => setShowCreateModal(true)}
+                            >
+                                <i className="fa-solid fa-plus me-1"></i> Giao việc mới
+                            </button>
 
-                            <div>
-                                {selectedTaskIds.length > 0 && (
-                                    <button
-                                        className="btn btn-danger btn-sm rounded-pill px-3 shadow-sm fw-medium slide-in"
-                                        onClick={handleDeleteSelected}
-                                    >
-                                        <i className="fa-solid fa-trash-can me-1"></i> Xóa ({selectedTaskIds.length})
-                                    </button>
-                                )}
+                            {selectedTaskIds.length > 0 && (
+                                <button
+                                    className="btn btn-danger btn-sm rounded-pill px-3 shadow-sm fw-medium slide-in"
+                                    onClick={handleDeleteSelected}
+                                >
+                                    <i className="fa-solid fa-trash-can me-1"></i> Xóa ({selectedTaskIds.length})
+                                </button>
+                            )}
+                        </div>
+                    )}
+                </div>
+            </div>
+
+            <div className="mb-4">
+                <div className="row g-3 align-items-end">
+
+                    <div className="col-md-3">
+                        <label className="form-label small small fw-semibold text-muted mb-1 ps-1">Tìm kiếm</label>
+                        <div className="input-group input-group-sm border bg-white rounded-pill overflow-hidden shadow-sm focus-within-ring">
+                            <span className="input-group-text bg-white border-0 text-muted ps-3">
+                                <i className="fa-solid fa-magnifying-glass"></i>
+                            </span>
+                            <input
+                                type="text"
+                                className="form-control border-0 shadow-none bg-white"
+                                value={filters.subject}
+                                onChange={(e) => setFilters({ ...filters, subject: e.target.value, page: 0 })}
+                                placeholder="Tìm theo chủ đề..."
+                            />
+                        </div>
+                    </div>
+
+                    <div className="col-md-2">
+                        <label className="form-label small fw-semibold text-muted mb-1 ps-1">Thời hạn công việc</label>
+                        <select
+                            className="form-select form-select-sm border border-white bg-white rounded-pill shadow-sm cursor-pointer"
+                            value={dateFilterType}
+                            onChange={(e) => {
+                                setDateFilterType(e.target.value);
+                                if (e.target.value !== "CUSTOM") {
+                                    setTimeout(() => handleApplyDateFilter(), 50);
+                                }
+                            }}
+                        >
+                            <option value="ALL">🗓️ Tất cả thời gian</option>
+                            <option value="OVERDUE">🚨 Quá hạn thực hiện</option>
+                            <option value="TODAY">⏳ Hôm nay</option>
+                            <option value="THIS_WEEK">📅 Tuần này</option>
+                            <option value="THIS_MONTH">📊 Tháng này</option>
+                            <option value="CUSTOM">⚙️ Tùy chỉnh...</option>
+                        </select>
+                    </div>
+
+                    {dateFilterType === "CUSTOM" && (
+                        <div className="col-md-4 animate-fade-in">
+                            <label className="form-label small fw-semibold text-muted mb-1 ps-1">Khoảng ngày lọc</label>
+                            <div className="d-flex gap-2 align-items-center">
+                                <input
+                                    type="date"
+                                    className="form-control form-control-sm border border-white bg-white rounded-pill shadow-sm"
+                                    value={fromDate}
+                                    onChange={(e) => setFromDate(e.target.value)}
+                                />
+                                <span className="text-muted small fw-medium">đến</span>
+                                <input
+                                    type="date"
+                                    className="form-control form-control-sm border border-white bg-white rounded-pill shadow-sm"
+                                    value={toDate}
+                                    onChange={(e) => setToDate(e.target.value)}
+                                />
+                                <button className="btn btn-sm btn-primary rounded-pill px-3 shadow-sm flex-shrink-0 fw-medium" onClick={handleApplyDateFilter}>
+                                    Lọc
+                                </button>
                             </div>
                         </div>
                     )}
 
-                </div>
-
-            </div>
-
-            {/* 2. BỘ LỌC TÌM KIẾM */}
-            <div className="card shadow-sm border-0 rounded-3 mb-4">
-                <div className="card-body p-3">
-                    <div className="row g-3 align-items-center">
-                        <div className="col-md-4">
-                            <div className="input-group input-group-sm border rounded-pill overflow-hidden focus-within-ring">
-                                <span className="input-group-text bg-white border-0 text-muted ps-3">
-                                    <i className="fa-solid fa-magnifying-glass"></i>
-                                </span>
-                                <input
-                                    type="text"
-                                    className="form-control border-0 shadow-none bg-white"
-                                    value={filters.subject}
-                                    onChange={(e) => setFilters({ ...filters, subject: e.target.value, page: 0 })}
-                                    placeholder="Tìm theo chủ đề..."
-                                />
-                            </div>
-                        </div>
-
-                        <div className="col-md-5">
-                            <div className="d-flex align-items-center bg-light p-1 rounded-pill border" style={{ width: 'fit-content', fontSize: '13px' }}>
-                                <span className="text-muted fw-medium mx-2"><i className="fa-solid fa-filter me-1"></i>Trạng thái:</span>
-                                <button
-                                    type="button"
-                                    className={`btn btn-sm rounded-pill px-3 py-1 ${filters.status === '' ? 'btn-secondary fw-bold shadow-sm' : 'btn-light text-muted border-0'}`}
-                                    onClick={() => setFilters({ ...filters, status: '', page: 0 })}
-                                >
-                                    Tất cả
-                                </button>
-                                <button
-                                    type="button"
-                                    className={`btn btn-sm rounded-pill px-3 py-1 mx-1 ${filters.status === 'NOT_STARTED' ? 'btn-secondary fw-bold shadow-sm' : 'btn-light text-muted border-0'}`}
-                                    onClick={() => setFilters({ ...filters, status: 'NOT_STARTED', page: 0 })}
-                                >
-                                    Chưa bắt đầu
-                                </button>
-                                <button
-                                    type="button"
-                                    className={`btn btn-sm rounded-pill px-3 py-1 ${filters.status === 'IN_PROGRESS' ? 'btn-primary fw-bold shadow-sm text-white' : 'btn-light text-muted border-0'}`}
-                                    onClick={() => setFilters({ ...filters, status: 'IN_PROGRESS', page: 0 })}
-                                >
-                                    Đang làm
-                                </button>
-                                <button
-                                    type="button"
-                                    className={`btn btn-sm rounded-pill px-3 py-1 ${filters.status === 'WAITING' ? 'btn-warning fw-bold shadow-sm text-dark' : 'btn-light text-muted border-0'}`}
-                                    onClick={() => setFilters({ ...filters, status: 'WAITING', page: 0 })}
-                                >
-                                    Đang chờ
-                                </button>
-                                <button
-                                    type="button"
-                                    className={`btn btn-sm rounded-pill px-3 py-1 ${filters.status === 'DEFERRED' ? 'btn-dark fw-bold shadow-sm text-white' : 'btn-light text-muted border-0'}`}
-                                    onClick={() => setFilters({ ...filters, status: 'DEFERRED', page: 0 })}
-                                >
-                                    Tạm hoãn
-                                </button>
-                                <button
-                                    type="button"
-                                    className={`btn btn-sm rounded-pill px-3 py-1 ms-1 ${filters.status === 'COMPLETED' ? 'btn-success fw-bold shadow-sm text-white' : 'btn-light text-muted border-0'}`}
-                                    onClick={() => setFilters({ ...filters, status: 'COMPLETED', page: 0 })}
-                                >
-                                    Đã xong
-                                </button>
-                            </div>
-                        </div>
-                        <div className="col-md-3 d-flex justify-content-end">
-                            {/* 1. SELECT: ĐỘ ƯU TIÊN */}
+                    <div className="col-md-auto ms-auto d-flex align-items-center gap-2">
+                        <div style={{ width: '130px' }}>
                             <select
-                                className="form-select form-select-sm border-light-subtle rounded-pill shadow-sm"
-                                style={{ width: '150px' }}
-                                value={filters.priority} // Ràng buộc giá trị với state
-                                onChange={(e) => setFilters({ ...filters, priority: e.target.value, page: 0 })} // Bắt sự kiện khi chọn
+                                className="form-select form-select-sm border border-white bg-white rounded-pill shadow-sm cursor-pointer"
+                                value={filters.priority}
+                                onChange={(e) => setFilters({ ...filters, priority: e.target.value, page: 0 })}
                             >
                                 <option value="">Độ ưu tiên</option>
                                 <option value="URGENT">🚨 Khẩn cấp</option>
@@ -352,23 +443,80 @@ const TaskPage = () => {
                                 <option value="NORMAL">⚡ Bình thường</option>
                                 <option value="LOW">💤 Thấp</option>
                             </select>
-                            <button
-                                className="btn btn-sm btn-light text-secondary border rounded-circle ms-2"
-                                style={{ width: '32px', height: '32px' }}
-                                title="Xóa bộ lọc"
-                                onClick={() => setFilters({ // Reset toàn bộ state về mặc định
+                        </div>
+
+                        <button
+                            type="button"
+                            className="btn btn-sm btn-white bg-white text-secondary border rounded-circle d-flex align-items-center justify-content-center shadow-sm"
+                            style={{ width: '32px', height: '32px' }}
+                            title="Làm mới bộ lọc"
+                            onClick={() => {
+                                setDateFilterType("ALL");
+                                setFromDate("");
+                                setToDate("");
+                                setFilters({
                                     subject: '',
                                     status: '',
                                     priority: '',
                                     page: 0,
-                                    size: 10
-                                })}
-                            >
-                                <i className="fa-solid fa-rotate-right"></i>
-                            </button>
-                        </div>
+                                    size: 10,
+                                    fromDate: '',
+                                    toDate: ''
+                                });
+                            }}
+                        >
+                            <i className="fa-solid fa-rotate-right"></i>
+                        </button>
                     </div>
+
                 </div>
+
+                <div className="d-flex align-items-center bg-white p-1 rounded-pill border shadow-sm mt-3" style={{ width: 'fit-content', fontSize: '13px' }}>
+                    <span className="text-muted fw-medium mx-2"><i className="fa-solid fa-filter me-1"></i>Trạng thái:</span>
+                    <button
+                        type="button"
+                        className={`btn btn-sm rounded-pill px-3 py-1 ${filters.status === '' ? 'btn-secondary fw-bold shadow-sm' : 'btn-light text-muted border-0'}`}
+                        onClick={() => setFilters({ ...filters, status: '', page: 0 })}
+                    >
+                        Tất cả
+                    </button>
+                    <button
+                        type="button"
+                        className={`btn btn-sm rounded-pill px-3 py-1 mx-1 ${filters.status === 'NOT_STARTED' ? 'btn-secondary fw-bold shadow-sm' : 'btn-light text-muted border-0'}`}
+                        onClick={() => setFilters({ ...filters, status: 'NOT_STARTED', page: 0 })}
+                    >
+                        Chưa bắt đầu
+                    </button>
+                    <button
+                        type="button"
+                        className={`btn btn-sm rounded-pill px-3 py-1 ${filters.status === 'IN_PROGRESS' ? 'btn-primary fw-bold shadow-sm text-white' : 'btn-light text-muted border-0'}`}
+                        onClick={() => setFilters({ ...filters, status: 'IN_PROGRESS', page: 0 })}
+                    >
+                        Đang làm
+                    </button>
+                    <button
+                        type="button"
+                        className={`btn btn-sm rounded-pill px-3 py-1 mx-1 ${filters.status === 'DEFERRED' ? 'btn-dark fw-bold shadow-sm text-white' : 'btn-light text-muted border-0'}`}
+                        onClick={() => setFilters({ ...filters, status: 'DEFERRED', page: 0 })}
+                    >
+                        Tạm hoãn
+                    </button>
+                    <button
+                        type="button"
+                        className={`btn btn-sm rounded-pill px-3 py-1 ${filters.status === 'COMPLETED' ? 'btn-success fw-bold shadow-sm text-white' : 'btn-light text-muted border-0'}`}
+                        onClick={() => setFilters({ ...filters, status: 'COMPLETED', page: 0 })}
+                    >
+                        Đã xong
+                    </button>
+                    <button
+                        type="button"
+                        className={`btn btn-sm rounded-pill px-3 py-1 ms-1 ${filters.status === 'CANCELED' ? 'btn-danger fw-bold shadow-sm text-white' : 'btn-light text-muted border-0'}`}
+                        onClick={() => setFilters({ ...filters, status: 'CANCELED', page: 0 })}
+                    >
+                        Đã hủy
+                    </button>
+                </div>
+
             </div>
             {error && (
                 <div className="alert alert-danger shadow-sm border-0 py-2 mb-4">
@@ -481,11 +629,7 @@ const TaskPage = () => {
 
                                     {/* CỘT 4: LIÊN QUAN ĐẾN (RELATED TO) */}
                                     <td className="align-middle">
-                                        {task.relatedToType && task.relatedToId ? (
-                                            <div>{getRelatedToBadge(task.relatedToType, task.relatedToId)}</div>
-                                        ) : (
-                                            <span className="text-muted fst-italic small">---</span>
-                                        )}
+                                        {renderRelatedToBadge(task.relatedToType, task.relatedToName)}
                                     </td>
 
                                     {/* CỘT 7: PHÂN CÔNG */}
@@ -495,9 +639,7 @@ const TaskPage = () => {
                                                 <div className="fw-medium text-primary small">
                                                     <i className="fa-regular fa-circle-user me-1"></i> {task.assignee.name}
                                                 </div>
-                                                {/* <div className="text-muted small" style={{ fontSize: '11px' }}>
-                                                    User ID: {task.assignee.id}
-                                                </div> */}
+
                                             </>
                                         ) : (
                                             <span className="text-muted small fst-italic">Chưa phân công</span>
@@ -510,10 +652,9 @@ const TaskPage = () => {
                                             className="btn btn-sm btn-outline-info rounded-pill px-3 shadow-sm fw-medium"
                                             title="Xem chi tiết công việc"
                                             onClick={(e) => {
-                                                e.stopPropagation(); // Rất quan trọng: Ngăn click lan ra thẻ <tr>
+                                                e.stopPropagation();
 
-                                                // Sửa '/tasks/' thành tên thư mục chứa trang detail của Duy
-                                                // Ví dụ nếu Duy để trong folder /app/activity/[id]/page.tsx thì đổi thành /activity/
+
                                                 router.push(`/task/${task.id}`);
                                             }}
                                         >

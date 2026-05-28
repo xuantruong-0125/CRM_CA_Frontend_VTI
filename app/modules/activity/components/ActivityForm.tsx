@@ -3,11 +3,11 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { activityApi } from '../api/activity.api'; // Bật cái này khi có API
+import { activityApi } from '../api/activity.api';
 import httpClient from '@/core/http/httpClient';
 
 interface Props {
-    id?: number; // Có ID truyền vào thì là chế độ Sửa, không có thì là Thêm mới
+    id?: number;
 }
 
 const ActivityForm = ({ id }: Props) => {
@@ -26,24 +26,76 @@ const ActivityForm = ({ id }: Props) => {
 
     const [users, setUsers] = useState<any[]>([]);
     const [auditData, setAuditData] = useState({ createdAt: '', updatedAt: '' });
-
     // State chứa dữ liệu form
     const [formData, setFormData] = useState({
         subject: '',
-        activityType: 'CALL', // Tương đương type trong HTML cũ
+        activityType: 'CALL',
         startDate: '',
         endDate: '',
         performedBy: '',
         relatedToId: '',
         relatedToType: 'CUSTOMER',
-        status: 'PLANNED', // 0 trong HTML cũ tương đương PLANNED
+        status: 'PLANNED',
         outcome: '',
-        important: false, // Tương đương isImportant
+        important: false,
         description: ''
     });
 
 
-    const mockCustomers = [{ id: 1, name: 'Công ty ABC' }, { id: 2, name: 'Tập đoàn XYZ' }];
+    const [relatedOptions, setRelatedOptions] = useState<any[]>([]);
+    const [isLoadingOptions, setIsLoadingOptions] = useState(false);
+
+    useEffect(() => {
+        const fetchRelatedOptions = async () => {
+            if (!formData.relatedToType) return;
+            setIsLoadingOptions(true);
+            try {
+                let endpoint = '';
+                if (formData.relatedToType === 'LEAD') endpoint = '/api/leads?size=100';
+                else if (formData.relatedToType === 'CUSTOMER') endpoint = '/api/customers?size=100';
+                else if (formData.relatedToType === 'OPPORTUNITY') endpoint = '/api/opportunities?size=100';
+                else if (formData.relatedToType === 'CONTACT') endpoint = '/api/v1/contacts?size=100';
+
+                if (endpoint) {
+                    const response = await httpClient.get(endpoint);
+                    const resData = response.data;
+                    let dataList: any[] = [];
+
+                    if (Array.isArray(resData)) {
+                        dataList = resData;
+                    } else if (Array.isArray(resData?.data?.items)) {
+                        dataList = resData.data.items;
+                    }
+                    else if (Array.isArray(resData?.data?.content)) {
+                        dataList = resData.data.content;
+                    } else if (Array.isArray(resData?.content)) {
+                        dataList = resData.content;
+                    } else if (Array.isArray(resData?.data)) {
+                        dataList = resData.data;
+                    } else if (Array.isArray(resData?.items)) {
+                        dataList = resData.items;
+                    }
+                    else if (resData?.data && typeof resData.data === 'object' && Object.keys(resData.data).length > 0) {
+                        dataList = [resData.data];
+                    } else if (resData && typeof resData === 'object') {
+                        dataList = [resData];
+                    }
+
+                    setRelatedOptions(dataList);
+                }
+            } catch (error) {
+                console.error(`Lỗi tải danh sách ${formData.relatedToType}:`, error);
+                setRelatedOptions([]);
+            } finally {
+                setIsLoadingOptions(false);
+            }
+        };
+
+        fetchRelatedOptions();
+    }, [formData.relatedToType]);
+
+
+
 
     useEffect(() => {
         const fetchUsers = async () => {
@@ -143,10 +195,6 @@ const ActivityForm = ({ id }: Props) => {
         }
     }, [id, isEditMode]);
 
-
-
-
-    // Hàm xử lý khi người dùng gõ vào các ô input
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
         const { name, value, type } = e.target as HTMLInputElement;
         const checked = (e.target as HTMLInputElement).checked;
@@ -177,22 +225,25 @@ const ActivityForm = ({ id }: Props) => {
 
         setIsSaving(true);
 
+        const formatToSpringDateTime = (dateStr: string) => {
+            if (!dateStr || dateStr.trim() === "") return null;
+            return dateStr.length === 16 ? `${dateStr}:00` : dateStr;
+        };
+
         //  Tạo basePayload gồm các trường LUÔN ĐƯỢC PHÉP thay đổi (dùng chung cho cả Thêm và Sửa)
         const basePayload = {
             subject: formData.subject,
-            startDate: formData.startDate,
+
+            startDate: formatToSpringDateTime(formData.startDate),
+            endDate: formatToSpringDateTime(formData.endDate),
+
             status: formData.status,
-            important: formData.important,
+            isImportant: formData.important === true || String(formData.important) === 'true',
 
-            // Ép kiểu ID từ Chuỗi sang Số
             performedBy: Number(formData.performedBy),
-
-            // Các trường có thể rỗng -> Chuyển thành null để Spring Boot không báo lỗi
             description: formData.description?.trim() === "" ? null : formData.description,
-            endDate: formData.endDate === "" ? null : formData.endDate,
             outcome: formData.outcome?.trim() === "" ? null : formData.outcome,
         };
-
         //  Tách biệt Payload dựa trên Chế độ
         let finalPayload;
 
@@ -212,20 +263,15 @@ const ActivityForm = ({ id }: Props) => {
                 await activityApi.updateActivity(id, finalPayload as any);
                 alert('Cập nhật thành công!');
 
-                // 2. Quay lại trang chi tiết của chính Activity đó
                 router.replace(`/activity/${id}`);
             } else {
-                // 1. Gửi full payload và HỨNG dữ liệu trả về (có chứa ID mới từ Backend)
                 const savedData = await activityApi.createActivity(finalPayload as any);
                 alert('Thêm mới thành công!');
 
-                // 2. Điều hướng vào thẳng trang chi tiết của Activity vừa tạo mới
-                // Backend trả về object, Duy lấy trường .id hoặc .data.id tùy vào cấu trúc API
+
                 const newId = savedData.id || savedData.data?.id;
                 router.push(`/activity/${newId}`);
             }
-
-            // XÓA DÒNG router.replace('/activity') ở đây đi vì nó sẽ đá Duy về trang danh sách
 
         } catch (error) {
             console.error(error);
@@ -309,9 +355,11 @@ const ActivityForm = ({ id }: Props) => {
 
                             <div className="row mb-4 g-3">
                                 <div className="col-md-6">
-                                    <label className="form-label text-muted small text-uppercase fw-bold">Người thực hiện <span className="text-danger">*</span>
-                                        {!isManager && <i className="fa-solid fa-lock text-secondary ms-1" title="Bạn chỉ có thể tạo hoạt động cho chính mình"></i>}</label>
-                                    <select className="form-select focus-ring focus-ring-info"
+                                    <label className="form-label text-muted small text-uppercase fw-bold">
+                                        Người thực hiện <span className="text-danger">*</span>
+                                        {!isManager && <i className="fa-solid fa-lock text-secondary ms-1" title="Bạn chỉ có thể tạo hoạt động cho chính mình"></i>}
+                                    </label>
+                                    <select className="form-select focus-ring focus-ring-info shadow-sm"
                                         name="performedBy"
                                         value={formData.performedBy}
                                         onChange={handleChange}
@@ -319,28 +367,66 @@ const ActivityForm = ({ id }: Props) => {
                                         disabled={isLocked || !isManager}>
                                         <option value="">-- Chọn nhân viên phụ trách --</option>
                                         {users.map((user) => (
-                                            <option key={user.id} value={user.id.toString()}>{user.fullName}</option>
+                                            <option key={user.id} value={user.id.toString()}>{user.fullName || user.name}</option>
                                         ))}
                                     </select>
                                 </div>
+                            </div>
+                            <div className="row mb-4 g-3">
+                                {/* --- LOẠI ĐỐI TƯỢNG (Dropdown 1) --- */}
                                 <div className="col-md-6">
                                     <label className="form-label text-muted small text-uppercase fw-bold">
-                                        Khách hàng liên quan <span className="text-danger">*</span>
-                                        {isEditMode && <i className="fa-solid fa-lock text-secondary ms-1" title="Không thể đổi khách hàng"></i>}
+                                        Liên kết với <span className="text-danger">*</span>
+                                        {isEditMode && <i className="fa-solid fa-lock text-secondary ms-1" title="Không thể đổi loại liên kết"></i>}
                                     </label>
                                     <select
-                                        className="form-select focus-ring focus-ring-info"
+                                        className="form-select focus-ring focus-ring-info shadow-sm bg-white"
+                                        name="relatedToType"
+                                        value={formData.relatedToType}
+                                        onChange={(e) => {
+                                            setFormData({ ...formData, relatedToType: e.target.value, relatedToId: '' });
+                                        }}
+                                        required
+                                        disabled={isEditMode}
+                                    >
+                                        <option value="CUSTOMER">🏢 Khách hàng (Customer)</option>
+                                        <option value="LEAD">🎯 Tiềm năng (Lead)</option>
+                                        <option value="CONTACT">👤 Liên hệ (Contact)</option>
+                                        <option value="OPPORTUNITY">💰 Cơ hội (Opportunity)</option>
+                                    </select>
+                                </div>
+
+                                {/* --- ĐỐI TƯỢNG CỤ THỂ (Dropdown 2) --- */}
+                                <div className="col-md-6">
+                                    <label className="form-label text-muted small text-uppercase fw-bold">
+                                        Đối tượng cụ thể <span className="text-danger">*</span>
+                                        {isEditMode && <i className="fa-solid fa-lock text-secondary ms-1" title="Không thể đổi đối tượng"></i>}
+                                    </label>
+                                    <select
+                                        className="form-select focus-ring focus-ring-info shadow-sm bg-white"
                                         name="relatedToId"
                                         value={formData.relatedToId}
                                         onChange={handleChange}
                                         required
-                                        disabled={isEditMode}
-                                        title={isEditMode ? "Hoạt động này đã được gắn cố định với khách hàng này" : ""}
+                                        disabled={isLocked || isLoadingOptions || isEditMode}
                                     >
-                                        <option value="">-- Chọn khách hàng --</option>
-                                        {mockCustomers.map(cus => (
-                                            <option key={cus.id} value={cus.id}>{cus.name}</option>
-                                        ))}
+                                        <option value="">
+                                            {isLoadingOptions ? '⏳ Đang tải dữ liệu...' : '-- Chọn đối tượng cụ thể --'}
+                                        </option>
+
+                                        {relatedOptions.map(option => {
+                                            let displayName = "";
+                                            if (option.companyName && option.contactName) {
+                                                displayName = `${option.companyName} (${option.contactName})`;
+                                            } else {
+                                                displayName = option.companyName || option.contactName || option.fullName || option.name || option.subject || option.title || `Đối tượng #${option.id}`;
+                                            }
+                                            return (
+                                                <option key={option.id} value={option.id}>
+                                                    {displayName}
+                                                </option>
+                                            );
+                                        })}
                                     </select>
                                 </div>
                             </div>

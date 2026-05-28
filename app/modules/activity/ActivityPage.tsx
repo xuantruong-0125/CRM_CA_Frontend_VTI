@@ -6,7 +6,8 @@ import Link from 'next/link';
 import { activityApi } from './api/activity.api';
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react';
-
+import { toast } from 'react-toastify';
+import ConfirmDeleteModal from '@/shared/components/ConfirmDeleteModal/ConfirmDeleteModal';
 
 
 const getActivityTypeLabel = (type: string | number) => {
@@ -48,7 +49,6 @@ const ActivityPage = () => {
 
     // State để lưu danh sách nhân viên lấy từ API
     const [users, setUsers] = useState<any[]>([]);
-    //  Gọi API lấy danh sách nhân viên ngay khi vừa vào trang
     useEffect(() => {
         const fetchUsers = async () => {
             try {
@@ -64,7 +64,7 @@ const ActivityPage = () => {
         };
 
         fetchUsers();
-    }, []); // Mảng rỗng [] nghĩa là chỉ gọi 1 lần khi load trang
+    }, []);
 
 
     useEffect(() => {
@@ -86,17 +86,13 @@ const ActivityPage = () => {
     const handleInputChange = (e: any) => {
         const { name, value } = e.target;
 
-        // Nếu người dùng đang thao tác trên ô chọn Khách hàng
         if (name === 'relatedToId') {
             setLocalFilters({
                 ...localFilters,
                 relatedToId: value,
-                // NẾU CÓ CHỌN ID -> Gán cứng Loại là CUSTOMER
-                // NẾU BỎ CHỌN (Value rỗng) -> Xóa luôn Loại cho sạch sẽ
                 relatedToType: value !== '' ? 'CUSTOMER' : ''
             });
         } else {
-            // Đối với các ô khác (search, status, performedBy...) thì giữ nguyên logic cũ
             setLocalFilters({
                 ...localFilters,
                 [name]: value
@@ -114,10 +110,8 @@ const ActivityPage = () => {
                 params.set(key, value.toString());
             }
         });
-        // ÉP LUÔN LUÔN VỀ TRANG 0 KHI LỌC MỚI
         params.set('page', '0');
 
-        // Cập nhật URL: ví dụ /activity?status=PLANNED&type=CALL
         router.push(`${pathname}?${params.toString()}`);
     };
 
@@ -144,6 +138,8 @@ const ActivityPage = () => {
 
     // State để quản lý danh sách các checkbox được chọn
     const [selectedIds, setSelectedIds] = useState<number[]>([]);
+    const [openBulkDeleteModal, setOpenBulkDeleteModal] = useState(false);
+    const [isBulkDeleting, setIsBulkDeleting] = useState(false);
 
     // Xử lý khi bấm nút "Chọn tất cả" trên Header
     const handleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -158,30 +154,29 @@ const ActivityPage = () => {
     // Xử lý khi bấm vào từng checkbox của mỗi dòng
     const handleSelectRow = (id: number) => {
         if (selectedIds.includes(id)) {
-            setSelectedIds(selectedIds.filter(itemId => itemId !== id)); // Bỏ chọn
+            setSelectedIds(selectedIds.filter(itemId => itemId !== id));
         } else {
-            setSelectedIds([...selectedIds, id]); // Thêm vào danh sách chọn
+            setSelectedIds([...selectedIds, id]);
         }
     };
 
-    // Hàm xử lý khi bấm xóa
-    const handleDeleteMultiple = async () => {
+    const handleDeleteMultiple = () => {
         if (selectedIds.length === 0) return;
+        setOpenBulkDeleteModal(true);
+    };
+    const confirmBulkDelete = async () => {
+        setIsBulkDeleting(true);
+        try {
+            await activityApi.deleteActivities(selectedIds);
 
-        const confirmMsg = `chắc chắn muốn xóa ${selectedIds.length} hoạt động đã chọn không?`;
-
-        if (window.confirm(confirmMsg)) {
-            try {
-                await activityApi.deleteActivities(selectedIds);
-
-                alert("Đã xóa ");
-                setSelectedIds([]);
-                refetch();
-
-            } catch (error) {
-                console.error("Lỗi xóa hàng loạt:", error);
-                alert("Hệ thống gặp lỗi khi xóa");
-            }
+            toast.success(`Đã xóa thành công ${selectedIds.length} hoạt động!`);
+            setSelectedIds([]);
+            setOpenBulkDeleteModal(false);
+            refetch();
+        } catch (error) {
+            toast.error("Hệ thống gặp lỗi khi xóa!");
+        } finally {
+            setIsBulkDeleting(false);
         }
     };
 
@@ -190,7 +185,7 @@ const ActivityPage = () => {
         // 1. Lấy tất cả params từ URL
         const params = Object.fromEntries(searchParams.entries());
 
-        // 2. Ép các ô Input phải đi theo URL (Dù URL rỗng thì Input cũng phải rỗng)
+        // 2. Ép các ô Input phải đi theo URL 
         setLocalFilters({
             search: params.search || '',
             status: params.status || '',
@@ -203,49 +198,40 @@ const ActivityPage = () => {
             page: params.page || '0'
         });
 
-        // 3. Gọi API với đúng những gì đang có trên thanh địa chỉ
         setFilters(params);
 
     }, [searchParams]);
 
-    // 1. State tạm để lưu số trang người dùng đang gõ vào ô input
     const [jumpPage, setJumpPage] = useState('');
 
-    // 2. Đồng bộ số trang hiện tại vào ô input khi trang vừa load hoặc đổi trang
     useEffect(() => {
         setJumpPage((Number(localFilters.page) + 1).toString());
     }, [localFilters.page]);
 
-    // 3. Hàm xử lý khi người dùng gõ xong và bấm Enter
     const handleJumpPage = (e: React.KeyboardEvent<HTMLInputElement>) => {
         if (e.key === 'Enter') {
             let targetPage = parseInt(jumpPage, 10);
             const maxPage = activities.totalPages || 1;
 
-            // Bắt lỗi: Nếu gõ chữ bậy bạ, gõ số < 1 hoặc lớn hơn tổng số trang
             if (isNaN(targetPage) || targetPage < 1) {
                 targetPage = 1;
             } else if (targetPage > maxPage) {
                 targetPage = maxPage;
             }
 
-            // Cập nhật lại ô input cho chuẩn (lỡ họ nhập sai)
             setJumpPage(targetPage.toString());
 
-            // Gọi hàm chuyển trang (nhớ trừ 1 vì Backend đếm từ số 0)
             handlePageChange(targetPage - 1);
         }
     };
     // Hàm chuyển đổi trạng thái nhanh (Tự động gọi API luôn)
     const handleStatusQuickFilter = (newStatus: string) => {
-        // 1. Cập nhật giao diện nút cho nó sáng lên
         setLocalFilters({ ...localFilters, status: newStatus });
 
-        // 2. Đẩy ngay lên URL để kích hoạt API
         const params = new URLSearchParams(searchParams.toString());
 
         if (newStatus === '') {
-            params.delete('status'); // Nếu chọn "Tất cả" thì xóa tham số status cho sạch URL
+            params.delete('status');
         } else {
             params.set('status', newStatus);
         }
@@ -256,7 +242,6 @@ const ActivityPage = () => {
     const handleSort = (key: string) => {
         let direction = 'asc';
 
-        // Nếu đang chọn đúng cột đó rồi thì đảo chiều, nếu chọn cột mới thì mặc định là asc
         if (sortConfig.key === key && sortConfig.direction === 'asc') {
             direction = 'desc';
         }
@@ -264,14 +249,8 @@ const ActivityPage = () => {
         const newConfig = { key, direction };
         setSortConfig(newConfig);
 
-        // Gọi lại hàm fetch dữ liệu với tham số sắp xếp mới
-        // Ví dụ: fetchActivities(currentPage, pageSize, `${key},${direction}`);
+
     };
-
-
-
-
-
 
     if (isLoading) return <div className="p-4 text-center">Đang tải dữ liệu...</div>;
     if (error) return <div className="p-4 text-danger">Lỗi: {error}</div>;
@@ -348,7 +327,6 @@ const ActivityPage = () => {
                             />
                         </div>
 
-                        {/* 3. BỔ SUNG: Ô Lọc Loại hoạt động */}
                         <div style={{ minWidth: '140px' }}>
                             <label className="form-label small text-muted mb-1">Loại hoạt động</label>
                             <select name="activityType" className="form-select" id="floatingType" value={localFilters.activityType} onChange={handleInputChange}>
@@ -361,18 +339,6 @@ const ActivityPage = () => {
                                 </optgroup>
                             </select>
                         </div>
-
-                        {/* 4. Ô Chọn Khách hàng */}
-                        <div style={{ minWidth: '180px' }}>
-                            <label className="form-label small text-muted mb-1">Khách hàng</label>
-                            <select className="form-select" name="relatedToId" value={localFilters.relatedToId} onChange={handleInputChange}>
-                                <option value="">-- Chọn khách hàng --</option>
-                                <option value="1">Công ty A</option>
-                                <option value="2">Anh Nguyễn Văn B</option>
-                            </select>
-                        </div>
-
-                        {/* 5. BỔ SUNG: Ô Người thực hiện (Phụ trách) */}
                         <div style={{ minWidth: '160px' }}>
                             <label className="form-label small text-muted mb-1">Người thực hiện</label>
                             <select
@@ -383,17 +349,15 @@ const ActivityPage = () => {
                             >
                                 <option value="">-- Tất cả nhân sự --</option>
 
-                                {/* Lặp qua mảng users lấy từ API để tự động tạo các option */}
                                 {users.map(user => (
                                     <option key={user.id} value={user.id}>
-                                        {user.fullName || user.name || user.username} {/* Đề phòng trường hợp API trả về tên field khác */}
+                                        {user.fullName || user.name || user.username}
                                     </option>
                                 ))}
 
                             </select>
                         </div>
 
-                        {/* 6. BỔ SUNG: Ô Từ ngày */}
                         <div style={{ minWidth: '140px' }}>
                             <label className="form-label small text-muted mb-1">Từ ngày</label>
                             <input
@@ -405,7 +369,6 @@ const ActivityPage = () => {
                             />
                         </div>
 
-                        {/* 7. BỔ SUNG: Ô Đến ngày */}
                         <div style={{ minWidth: '140px' }}>
                             <label className="form-label small text-muted mb-1">Đến ngày</label>
                             <input
@@ -417,7 +380,6 @@ const ActivityPage = () => {
                             />
                         </div>
 
-                        {/* 8. NÚT THAO TÁC */}
                         <div className="d-flex gap-2">
                             <button className="btn btn-primary" onClick={handleApplyFilter}>
                                 <i className="fa-solid fa-filter me-1"></i> Lọc
@@ -539,9 +501,6 @@ const ActivityPage = () => {
                                                 <div className="fw-medium text-primary small mb-1">
                                                     <i className="fa-regular fa-circle-user me-1"></i> {act.performedBy?.name || 'Chưa gán'}
                                                 </div>
-                                                {/* <div className="text-muted small" style={{ fontSize: '11px' }}>
-                                                    <i className="fa-regular fa-building me-1"></i> Đối tượng ID: {act.relatedToId}
-                                                </div> */}
                                             </td>
 
                                             {/* Cột 8: Hành động (Sửa / Xem) */}
@@ -667,6 +626,16 @@ const ActivityPage = () => {
                     </div>
                 </div>
             </div>
+            <ConfirmDeleteModal
+                open={openBulkDeleteModal}
+                onClose={() => setOpenBulkDeleteModal(false)}
+                onConfirm={confirmBulkDelete}
+                loading={isBulkDeleting}
+                title="Xóa hàng loạt"
+                message={`Bạn có chắc chắn muốn xóa ${selectedIds.length} hoạt động đã chọn không?`}
+                confirmLabel="Đồng ý xóa"
+                cancelLabel="Hủy bỏ"
+            />
         </div>
     );
 };
