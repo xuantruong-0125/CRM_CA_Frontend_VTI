@@ -72,7 +72,7 @@ const PersonalKpiPage = () => {
 
   return (
     <div className={styles.pageContainer}>
-      <h2 className={styles.title}>Mục tiêu KPI của tôi</h2>
+      <h2 className={styles.title}>KPI của tôi</h2>
 
       <div className={styles.filterBar}>
         <div className={styles.filterGroup}>

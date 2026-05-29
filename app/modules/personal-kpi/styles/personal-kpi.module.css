@@ -2,7 +2,7 @@
 @import url('https://fonts.googleapis.com/css2?family=Manrope:wght@200;400;600;700;800&display=swap');
 
 .pageContainer {
-  padding: 30px;
+  /* padding: 30px; */
   background-color: #f4f6fa;
   min-height: 100vh;
   font-family: 'Manrope', sans-serif;
