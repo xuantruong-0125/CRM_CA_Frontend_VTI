@@ -3,6 +3,7 @@
 import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { customerApi } from "@/modules/customer/api/customer.api";
+import { userApi } from "@/modules/system/user/api/user.api";
 import type { CustomerListQuery } from "@/modules/customer/types/customer.types";
 import { queryKeys } from "@/shared/constants/query-keys";
 
@@ -126,5 +127,22 @@ export function useCustomerAttachments(customerId?: number, enabled = true) {
     queryFn: () => customerApi.getAttachmentsByCustomerId(customerId as number),
     enabled: enabled && typeof customerId === "number" && Number.isFinite(customerId),
     staleTime: 30_000,
+  });
+}
+
+export function useCustomerNotes(customerId?: number, enabled = true) {
+  return useQuery({
+    queryKey: queryKeys.customer.notes(customerId ?? 0),
+    queryFn: () => customerApi.getNotesByCustomerId(customerId as number),
+    enabled: enabled && typeof customerId === "number" && Number.isFinite(customerId),
+    staleTime: 30_000,
+  });
+}
+
+export function useAllUsers() {
+  return useQuery({
+    queryKey: ["users", "all"],
+    queryFn: () => userApi.getUsers(),
+    staleTime: 5 * 60 * 1000,
   });
 }

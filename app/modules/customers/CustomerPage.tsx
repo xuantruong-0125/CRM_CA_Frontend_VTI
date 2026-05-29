@@ -149,8 +149,10 @@ export const CustomerPage = () => {
 
   return (
     <div className="bg-slate-50 min-h-screen">
+      <div className="bg-[rgb(21,0,211)] text-white px-6 py-[10px] rounded-md mb-3 flex items-center">
+        <span className="text-[18px] font-bold tracking-[0.01em]">Quản lý khách hàng</span>
+      </div>
       <TableToolbar
-        title="Quản lý khách hàng"
         onSearch={handleSearch}
         onFilterApply={handleApplyFilters}
         onFilterReset={handleResetFilters}

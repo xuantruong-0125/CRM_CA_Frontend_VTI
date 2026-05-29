@@ -240,7 +240,7 @@ export default function ReportsPage() {
         )}
       </div>
 
-      <div className="p-5 overflow-x-auto">
+      <div className="overflow-x-auto">
         {activeTab === "detail" && (
           detailData.length > 0 ? (
             <table className={styles.reportTableWrap}>

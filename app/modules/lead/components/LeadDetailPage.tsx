@@ -17,7 +17,7 @@ import {
   useLeadById,
   useLeadTasks,
 } from "@/modules/lead/hooks/useLeads";
-import LeadInteractionPanel from "@/modules/lead/components/LeadInteractionPanel";
+import LeadInteractionPanel from "./LeadInteractionPanel";
 import type { LeadFormValues } from "@/modules/lead/schemas/lead.schema";
 import type { LeadActivityResponse, LeadReferenceOptionResponse, MetadataItem } from "@/modules/lead/types/lead.types";
 import { getApiErrorMessage } from "@/shared/utils/api-error";
@@ -143,8 +143,9 @@ export default function LeadDetailPage({ id }: LeadDetailPageProps) {
                 )}
                 <Link
                   href="/leads"
-                  className="rounded-[5px] border border-white/30 bg-white/10 px-3 py-2 text-[12px] font-medium text-white transition hover:bg-white/20"
+                  className="rounded-[5px] border border-white/40 bg-white/10 px-3 py-2 text-[12px] font-semibold text-white no-underline shadow-sm transition hover:bg-white/20 hover:text-white"
                   title="Quay lại danh sách"
+                  style={{ textDecoration: "none" }}
                 >
                   Quay lại danh sách
                 </Link>
@@ -207,8 +208,8 @@ export default function LeadDetailPage({ id }: LeadDetailPageProps) {
         </section>
 
         {leadQuery.data && isInteractionFormVisible && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/50 p-4 backdrop-blur-sm">
-            <div className="max-h-[90vh] w-full max-w-5xl overflow-y-auto rounded-2xl bg-white shadow-2xl">
+          <div className="fixed inset-y-0 left-[var(--sidebar-width)] z-[100] flex w-[calc(100vw-var(--sidebar-width))] items-center justify-center bg-slate-900/50 p-3 backdrop-blur-sm md:p-4">
+            <div className="max-h-[88vh] w-full max-w-5xl overflow-hidden rounded-2xl bg-white shadow-2xl">
               <LeadInteractionPanel
                 key={interactionMode}
                 lead={leadQuery.data}
@@ -220,8 +221,8 @@ export default function LeadDetailPage({ id }: LeadDetailPageProps) {
         )}
 
         {leadQuery.data && editingActivity && (
-          <div className="fixed inset-0 z-[110] flex items-center justify-center bg-slate-900/50 p-4 backdrop-blur-sm">
-            <div className="max-h-[90vh] w-full max-w-5xl overflow-y-auto rounded-2xl bg-white shadow-2xl">
+          <div className="fixed inset-y-0 left-[var(--sidebar-width)] z-[110] flex w-[calc(100vw-var(--sidebar-width))] items-center justify-center bg-slate-900/50 p-3 backdrop-blur-sm md:p-4">
+            <div className="max-h-[88vh] w-full max-w-5xl overflow-hidden rounded-2xl bg-white shadow-2xl">
               <LeadInteractionPanel
                 key={`edit-activity-${editingActivity.id}`}
                 lead={leadQuery.data}

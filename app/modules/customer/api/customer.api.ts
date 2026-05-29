@@ -17,6 +17,7 @@ import type {
   PageResponse,
   QuoteResponseDTO,
   UpdateCustomerDTO,
+  NoteResponseDTO,
 } from "@/modules/customer/types/customer.types";
 
 type LeadAssigneeResponseDTO = {
@@ -184,15 +185,24 @@ export const customerApi = {
   },
 
   getContactsByCustomerId: async (customerId: number): Promise<ContactResponseDTO[]> => {
-    const response = await http.get<ContactResponseDTO[]>(`/api/contacts/customer/${customerId}`);
-    return response.data;
+    const response = await http.get<any>(`/api/v1/contacts/customer/${customerId}`);
+    // backend may wrap result as { status, message, data: [...] }
+    if (response.data && Array.isArray(response.data)) {
+      return response.data as ContactResponseDTO[];
+    }
+
+    if (response.data && response.data.data && Array.isArray(response.data.data)) {
+      return response.data.data as ContactResponseDTO[];
+    }
+
+    return [];
   },
 
   getOpportunitiesByCustomerId: async (
     customerId: number
   ): Promise<PageResponse<OpportunityResponseDTO>> => {
     const response = await http.get<PageResponse<OpportunityResponseDTO>>(
-      `/api/opportunities/customer/${customerId}`
+      `/api/v1/opportunities`, { params: { customerId } }
     );
 
     return response.data;
@@ -207,11 +217,11 @@ export const customerApi = {
   },
 
   getContractsByCustomerId: async (customerId: number): Promise<PageResponse<ContractResponseDTO>> => {
-    const response = await http.get<PageResponse<ContractResponseDTO>>(
-      `/api/contracts/customer/${customerId}`
+    const response = await http.get<any>(
+      `/api/contracts`, { params: { customerId } }
     );
 
-    return response.data;
+    return response.data?.data ?? response.data;
   },
 
   getInvoicesByCustomerId: async (customerId: number): Promise<PageResponse<InvoiceResponseDTO>> => {
@@ -224,7 +234,7 @@ export const customerApi = {
 
   getActivitiesByCustomerId: async (customerId: number): Promise<PageResponse<ActivityResponseDTO>> => {
     const response = await http.get<PageResponse<ActivityResponseDTO>>(
-      `/api/activities/customer/${customerId}`
+      `/api/v1/activities`, { params: { relatedToId: customerId, relatedToType: "CUSTOMER" } }
     );
 
     return response.data;
@@ -241,16 +251,45 @@ export const customerApi = {
   getAttachmentsByCustomerId: async (
     customerId: number
   ): Promise<PageResponse<AttachmentResponseDTO>> => {
-    const response = await http.get<PageResponse<AttachmentResponseDTO>>(
-      `/api/attachments/related-paginated/customer/${customerId}`
+    const response = await http.get<AttachmentResponseDTO[]>(
+      `/api/attachments/related/CUSTOMER/${customerId}`
     );
 
+    return {
+      content: response.data || [],
+      pageable: {
+        pageNumber: 0,
+        pageSize: response.data?.length || 10,
+        offset: 0,
+        paged: true,
+        unpaged: false
+      },
+      last: true,
+      totalPages: 1,
+      totalElements: response.data?.length || 0,
+      size: response.data?.length || 10,
+      number: 0,
+      sort: {
+        empty: true,
+        sorted: false,
+        unsorted: true
+      },
+      first: true,
+      numberOfElements: response.data?.length || 0,
+      empty: !response.data?.length
+    };
+  },
+
+  getNotesByCustomerId: async (customerId: number): Promise<NoteResponseDTO[]> => {
+    const response = await http.get<NoteResponseDTO[]>(
+      `/api/v1/notes`, { params: { notableType: "CUSTOMER", notableId: customerId } }
+    );
     return response.data;
   },
 
   // Create contact for a customer
   createContact: async (payload: CreateContactDTO): Promise<ContactResponseDTO> => {
-    const response = await http.post<ContactResponseDTO>(`/api/contacts`, payload);
+    const response = await http.post<ContactResponseDTO>(`/api/v1/contacts`, payload);
     return response.data;
   },
 

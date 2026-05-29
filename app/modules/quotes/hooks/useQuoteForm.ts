@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "react-toastify";
+import { customerApi } from "@/modules/customer/api/customer.api";
 import {
     QuoteFormDataCustomer,
     QuoteFormDataProduct,
@@ -39,6 +40,8 @@ const EMPTY_FORM: FormData = {
 
 export const useQuoteForm = (mode: "create" | "edit", id?: number) => {
     const router = useRouter();
+    const searchParams = useSearchParams();
+    const queryCustomerId = searchParams.get("customerId");
     const isEdit = mode === "edit";
 
     const [formData, setFormData] = useState<FormData>(EMPTY_FORM);
@@ -96,6 +99,21 @@ export const useQuoteForm = (mode: "create" | "edit", id?: number) => {
                     router.push("/quotes");
                 } finally {
                     setLoading(false);
+                }
+            }
+
+            if (!isEdit && queryCustomerId) {
+                try {
+                    const cust = await customerApi.getCustomerById(Number(queryCustomerId));
+                    if (cust) {
+                        setCustomerSearch(cust.name);
+                        setFormData((prev) => ({
+                            ...prev,
+                            customerId: Number(queryCustomerId),
+                        }));
+                    }
+                } catch (err) {
+                    console.error("Failed to fetch customer for quote form", err);
                 }
             }
         };

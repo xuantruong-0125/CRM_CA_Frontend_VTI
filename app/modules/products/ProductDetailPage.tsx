@@ -558,19 +558,19 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({ initialDat
         </div>
         <div className="flex gap-6">
           <div className="flex items-center gap-1.5 text-[11px] text-slate-600">
-            <kbd className="px-1.5 py-0.5 bg-white border border-slate-200 rounded shadow-sm font-bold text-sky-600">Ctrl + S</kbd> Lưu nhanh
+            <kbd className="px-1.5 py-0.5 bg-black border border-slate-200 rounded shadow-sm font-bold text-sky-600">Ctrl + S</kbd> Lưu nhanh
           </div>
           <div className="flex items-center gap-1.5 text-[11px] text-slate-600">
-            <kbd className="px-1.5 py-0.5 bg-white border border-slate-200 rounded shadow-sm font-bold text-rose-500">Esc</kbd> Hủy bỏ
+            <kbd className="px-1.5 py-0.5 bg-black border border-slate-200 rounded shadow-sm font-bold text-rose-500">Esc</kbd> Hủy bỏ
           </div>
           <div className="flex items-center gap-1.5 text-[11px] text-slate-600">
-            <kbd className="px-1.5 py-0.5 bg-white border border-slate-200 rounded shadow-sm font-bold text-slate-700">Alt + 1</kbd> Thông tin
+            <kbd className="px-1.5 py-0.5 bg-black border border-slate-200 rounded shadow-sm font-bold text-slate-700">Alt + 1</kbd> Thông tin
           </div>
           <div className="flex items-center gap-1.5 text-[11px] text-slate-600">
-            <kbd className="px-1.5 py-0.5 bg-white border border-slate-200 rounded shadow-sm font-bold text-slate-700">Alt + 2</kbd> Định giá
+            <kbd className="px-1.5 py-0.5 bg-black border border-slate-200 rounded shadow-sm font-bold text-slate-700">Alt + 2</kbd> Định giá
           </div>
           <div className="flex items-center gap-1.5 text-[11px] text-slate-600">
-            <kbd className="px-1.5 py-0.5 bg-white border border-slate-200 rounded shadow-sm font-bold text-slate-700">Enter</kbd> Chuyển ô
+            <kbd className="px-1.5 py-0.5 bg-black border border-slate-200 rounded shadow-sm font-bold text-slate-700">Enter</kbd> Chuyển ô
           </div>
         </div>
       </div>

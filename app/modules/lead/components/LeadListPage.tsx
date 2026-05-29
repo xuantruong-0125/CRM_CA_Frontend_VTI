@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState, useCallback } from "react";
+import styles from "@/modules/lead/styles/lead.module.css";
 import { toast } from "react-toastify";
 import {
   ChevronsLeft,
@@ -11,6 +12,8 @@ import {
   EyeOff,
   Search,
   SlidersHorizontal,
+  X,
+  Plus
 } from "lucide-react";
 import { leadApi } from "@/modules/lead/api/lead.api";
 import LeadFilters, { type LeadFilterValues } from "@/modules/lead/components/LeadFilters";
@@ -440,387 +443,342 @@ export default function LeadListPage() {
 
     if (!Number.isInteger(nextPage) || nextPage < 1 || nextPage > totalPages) {
       toast.error(`Vui lòng nhập số trang từ 1 đến ${totalPages}`);
-      setPageInput(String((leadsPage?.page ?? page) + 1));
+      setPageInput(String(page + 1));
       return;
     }
 
     navigateToPage(nextPage - 1);
   };
 
-  if (formMode !== "hidden") {
-    return (
-      <main className="min-h-screen bg-slate-100 px-4 py-6 md:px-8">
-        <div className="mx-auto max-w-[1600px] space-y-6">
-          <section className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
-            <div className="bg-[rgb(21,0,211)] px-6 py-4 text-white">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-white/70">Lead module</p>
-              <h1 className="mt-1 text-[18px] font-bold leading-tight text-white">
-                {formMode === "create" ? "Thêm khách hàng tiềm năng" : "Chỉnh sửa khách hàng tiềm năng"}
-              </h1>
-            </div>
-
-            <div className="px-6 py-6">
-              <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-                <LeadForm
-                  mode={formMode === "create" ? "create" : "edit"}
-                  initialValues={formInitialValues}
-                  statuses={leadStatuses}
-                  sources={references?.sources || []}
-                  campaigns={references?.campaigns || []}
-                  assignees={assigneesQuery.data?.content || []}
-                  provinces={references?.provinces || []}
-                  products={productsQuery.data?.content || []}
-                  onSubmit={submitLeadForm}
-                  onCancel={() => {
-                    setFormMode("hidden");
-                    setEditingLead(null);
-                  }}
-                  isSubmitting={isBusy}
-                />
-              </div>
-            </div>
-          </section>
-        </div>
-
-        <ConfirmDeleteModal
-          open={!!deleteLeadTarget}
-          title="Xóa lead"
-          message={deleteLeadTarget ? `Bạn có chắc muốn xóa lead ${deleteLeadTarget.contactName || "này"}?` : "Bạn có chắc muốn xóa lead này?"}
-          onClose={() => setDeleteLeadTarget(null)}
-          onConfirm={confirmDeleteLead}
-          loading={deleteLeadMutation.isPending}
-        />
-      </main>
-    );
-  }
-
   return (
-    <main className="min-h-screen bg-slate-100 px-4 py-6 md:px-8">
-      <div className="mx-auto max-w-[1600px] space-y-6">
-        <section className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
-          <div className="bg-[rgb(21,0,211)] px-6 py-4 text-white">
-            <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-              <div>
-                <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-white/70">Lead module</p>
-                <h1 className="mt-1 text-[18px] font-bold leading-tight text-white">Quản lý khách hàng tiềm năng</h1>
-              </div>
-
-              <div className="flex flex-wrap gap-2">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setEditingLead(null);
-                    setFormMode("create");
-                  }}
-                  className="inline-flex items-center justify-center gap-2 rounded-[5px] bg-emerald-500 px-3 py-2 text-[12px] font-semibold text-white transition hover:bg-emerald-400"
-                  title={LEAD_SHORTCUTS.CREATE_LEAD.label}
-                >
-                  Thêm lead mới
-                </button>
-              </div>
-            </div>
+    <div className={styles.page}>
+      <div className={styles.pageShell}>
+        <section>
+          <div className={styles.pageTopBar}>
+            <h1 className={styles.pageTopBarTitle}>Quản lý khách hàng tiềm năng</h1>
           </div>
 
-          <div className="border-b border-slate-200 bg-slate-50 px-6 py-3">
-            <div className="flex gap-2 overflow-x-auto pb-1">
-              <button
-                type="button"
-                onClick={() => {
-                  setPage(0);
-                  setPageInput("1");
-                  setFilters((prev) => ({ ...prev, statusId: undefined }));
-                }}
-                className={`whitespace-nowrap rounded-[5px] px-3 py-2 text-[12px] font-medium transition ${
-                  !filters.statusId ? "bg-[rgb(21,0,211)] text-white" : "bg-white text-slate-700 hover:bg-slate-100"
-                }`}
-              >
-                Tất cả
-              </button>
-              {leadStatuses.map((status) => (
+          <div className={styles.toolbar}>
+            <div className={styles.toolbarLeft}>
+              <div className={styles.statusTabs}>
                 <button
-                  key={status.id}
                   type="button"
                   onClick={() => {
                     setPage(0);
                     setPageInput("1");
-                    setFilters((prev) => ({ ...prev, statusId: status.id }));
+                    setFilters((prev) => ({ ...prev, statusId: undefined }));
                   }}
-                  className={`whitespace-nowrap rounded-[5px] px-3 py-2 text-[12px] font-medium transition ${
-                    filters.statusId === status.id
-                      ? "bg-[rgb(21,0,211)] text-white"
-                      : "bg-white text-slate-700 hover:bg-slate-100"
-                  }`}
+                  className={`${styles.statusTab} ${!filters.statusId ? styles.statusTabActive : ""}`}
                 >
-                  {status.name}
+                  Tất cả
                 </button>
-              ))}
-            </div>
-          </div>
-
-          <div className="border-b border-slate-200 px-6 py-4">
-            <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
-              <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2">
-                <label className="relative w-full max-w-[340px]">
-                  <Search className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
-                  <input
-                    type="text"
-                    value={searchTerm}
-                    onChange={(event) => setSearchTerm(event.target.value)}
-                    placeholder="Tìm theo điện thoại hoặc email..."
-                    className="w-full rounded-[5px] border border-slate-300 bg-white py-2 pl-10 pr-4 text-[12px] text-slate-900 outline-none transition focus:border-[rgb(21,0,211)] focus:ring-2 focus:ring-[rgb(21,0,211)]/20"
-                  />
-                </label>
-
-                <button
-                  type="button"
-                  onClick={() => {
-                    setShowFilters((current) => !current);
-                    setShowMaskFilterMenu(false);
-                    setShowPageSizeMenu(false);
-                  }}
-                  className="inline-flex items-center gap-2 rounded-[5px] border border-slate-300 bg-white px-3 py-2 text-[12px] font-semibold text-slate-700 transition hover:bg-slate-50"
-                >
-                  <SlidersHorizontal size={16} />
-                  Bộ lọc nâng cao
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => {
-                    setShowMaskFilterMenu((current) => !current);
-                    setShowPageSizeMenu(false);
-                  }}
-                  className="inline-flex items-center gap-2 rounded-[5px] border border-slate-300 bg-white px-3 py-2 text-[12px] font-semibold text-slate-700 transition hover:bg-slate-50"
-                >
-                  {maskPhoneEnabled || maskEmailEnabled ? <EyeOff size={16} /> : <Eye size={16} />}
-                  Bảo mật
-                </button>
-
-                <div className="relative">
+                {leadStatuses.map((status) => (
                   <button
+                    key={status.id}
                     type="button"
                     onClick={() => {
-                      setShowPageSizeMenu((current) => !current);
-                      setShowMaskFilterMenu(false);
+                      setPage(0);
+                      setPageInput("1");
+                      setFilters((prev) => ({ ...prev, statusId: status.id }));
                     }}
-                    className="inline-flex items-center gap-2 rounded-[5px] border border-slate-300 bg-white px-3 py-2 text-[12px] font-semibold text-slate-700 transition hover:bg-slate-50"
-                    title={LEAD_SHORTCUTS.TOGGLE_PAGE_SIZE.label}
+                    className={`${styles.statusTab} ${filters.statusId === status.id ? styles.statusTabActive : ""}`}
                   >
-                    Lead/trang: {size}
+                    {status.name}
                   </button>
+                ))}
+              </div>
+            </div>
 
-                  {showPageSizeMenu && (
-                    <div className="absolute left-0 z-20 mt-2 min-w-[140px] rounded-[5px] border border-slate-200 bg-white p-1 shadow-xl">
-                      {[20, 50, 100].map((option) => (
-                        <button
-                          key={option}
-                          type="button"
-                          onClick={() => applyPageSize(option)}
-                          className={`flex w-full items-center justify-between rounded-[5px] px-2 py-1.5 text-[12px] transition ${
-                            size === option ? "bg-blue-50 text-blue-700" : "text-slate-700 hover:bg-slate-50"
-                          }`}
-                        >
-                          <span>{option}</span>
-                          {size === option && <span>✓</span>}
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                </div>
+            <button
+              type="button"
+              onClick={() => {
+                setEditingLead(null);
+                setFormMode("create");
+              }}
+              className={`${styles.btnPrimary} ${styles.btnPrimarySuccess}`}
+              title={LEAD_SHORTCUTS.CREATE_LEAD.label}
+            >
+              <Plus size={17}/>
+              Thêm mới
+            </button>
+          </div>
+
+          <div className={styles.toolbar}>
+            <div className={styles.toolbarLeft}>
+              <div className={styles.searchBox}>
+                <Search className={styles.searchIcon} size={14} />
+                <input
+                  type="text"
+                  value={searchTerm}
+                  onChange={(event) => setSearchTerm(event.target.value)}
+                  placeholder="Tìm theo tên, phone, email..."
+                  className={styles.searchInput}
+                />
+              </div>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setShowFilters((current) => !current);
+                  setShowMaskFilterMenu(false);
+                  setShowPageSizeMenu(false);
+                }}
+                className={styles.btnFilter}
+                title={LEAD_SHORTCUTS.TOGGLE_FILTER.label}
+              >
+                <SlidersHorizontal size={14} />
+                Bộ lọc
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setShowMaskFilterMenu((current) => !current);
+                  setShowPageSizeMenu(false);
+                }}
+                className={styles.btnOutline}
+                title={LEAD_SHORTCUTS.TOGGLE_SECURITY.label}
+              >
+                {maskPhoneEnabled || maskEmailEnabled ? <EyeOff size={14} /> : <Eye size={14} />}
+                Bảo mật
+              </button>
+
+              <div className="relative">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowPageSizeMenu((current) => !current);
+                    setShowMaskFilterMenu(false);
+                  }}
+                  className={styles.btnOutline}
+                  title={LEAD_SHORTCUTS.TOGGLE_PAGE_SIZE.label}
+                >
+                  {size} / trang
+                </button>
+
+                {showPageSizeMenu && (
+                  <div className={styles.dropdownMenu}>
+                    {[20, 50, 100].map((option) => (
+                      <button
+                        key={option}
+                        type="button"
+                        className={`${styles.dropdownMenuItem} ${size === option ? styles.dropdownMenuItemActive : ""}`}
+                        onClick={() => applyPageSize(option)}
+                      >
+                        <span>{option}</span>
+                        {size === option && <span className={styles.dropdownCheckmark}>✓</span>}
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
           </div>
 
           {showFilters && (
-            <div className="border-b border-slate-200 bg-slate-50/70 px-6 py-4">
-              <LeadFilters
-                statuses={leadStatuses}
-                sources={references?.sources || []}
-                provinces={references?.provinces || []}
-                organizations={organizationOptions}
-                defaultValues={visibleLeadFilters}
-                onChange={(nextFilters) => {
-                  setPage(0);
-                  setPageInput("1");
-                  setFilters(nextFilters);
-                }}
-                onReset={() => {
-                  setPage(0);
-                  setPageInput("1");
-                  setSearchTerm("");
-                  setFilters({ phone: undefined, email: undefined });
-                }}
-              />
+            <div className={styles.filterSection}>
+            <LeadFilters
+              statuses={leadStatuses}
+              sources={references?.sources || []}
+              provinces={references?.provinces || []}
+              organizations={organizationOptions}
+              defaultValues={visibleLeadFilters}
+              onChange={(nextFilters) => {
+                setPage(0);
+                setPageInput("1");
+                setFilters(nextFilters);
+              }}
+              onReset={() => {
+                setPage(0);
+                setPageInput("1");
+                setSearchTerm("");
+                setFilters({ phone: undefined, email: undefined });
+              }}
+            />
             </div>
           )}
 
           {showMaskFilterMenu && (
-            <div className="border-b border-slate-200 bg-slate-50/70 px-6 py-4 text-[12px] text-slate-700">
-              <div className="flex flex-wrap items-center gap-4">
-                <label className="inline-flex items-center gap-2">
+            <div className={styles.maskFilterMenu}>
+              <div className={styles.maskFilterOptions}>
+                <label className={styles.maskFilterCheckbox}>
                   <input
                     type="checkbox"
                     checked={maskPhoneEnabled}
                     onChange={(event) => setMaskPhoneEnabled(event.target.checked)}
-                    className="h-4 w-4 rounded border-slate-300"
                   />
-                  Ẩn SĐT
+                  Ẩn số điện thoại
                 </label>
-                <label className="inline-flex items-center gap-2">
+                <label className={styles.maskFilterCheckbox}>
                   <input
                     type="checkbox"
                     checked={maskEmailEnabled}
                     onChange={(event) => setMaskEmailEnabled(event.target.checked)}
-                    className="h-4 w-4 rounded border-slate-300"
                   />
-                  Ẩn Email
+                  Ẩn email
                 </label>
               </div>
             </div>
           )}
 
-          {leadsQuery.error && (
-            <div className="border-b border-red-200 bg-red-50 px-6 py-3 text-[12px] text-red-700">
-              {getApiErrorMessage(leadsQuery.error)}
-            </div>
-          )}
+          {leadsQuery.error && <div className={styles.errorMessage}>{getApiErrorMessage(leadsQuery.error)}</div>}
 
-          <div className="overflow-hidden">
-            <LeadTable
-              leads={leadsPage?.content || []}
-              loading={leadsQuery.isLoading}
-              provinceNameById={provinceNameById}
-              statusNameById={statusNameById}
-              maskPhoneEnabled={maskPhoneEnabled}
-              maskEmailEnabled={maskEmailEnabled}
-              loadingEditLeadId={editingLeadId}
-              onEdit={async (lead) => {
-                if (!lead.id) {
-                  toast.error("Không tìm thấy ID lead để chỉnh sửa");
-                  return;
-                }
+          <LeadTable
+            leads={leadsPage?.content || []}
+            loading={leadsQuery.isLoading}
+            provinceNameById={provinceNameById}
+            statusNameById={statusNameById}
+            maskPhoneEnabled={maskPhoneEnabled}
+            maskEmailEnabled={maskEmailEnabled}
+            loadingEditLeadId={editingLeadId}
+            onEdit={async (lead) => {
+              if (!lead.id) {
+                toast.error("Không tìm thấy ID lead để chỉnh sửa");
+                return;
+              }
 
-                try {
-                  setEditingLeadId(lead.id);
-                  const fullLead = await leadApi.getLeadById(lead.id);
-                  setEditingLead(fullLead);
-                  setFormMode("edit");
-                } catch (error) {
-                  toast.error(getApiErrorMessage(error));
-                } finally {
-                  setEditingLeadId(null);
-                }
-              }}
-              onDelete={deleteLead}
-              onConvert={convertLead}
-              onStatusChange={handleStatusChange}
-            />
-          </div>
+              try {
+                setEditingLeadId(lead.id);
+                const fullLead = await leadApi.getLeadById(lead.id);
+                setEditingLead(fullLead);
+                setFormMode("edit");
+              } catch (error) {
+                toast.error(getApiErrorMessage(error));
+              } finally {
+                setEditingLeadId(null);
+              }
+            }}
+            onDelete={deleteLead}
+            onConvert={convertLead}
+            onStatusChange={handleStatusChange}
+          />
+          <div className={styles.pagination}>
+            <span className={styles.userNum}>
+              Total: <strong>{(leadsPage?.totalElements ?? 0).toLocaleString("vi-VN")}</strong> leads
+            </span>
 
-          <div className="border-t border-slate-200 px-6 py-4">
-            <div className="grid items-center gap-4 lg:grid-cols-[1fr_auto_1fr]">
-              <div className="text-[12px] font-medium text-slate-600">
-                Total: {(leadsPage?.totalElements ?? 0).toLocaleString("vi-VN")} leads
-              </div>
+            <div className={styles.paginationControls}>
+              <button
+                type="button"
+                disabled={page <= 0}
+                onClick={() => navigateToPage(0)}
+                className={styles.pageBtn}
+                title={LEAD_SHORTCUTS.FIRST_PAGE.label}
+              >
+                <ChevronsLeft size={16} />
+              </button>
 
-              <div className="flex items-center justify-center gap-2">
-                <button
-                  type="button"
-                  disabled={page <= 0}
-                  onClick={() => navigateToPage(0)}
-                  className="inline-flex h-9 w-9 items-center justify-center rounded-[5px] border border-slate-300 bg-white text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
-                  title={LEAD_SHORTCUTS.FIRST_PAGE.label}
-                >
-                  <ChevronsLeft size={16} />
-                </button>
-                <button
-                  type="button"
-                  disabled={page <= 0}
-                  onClick={() => navigateToPage(page - 1)}
-                  className="inline-flex h-9 w-9 items-center justify-center rounded-[5px] border border-slate-300 bg-white text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
-                  title={LEAD_SHORTCUTS.PREV_PAGE.label}
-                >
-                  <ChevronLeft size={16} />
-                </button>
+              <button
+                type="button"
+                disabled={page <= 0}
+                onClick={() => navigateToPage(page - 1)}
+                className={styles.pageBtn}
+                title={LEAD_SHORTCUTS.PREV_PAGE.label}
+              >
+                <ChevronLeft size={16} />
+              </button>
 
-                <form
-                  className="flex items-center gap-2 rounded-[5px] border border-slate-200 bg-slate-50 px-3 py-2"
-                  onSubmit={(event) => {
-                    event.preventDefault();
-                    submitPageInput();
+              <div className={styles.pageInputWrapper}>
+                <span>Trang</span>
+                <input
+                  type="number"
+                  className={styles.pageInput}
+                  value={pageInput}
+                  min={1}
+                  max={totalPages}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    setPageInput(value === "" ? "1" : value);
                   }}
-                >
-                  <span className="text-[12px] font-semibold text-slate-700">Trang</span>
-                  <input
-                    value={pageInput}
-                    onChange={(event) => setPageInput(event.target.value)}
-                    onBlur={() => {
-                      if (pageInput.trim() === "") {
-                        setPageInput(String((leadsPage?.page ?? page) + 1));
-                      }
-                    }}
-                    inputMode="numeric"
-                    className="h-8 w-14 rounded-[5px] border border-slate-300 bg-white px-2 text-center text-[12px] text-slate-900 outline-none transition focus:border-[rgb(21,0,211)] focus:ring-2 focus:ring-[rgb(21,0,211)]/20"
-                  />
-                  <span className="text-[12px] text-slate-600">/ {totalPages}</span>
-                  <button
-                    type="submit"
-                    className="rounded-[5px] bg-[rgb(21,0,211)] px-3 py-2 text-[12px] font-semibold text-white transition hover:opacity-90"
-                  >
-                    Đi
-                  </button>
-                </form>
-
-                <button
-                  type="button"
-                  disabled={!leadsPage?.hasNext}
-                  onClick={() => navigateToPage(page + 1)}
-                  className="inline-flex h-9 w-9 items-center justify-center rounded-[5px] border border-slate-300 bg-white text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
-                  title={LEAD_SHORTCUTS.NEXT_PAGE.label}
-                >
-                  <ChevronRight size={16} />
-                </button>
-                <button
-                  type="button"
-                  disabled={!leadsPage?.hasNext}
-                  onClick={() => navigateToPage(totalPages - 1)}
-                  className="inline-flex h-9 w-9 items-center justify-center rounded-[5px] border border-slate-300 bg-white text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
-                  title={LEAD_SHORTCUTS.LAST_PAGE.label}
-                >
-                  <ChevronsRight size={16} />
-                </button>
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      submitPageInput();
+                    }
+                  }}
+                />
+                <span>/ {totalPages}</span>
               </div>
 
-              <div className="hidden lg:block" />
+              <button type="button" onClick={() => submitPageInput()} className={styles.btnPrimary}>
+                Đi
+              </button>
+
+              <button
+                type="button"
+                disabled={!leadsPage?.hasNext}
+                onClick={() => navigateToPage(page + 1)}
+                className={styles.pageBtn}
+                title={LEAD_SHORTCUTS.NEXT_PAGE.label}
+              >
+                <ChevronRight size={16} />
+              </button>
+
+              <button
+                type="button"
+                disabled={!leadsPage?.hasNext}
+                onClick={() => navigateToPage(totalPages - 1)}
+                className={styles.pageBtn}
+                title={LEAD_SHORTCUTS.LAST_PAGE.label}
+              >
+                <ChevronsRight size={16} />
+              </button>
             </div>
           </div>
         </section>
       </div>
 
+      {/* Modal Form */}
       {formMode !== "hidden" && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/50 p-4 backdrop-blur-sm">
-          <div className="max-h-[90vh] w-full max-w-5xl overflow-y-auto rounded-3xl bg-white shadow-2xl">
-            <LeadForm
-              key={formMode}
-              mode={formMode === "create" ? "create" : "edit"}
-              initialValues={formInitialValues}
-              statuses={leadStatuses}
-              sources={references?.sources || []}
-              campaigns={references?.campaigns || []}
-              assignees={assigneesQuery.data?.content || []}
-              provinces={references?.provinces || []}
-              products={productsQuery.data?.content || []}
-              onSubmit={submitLeadForm}
-              onCancel={() => {
-                setFormMode("hidden");
-                setEditingLead(null);
-              }}
-              isSubmitting={isBusy}
-            />
+        <div
+          className={styles.modalOverlay}
+          onClick={() => {
+            setFormMode("hidden");
+            setEditingLead(null);
+          }}
+        >
+          <div
+            className={styles.modal}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className={styles.modalHeader}>
+              <h3 className={styles.modalTitle}>
+                {formMode === "create" ? "Thêm khách hàng tiềm năng" : "Chỉnh sửa khách hàng tiềm năng"}
+              </h3>
+              <button
+                type="button"
+                className={styles.closeBtn}
+                onClick={() => {
+                  setFormMode("hidden");
+                  setEditingLead(null);
+                }}
+              >
+                <X size={20} />
+              </button>
+            </div>
+            <div className={styles.modalBody}>
+              <LeadForm
+                key={formMode}
+                mode={formMode === "create" ? "create" : "edit"}
+                initialValues={formInitialValues}
+                statuses={leadStatuses}
+                sources={references?.sources || []}
+                campaigns={references?.campaigns || []}
+                assignees={assigneesQuery.data?.content || []}
+                provinces={references?.provinces || []}
+                products={productsQuery.data?.content || []}
+                onSubmit={submitLeadForm}
+                onCancel={() => {
+                  setFormMode("hidden");
+                  setEditingLead(null);
+                }}
+                isSubmitting={isBusy}
+              />
+            </div>
           </div>
         </div>
       )}
 
+      {/* Confirmation Modals */}
       <ConfirmDeleteModal
         open={!!pendingSubmission}
         title={pendingSubmission?.mode === "create" ? "Xác nhận tạo lead" : "Xác nhận cập nhật lead"}
@@ -839,6 +797,17 @@ export default function LeadListPage() {
       />
 
       <ConfirmDeleteModal
+        open={!!deleteLeadTarget}
+        title="Xóa lead"
+        message={deleteLeadTarget ? `Bạn có chắc muốn xóa lead ${deleteLeadTarget.contactName || "này"}?` : "Bạn có chắc muốn xóa lead này?"}
+        confirmLabel="Xóa"
+        cancelLabel="Hủy"
+        onClose={() => setDeleteLeadTarget(null)}
+        onConfirm={confirmDeleteLead}
+        loading={deleteLeadMutation.isPending}
+      />
+
+      <ConfirmDeleteModal
         open={!!convertLeadTarget}
         title="Xác nhận chuyển đổi lead"
         message={convertLeadTarget ? `Bạn có chắc muốn chuyển đổi lead ${convertLeadTarget.contactName || `#${convertLeadTarget.id}`}?` : "Bạn có chắc muốn chuyển đổi lead này?"}
@@ -848,6 +817,6 @@ export default function LeadListPage() {
         onConfirm={confirmConvertLead}
         loading={convertLeadMutation.isPending}
       />
-    </main>
+    </div>
   );
 }

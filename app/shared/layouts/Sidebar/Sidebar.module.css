@@ -224,11 +224,6 @@
 }
 
 /* COLLAPSE */
-
-.sidebar.collapsed {
-  padding-left: 0;
-  padding-right: 0;
-}
 .sidebar.collapsed .menuItem {
   justify-content: center;
 }
@@ -248,6 +243,7 @@
   align-items: center;
   justify-content: center;
   min-width: fit-content;
+  margin-left: 20px;
 }
 
 .sidebar.collapsed .menuGroupParent {

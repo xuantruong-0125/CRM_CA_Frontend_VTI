@@ -28,5 +28,6 @@ export const queryKeys = {
     activities: (id: number) => ["customer", "activities", id] as const,
     feedbacks: (id: number) => ["customer", "feedbacks", id] as const,
     attachments: (id: number) => ["customer", "attachments", id] as const,
+    notes: (id: number) => ["customer", "notes", id] as const,
   },
 };

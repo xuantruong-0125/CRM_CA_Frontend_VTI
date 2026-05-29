@@ -13,8 +13,17 @@
   padding: 20px;
   background: #f5f6fa;
   margin-left: 220px;
+  --sidebar-width: 220px;
   transition: all 0.3s ease;
-  min-height: 100vh;
+  min-height: 0;
+  box-sizing: border-box;
+  overflow: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.content::-webkit-scrollbar {
+  display: none;
 }
 
 .collapsed {
@@ -22,4 +31,5 @@
   flex: 1;
   padding: 20px;
   background: #f5f6fa;
+  --sidebar-width: 70px;
 }

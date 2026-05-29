@@ -6,7 +6,6 @@ export interface LoginRequest {
 export interface LoginResponse {
     accessToken: string;
     refreshToken: string;
-    userId:number;
     username: string;
     userId: number;
     orgId: number;

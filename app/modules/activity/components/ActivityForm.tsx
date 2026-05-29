@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { activityApi } from '../api/activity.api';
 import httpClient from '@/core/http/httpClient';
@@ -12,6 +12,8 @@ interface Props {
 
 const ActivityForm = ({ id }: Props) => {
     const router = useRouter();
+    const searchParams = useSearchParams();
+    const queryCustomerId = searchParams.get('customerId');
     const isEditMode = !!id; // Kiểm tra xem đang ở chế độ nào
 
     const [isLoading, setIsLoading] = useState(false);
@@ -44,6 +46,16 @@ const ActivityForm = ({ id }: Props) => {
 
     const [relatedOptions, setRelatedOptions] = useState<any[]>([]);
     const [isLoadingOptions, setIsLoadingOptions] = useState(false);
+
+    useEffect(() => {
+        if (queryCustomerId && !isEditMode) {
+            setFormData(prev => ({
+                ...prev,
+                relatedToType: 'CUSTOMER',
+                relatedToId: queryCustomerId
+            }));
+        }
+    }, [queryCustomerId, isEditMode]);
 
     useEffect(() => {
         const fetchRelatedOptions = async () => {

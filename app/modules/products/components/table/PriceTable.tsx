@@ -295,8 +295,29 @@ export const PriceTable: React.FC<PriceTableProps> = ({
                 {headerGroup.headers.map((header) => (
                   <th
                     key={header.id}
-                    className="relative py-1.5 px-2 font-semibold select-none group text-xs overflow-hidden border-r border-transparent hover:border-slate-200 transition-colors"
-                    style={{ width: header.getSize() }}
+                    className="
+                      relative
+                      overflow-hidden
+                      whitespace-nowrap
+                      px-[10px]
+                      py-[8px]
+                      text-left
+                      text-[13px]
+                      font-bold
+                      text-white
+                      select-none
+                      group
+                      border-r
+                      border-transparent
+                      transition-colors
+                      hover:border-slate-200
+                      first:rounded-tl-xl
+                      last:rounded-tr-xl
+                    "
+                    style={{
+                      width: header.getSize(),
+                      background: 'linear-gradient(135deg, #2563eb, #1d4ed8)',
+                    }}
                   >
                     {header.id === "select" ? (
                       flexRender(header.column.columnDef.header, header.getContext())
@@ -307,13 +328,12 @@ export const PriceTable: React.FC<PriceTableProps> = ({
                           : flexRender(header.column.columnDef.header, header.getContext())}
                       </div>
                     )}
-                    
+
                     <div
                       onMouseDown={header.getResizeHandler()}
                       onTouchStart={header.getResizeHandler()}
-                      className={`absolute right-0 top-0 h-full w-1 cursor-col-resize select-none touch-none transition-all group-hover:bg-slate-300 hover:bg-sky-500 ${
-                        header.column.getIsResizing() ? "bg-sky-600 opacity-100" : "opacity-0 group-hover:opacity-100"
-                      }`}
+                      className={`absolute right-0 top-0 h-full w-1 cursor-col-resize select-none touch-none transition-all group-hover:bg-slate-300 hover:bg-sky-500 ${header.column.getIsResizing() ? "bg-sky-600 opacity-100" : "opacity-0 group-hover:opacity-100"
+                        }`}
                     />
                   </th>
                 ))}

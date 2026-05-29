@@ -31,25 +31,25 @@ type LeadFormProps = {
 
 const DS = {
   spacing: {
-    colGap: "gap-x-8",
-    rowGap: "gap-y-2",
-    innerGap: "gap-x-3",
+    colGap: "gap-x-4",
+    rowGap: "gap-y-1.5",
+    innerGap: "gap-x-1.5",
   },
   input: {
-    height: "h-[30px]",
-    padding: "px-2.5 py-1",
+    height: "h-[26px]",
+    padding: "px-2 py-0.5",
     border: "border border-slate-300",
     borderError: "border border-red-500",
     borderRadius: "rounded-[3px]",
     focus: "focus:border-blue-500 focus:ring-1 focus:ring-blue-500",
     focusError: "focus:border-red-500 focus:ring-1 focus:ring-red-500",
   },
-  sectionSpacing: "flex flex-col gap-y-2",
-  formSpacing: "flex flex-col space-y-2",
+  sectionSpacing: "flex flex-col gap-y-1",
+  formSpacing: "flex flex-col space-y-1",
 };
 
 const getInputClassName = (hasError: boolean, isSelect: boolean = false) => {
-  let baseClasses = `w-full ${DS.input.height} ${DS.input.padding} ${DS.input.borderRadius} bg-white text-[12px] text-slate-900 outline-none transition-all duration-200`;
+  let baseClasses = `w-full ${DS.input.height} ${DS.input.padding} ${DS.input.borderRadius} bg-white text-[11px] text-slate-900 outline-none transition-all duration-200`;
   
   // Custom arrow cho select với màu slate-300 (#cbd5e1)
   if (isSelect) {
@@ -62,7 +62,7 @@ const getInputClassName = (hasError: boolean, isSelect: boolean = false) => {
 };
 
 const FormLabel = ({ children, required = false }: { children: React.ReactNode; required?: boolean }) => (
-  <label className="block text-[11px] font-medium text-slate-700 leading-none">
+  <label className="block text-[10px] font-medium text-slate-700 leading-none">
     {children}
     {required && <span className="ml-0.5 text-red-500 font-bold">*</span>}
   </label>
@@ -81,7 +81,7 @@ const ErrorText = ({ error }: { error?: unknown }) => {
 };
 
 const SectionHeader = ({ title }: { title: string }) => (
-  <h3 className="text-[12px] font-bold text-slate-800 uppercase tracking-wider pb-1 border-b border-slate-200 mb-1 mt-1">
+  <h3 className="text-[11px] font-bold text-slate-800 uppercase tracking-wide pb-0.5 border-b border-slate-200 mb-0.5 mt-0">
     {title}
   </h3>
 );
@@ -113,7 +113,7 @@ const FormField = ({
   const hasError = !!(error && typeof error === "object" && "message" in error);
   return (
     <div className={`flex flex-col ${className}`}>
-      <div className="mb-1 flex min-h-[14px] items-start justify-between gap-2">
+      <div className="mb-0.5 flex min-h-[12px] items-start justify-between gap-2">
         {label ? <FormLabel required={required}>{label}</FormLabel> : <div></div>}
         {hasError && <ErrorText error={error} />}
       </div>
@@ -175,10 +175,10 @@ function ProductSelectionModal({
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/50 p-4 backdrop-blur-sm">
-      <div className="flex w-full max-w-2xl flex-col rounded-md bg-white shadow-2xl overflow-hidden h-[85vh] max-h-[700px]">
+      <div className="flex h-[82vh] max-h-[640px] w-full max-w-2xl flex-col overflow-hidden rounded-md bg-white shadow-2xl">
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-slate-200 bg-slate-50 px-4 py-2.5">
-          <h3 className="text-[14px] font-bold text-slate-800">Chọn sản phẩm quan tâm</h3>
+        <div className="flex items-center justify-between border-b border-slate-200 bg-slate-50 px-3 py-2">
+          <h3 className="text-[13px] font-bold text-slate-800">Chọn sản phẩm quan tâm</h3>
           <button
             type="button"
             onClick={onClose}
@@ -192,7 +192,7 @@ function ProductSelectionModal({
         </div>
 
         {/* Search & Bulk Action */}
-        <div className="border-b border-slate-200 p-3 bg-white space-y-3">
+        <div className="space-y-2 border-b border-slate-200 bg-white p-2.5">
           <div className="relative">
             <svg
               viewBox="0 0 24 24"
@@ -212,11 +212,11 @@ function ProductSelectionModal({
                 setSearch(e.target.value);
                 setCurrentPage(0);
               }}
-              className="h-8 w-full rounded-sm border border-slate-300 pl-8 pr-3 text-[12px] text-slate-900 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all"
+              className="h-7 w-full rounded-sm border border-slate-300 pl-8 pr-3 text-[11px] text-slate-900 outline-none transition-all focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
             />
           </div>
           
-          <div className="flex items-center justify-between text-[12px]">
+          <div className="flex items-center justify-between text-[11px]">
             <label className="flex items-center gap-2 cursor-pointer text-slate-700 font-medium hover:text-blue-600 transition-colors">
               <input
                 type="checkbox"
@@ -226,20 +226,20 @@ function ProductSelectionModal({
               />
               Chọn tất cả {displayedProducts.length} sản phẩm trang này
             </label>
-            <div className="text-[11px] text-slate-500">
+            <div className="text-[10px] text-slate-500">
               Đã chọn: <span className="font-bold text-blue-600">{selectedIds.length}</span> sản phẩm
             </div>
           </div>
         </div>
 
         {/* Danh sách Sản phẩm */}
-        <div className="flex-1 overflow-y-auto bg-slate-50 p-2">
+        <div className="flex-1 overflow-y-auto bg-slate-50 p-1.5">
           {displayedProducts.length > 0 ? (
             <div className="flex flex-col gap-1">
               {displayedProducts.map((p) => (
                 <label
                   key={p.id}
-                  className={`flex cursor-pointer items-center gap-3 rounded-sm border px-3 py-2 transition-colors ${
+                  className={`flex cursor-pointer items-center gap-2 rounded-sm border px-2.5 py-1.5 transition-colors ${
                     selectedIds.includes(Number(p.id))
                       ? "border-blue-200 bg-blue-50"
                       : "border-transparent bg-white hover:bg-slate-100"
@@ -251,19 +251,19 @@ function ProductSelectionModal({
                     onChange={() => handleToggle(Number(p.id))}
                     className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
                   />
-                  <span className="text-[12px] text-slate-800 select-none">{p.name}</span>
+                  <span className="select-none text-[11px] text-slate-800">{p.name}</span>
                 </label>
               ))}
             </div>
           ) : (
-            <div className="flex h-full items-center justify-center text-[12px] text-slate-500">
+            <div className="flex h-full items-center justify-center text-[11px] text-slate-500">
               Không tìm thấy sản phẩm nào phù hợp.
             </div>
           )}
         </div>
 
         {/* Phân trang (Pagination) */}
-        <div className="flex items-center justify-between border-t border-slate-200 bg-white px-4 py-2 text-[11px] text-slate-600">
+        <div className="flex items-center justify-between border-t border-slate-200 bg-white px-3 py-1.5 text-[10px] text-slate-600">
           <div>
             Hiển thị {filteredProducts.length === 0 ? 0 : currentPage * ITEMS_PER_PAGE + 1} - {Math.min((currentPage + 1) * ITEMS_PER_PAGE, filteredProducts.length)} / {filteredProducts.length}
           </div>
@@ -308,18 +308,18 @@ function ProductSelectionModal({
         </div>
 
         {/* Footer Buttons */}
-        <div className="flex items-center justify-end gap-2 border-t border-slate-200 bg-slate-50 px-4 py-3">
+        <div className="flex items-center justify-end gap-2 border-t border-slate-200 bg-slate-50 px-3 py-2">
           <button
             type="button"
             onClick={onClose}
-            className="h-8 rounded-sm border border-slate-300 bg-white px-4 text-[12px] font-medium text-slate-700 hover:bg-slate-100 transition-colors"
+            className="h-7 rounded-sm border border-slate-300 bg-white px-3.5 text-[11px] font-medium text-slate-700 transition-colors hover:bg-slate-100"
           >
             Hủy
           </button>
           <button
             type="button"
             onClick={() => onConfirm(selectedIds)}
-            className="h-8 rounded-sm bg-blue-600 px-6 text-[12px] font-medium text-white hover:bg-blue-700 transition-colors shadow-sm"
+            className="h-7 rounded-sm bg-blue-600 px-5 text-[11px] font-medium text-white transition-colors shadow-sm hover:bg-blue-700"
           >
             Xác nhận
           </button>
@@ -443,14 +443,14 @@ export default function LeadForm({
   };
 
   return (
-    <form onSubmit={handleSubmit(handleFormSubmit)} className={DS.formSpacing}>
+    <form onSubmit={handleSubmit(handleFormSubmit)} className={`${DS.formSpacing} text-[15px]`}>
       {isFormLocked && (
-        <div className="rounded-sm border border-amber-200 bg-amber-50 px-3 py-2 text-[11px] text-amber-700">
+        <div className="rounded-sm border border-amber-200 bg-amber-50 px-3 py-1.5 text-[11px] text-amber-700">
           Lead đang ở trạng thái &quot;Đã chuyển đổi&quot;, không thể chỉnh sửa thông tin.
         </div>
       )}
 
-      <fieldset disabled={isSubmitting || isFormLocked} className="min-w-0 space-y-2">
+      <fieldset disabled={isSubmitting || isFormLocked} className="min-w-0 space-y-1">
       {/* SECTION 1: Contact & Classification (2 columns) */}
       <div className={`grid grid-cols-1 md:grid-cols-2 ${DS.spacing.colGap}`}>
         
@@ -744,7 +744,7 @@ export default function LeadForm({
             <FormField label="Mô tả / Ghi chú" error={errors.description} className="h-full">
               <textarea
                 rows={3}
-                className={`${getInputClassName(!!errors.description)} resize-none h-full min-h-[74px] py-1.5`}
+                className={`${getInputClassName(!!errors.description)} min-h-[70px] resize-none py-1`}
                 {...register("description")}
               />
             </FormField>
@@ -754,13 +754,13 @@ export default function LeadForm({
       </fieldset>
       
       {/* ACTION BUTTONS */}
-      <div className="flex items-center justify-end gap-2 pt-2 mt-1 border-t border-slate-200">
+      <div className="mt-0.5 flex items-center justify-end gap-2 border-t border-slate-200 pt-1">
         <button
           ref={cancelButtonRef}
           type="button"
           onClick={onCancel}
           disabled={isSubmitting}
-          className="h-[30px] px-4 text-[12px] font-medium text-slate-700 bg-white border border-slate-300 rounded-sm transition hover:bg-slate-50 hover:border-slate-400 disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center gap-1.5"
+          className="inline-flex h-[26px] items-center gap-1.5 rounded-sm border border-slate-300 bg-white px-3 text-[11px] font-medium text-slate-700 transition hover:border-slate-400 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
           title={LEAD_SHORTCUTS.CANCEL_FORM.label}
         >
           Hủy
@@ -770,11 +770,11 @@ export default function LeadForm({
           ref={submitButtonRef}
           type="submit"
           disabled={isSubmitting || !isValid || isFormLocked}
-          className="h-[30px] px-5 flex items-center gap-1.5 text-[12px] font-medium text-white bg-blue-600 rounded-sm transition hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
+          className="inline-flex h-[26px] items-center gap-1.5 rounded-sm bg-blue-600 px-4 text-[11px] font-medium text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50 shadow-sm"
           title={LEAD_SHORTCUTS.SAVE_FORM.label}
         >
           {isSubmitting && (
-            <svg className="animate-spin h-3.5 w-3.5" fill="none" viewBox="0 0 24 24">
+            <svg className="h-3.5 w-3.5 animate-spin" fill="none" viewBox="0 0 24 24">
               <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
               <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
             </svg>
@@ -796,11 +796,11 @@ export default function LeadForm({
       </div>
 
       {/* REQUIRED FIELDS EXPLANATION */}
-      <div className="flex items-start gap-2 p-2 bg-blue-50/50 border border-blue-100 rounded-sm mt-1">
+      <div className="mt-0.5 flex items-start gap-2 rounded-sm border border-blue-100 bg-blue-50/50 p-2">
         <svg className="h-3.5 w-3.5 text-blue-500 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 24 24">
           <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm0-14c-3.31 0-6 2.69-6 6s2.69 6 6 6 6-2.69 6-6-2.69-6-6-6zm0 10c-2.21 0-4-1.79-4-4s1.79-4 4-4 4 1.79 4 4-1.79 4-4 4z"/>
         </svg>
-        <div className="flex-1 text-[10.5px] text-blue-700 flex flex-col md:flex-row md:gap-6">
+        <div className="flex flex-1 flex-col text-[10px] text-blue-700 md:flex-row md:gap-6">
           <span><span className="text-red-500 font-bold">*</span> <strong>Tên liên hệ:</strong> Dùng để xưng hô và định danh khách hàng.</span>
           <span><span className="text-red-500 font-bold">*</span> <strong>Trạng thái:</strong> Xác định tiến độ trong quy trình Sales.</span>
         </div>

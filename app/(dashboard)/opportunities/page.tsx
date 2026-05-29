@@ -1,3 +1,4 @@
+import { Suspense } from 'react';
 import OpportunityListPage from "@/modules/opportunity/OpportunityListPage";
 import type { Metadata } from "next";
 export const metadata: Metadata = {
@@ -5,5 +6,9 @@ export const metadata: Metadata = {
     description: "Trang quản cơ hội bán hàng",
 };
 export default function OpportunitiesPage() {
-    return <OpportunityListPage />;
+    return (
+        <Suspense fallback={<div>Đang tải danh sách cơ hội...</div>}>
+            <OpportunityListPage />
+        </Suspense>
+    );
 }
