@@ -3,7 +3,7 @@
   background: #1a1a42;
   color: white;
   height: 100vh;
-  padding: 20px;
+  padding: 15px;
   padding-left: 5px;
   position: fixed;
   overflow-y: auto;
@@ -224,6 +224,11 @@
 }
 
 /* COLLAPSE */
+
+.sidebar.collapsed {
+  padding-left: 0;
+  padding-right: 0;
+}
 .sidebar.collapsed .menuItem {
   justify-content: center;
 }
@@ -233,9 +238,16 @@
 }
 
 .sidebar.collapsed .header {
-  margin-left: 0px;
   justify-content: center;
-  gap: 2px;
+  padding: 0;
+  gap: 1px;
+}
+
+.sidebar.collapsed .logo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: fit-content;
 }
 
 .sidebar.collapsed .menuGroupParent {
@@ -256,6 +268,7 @@
   height: 44px;
   padding: 0;
   justify-content: center;
+  margin-left: 2px;
 }
 
 .sidebar.collapsed .userBox {
