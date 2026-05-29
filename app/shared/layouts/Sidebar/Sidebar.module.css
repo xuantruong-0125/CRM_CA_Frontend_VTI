@@ -78,6 +78,15 @@
   color: #fff;
 }
 
+.menuItem svg,
+.menuItem i {
+  width: 20px;
+  height: 20px;
+  min-width: 20px;
+  font-size: 20px;
+  flex-shrink: 0;
+}
+
 .active {
   background-color: #0f53e6;
   color: white;
@@ -224,7 +233,9 @@
 }
 
 .sidebar.collapsed .header {
-  margin-left: -6px;
+  margin-left: 0px;
+  justify-content: center;
+  gap: 2px;
 }
 
 .sidebar.collapsed .menuGroupParent {
@@ -238,4 +249,17 @@
 
 .sidebar.collapsed .subItems {
   display: none;
+}
+
+.sidebar.collapsed .logoutBtn {
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  justify-content: center;
+}
+
+.sidebar.collapsed .userBox {
+  display: flex;
+  justify-content: center;
+  padding: 12px 0;
 }

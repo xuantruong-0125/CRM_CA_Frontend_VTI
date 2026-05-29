@@ -334,12 +334,29 @@ const TaskPage = () => {
     };
 
     return (
-        <div className="container-fluid px-0 bg-white min-vh-100">
-            <div className="mb-3">
+        <div className="container-fluid px-0 min-vh-100">
+            {/* <div className="mb-3">
                 <h5 className="text-uppercase mb-0 fw-bold text-white px-4 py-2 rounded-xl  shadow-sm d-inline-block"
                     style={{ backgroundColor: 'rgb(21, 0, 211)', fontSize: '15px', letterSpacing: '0.5px' }}>
                     <i className="fa-solid fa-list-check me-2"></i>QUẢN LÝ CÔNG VIỆC
                 </h5>
+            </div> */}
+
+            <div className="d-flex justify-content-between align-items-center mb-4">
+                <div className="w-100">
+                    <h5
+                        className="mb-0 fw-bold text-white w-100"
+                        style={{
+                            backgroundColor: "rgb(21, 0, 211)",
+                            padding: "10px 20px",
+                            borderRadius: "10px",
+                            textAlign: "left",
+                            fontSize: "larger"
+                        }}
+                    >
+                        Quản lý công việc
+                    </h5>
+                </div>
             </div>
 
             <div className="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
@@ -348,10 +365,11 @@ const TaskPage = () => {
                     {isManager && (
                         <>
                             <button
-                                className="btn btn-success btn-sm rounded-xl px-3 shadow-sm fw-medium"
                                 onClick={() => setShowCreateModal(true)}
+                                className="flex items-center gap-1 px-3 py-2 bg-[rgb(0,164,22)] hover:bg-[rgb(5,190,30)] text-white font-bold !rounded-lg border-0 transition-colors"
                             >
-                                <i className="fa-solid fa-plus me-1"></i> Giao việc mới
+                                <i className="fa-solid fa-plus"></i>
+                                Giao việc mới
                             </button>
 
                             {selectedTaskIds.length > 0 && (

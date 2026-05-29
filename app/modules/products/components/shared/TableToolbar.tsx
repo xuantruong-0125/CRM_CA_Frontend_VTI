@@ -181,7 +181,7 @@ export const TableToolbar: React.FC<TableToolbarProps> = ({
           {onCreate && (
             <button
               onClick={onCreate}
-              className="flex items-center gap-1.5 px-4 py-2.5 bg-[rgb(0,164,22)] hover:bg-[rgb(5,190,30)] text-white !rounded-lg text-sm font-medium cursor-pointer transition-colors ml-1 whitespace-nowrap"
+              className="flex items-center gap-1.5 px-4 py-2.5 bg-[rgb(0,164,22)] hover:bg-[rgb(5,190,30)] text-white !rounded-lg text-sm font-bold cursor-pointer transition-colors ml-1 whitespace-nowrap"
             >
               <Plus size={18} />
               <span>{createLabel}</span>

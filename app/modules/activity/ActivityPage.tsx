@@ -293,26 +293,35 @@ const ActivityPage = () => {
     if (isLoading) return <div className="p-4 text-center">Đang tải dữ liệu...</div>;
     if (error) return <div className="p-4 text-danger">Lỗi: {error}</div>;
     return (
-        <div className="container-fluid px-0 bg-white min-vh-100">
+        <div className="container-fluid px-0 min-vh-100">
             <div className="card shadow-sm border-0 rounded-3">
                 <div className="card-body p-0">
 
                     {/* HEADER TITLE & QUẢN LÝ TRẠNG THÁI */}
                     <div className="d-flex justify-content-between align-items-center mb-4">
-                        {/* BÊN TRÁI: Tiêu đề và Nút hành động */}
-                        <div className="d-flex align-items-center gap-3">
-                            <h5 className="text-uppercase mb-0 fw-bold text-white px-4 py-2 rounded-xl  shadow-sm d-inline-block"
-                                style={{ backgroundColor: 'rgb(21, 0, 211)', fontSize: '15px', letterSpacing: '0.5px' }}>
-                                <i className="fa-solid fa-list-check text-primary me-2"></i>Tất cả hoạt động
+                        <div className="w-100">
+                            <h5
+                                className="mb-0 fw-bold text-white w-100"
+                                style={{
+                                    backgroundColor: "rgb(21, 0, 211)",
+                                    padding: "10px 20px",
+                                    borderRadius: "10px",
+                                    textAlign: "left",
+                                    fontSize: "larger"
+                                }}
+                            >
+                                Tất cả hoạt động
                             </h5>
                         </div>
-
-
                     </div>
                     <div className="d-flex justify-content-between align-items-center mb-4">
                         <div className="d-flex align-items-center gap-2">
-                            <Link href="/activity/create" className="btn btn-success btn-sm rounded-xl px-3 shadow-sm fw-medium">
-                                <i className="fa-solid fa-plus me-1"></i> Thêm mới
+                            <Link
+                                href="/activity/create"
+                                className="flex items-center gap-1 px-3 py-2 bg-[rgb(0,164,22)] hover:bg-[rgb(5,190,30)] text-white font-bold rounded-lg text-decoration-none transition-colors w-fit text-base"
+                            >
+                                <i className="fa-solid fa-plus"></i>
+                                Thêm mới
                             </Link>
 
                             {selectedIds.length > 0 && (
@@ -433,13 +442,18 @@ const ActivityPage = () => {
                     </div>
 
                     {/* TABLE DATA (STYLE MỚI GIỐNG TASK) */}
-                    <div className="table-responsive shadow-sm rounded-3 bg-white border border-light">
+                    <div className="table-responsive shadow-sm rounded-3 border border-light">
                         <table className="table table-hover table-bordered align-middle mb-0" style={{ fontSize: '14px' }}>
-                            <thead style={{
-                                background: 'linear-gradient(135deg, #2563eb, #1d4ed8)',
-                                fontSize: '15px',
-                                whiteSpace: 'nowrap'
-                            }}>
+                            <thead
+                                style={{
+                                    background: 'linear-gradient(135deg, #2563eb, #1d4ed8)',
+                                    fontSize: '13px',
+                                    whiteSpace: 'nowrap',
+                                    fontWeight: '700',
+                                    color: '#fff',
+                                    textAlign: 'left',
+                                }}
+                            >
                                 <tr>
                                     <th className="fw-bold px-3 py-3 text-white" style={{ width: '4%', background: 'transparent', borderBottom: 'none' }}>
                                         <input className="form-check-input shadow-sm cursor-pointer m-0" type="checkbox" onChange={handleSelectAll} title="Chọn tất cả" />
