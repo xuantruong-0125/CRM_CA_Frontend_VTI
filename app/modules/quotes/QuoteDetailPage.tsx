@@ -6,7 +6,7 @@ import { ArrowLeft, Edit, Printer, Package, User, Calendar, Tag, FileText, Trend
 import { toast } from "react-toastify";
 import { getQuoteById } from "./useCases/getQuoteById";
 import { quoteApi } from "./api/quote.api";
-import { Quote } from "./types/quote.type";
+import { Quote, QuoteStatusId } from "./types/quote.type";
 import { getCurrentUser } from "@/core/auth/getCurrentUser";
 import styles from "./styles/quote.module.css";
 
@@ -71,7 +71,7 @@ export default function QuoteDetailPage() {
         setStatusUpdating(true);
         try {
             await quoteApi.updateStatus(quote.id, newStatusId);
-            setQuote({ ...quote, statusId: newStatusId });
+            setQuote({ ...quote, statusId: newStatusId as QuoteStatusId });
             toast.success(msg);
         } catch {
             toast.error("Không thể cập nhật trạng thái");

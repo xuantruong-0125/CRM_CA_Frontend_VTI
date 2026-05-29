@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import { getCurrentUser } from "@/core/auth/getCurrentUser";
 import { toast } from "react-toastify";
+import { useSearchParams } from "next/navigation";
 import { useOpportunity } from "./hooks/useOpportunity";
 import { opportunityApi } from "./api/opportunity.api";
 import { pipelineApi } from "@/modules/opportunity/pipeline/api/pipeline.api";
@@ -85,6 +86,10 @@ export default function OpportunityListPage() {
         filters, applyFilter, resetFilter, remove, refresh,
     } = useOpportunity();
 
+    const searchParams = useSearchParams();
+    const queryCustomerId = searchParams?.get("customerId");
+    const queryCreate = searchParams?.get("create") === "true";
+
     const [keyword, setKeyword] = useState("");
     const [filterHealth, setFilterHealth] = useState<HealthStatus | "">("");
     const [filterPipeline, setFilterPipeline] = useState<string>("");
@@ -124,6 +129,17 @@ export default function OpportunityListPage() {
     }, []);
 
     useEffect(() => { setPageInput(currentPage); }, [currentPage]);
+
+    useEffect(() => {
+        if (queryCreate && queryCustomerId) {
+            setForm({
+                ...EMPTY_FORM,
+                customerId: queryCustomerId,
+            });
+            setViewOnly(false);
+            setModalOpen(true);
+        }
+    }, [queryCustomerId, queryCreate]);
 
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {

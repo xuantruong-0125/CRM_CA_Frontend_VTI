@@ -1,8 +1,10 @@
 "use client";
 
+import { useMemo, useState } from "react";
 import Link from "next/link";
-import { useLeadActivityStatistics } from "@/modules/lead/hooks/useLeads";
+import { Pencil, Trash2, ChevronsRight } from "lucide-react";
 import type { LeadResponse } from "@/modules/lead/types/lead.types";
+import styles from "@/modules/lead/styles/lead.module.css";
 
 type LeadTableProps = {
   leads: LeadResponse[];
@@ -18,9 +20,35 @@ type LeadTableProps = {
   onStatusChange?: (lead: LeadResponse, newStatusId: number) => void;
 };
 
-type LeadActivityCellsProps = {
-  leadId?: number;
+type ColumnKey =
+  | "contactName"
+  | "companyName"
+  | "phone"
+  | "email"
+  | "province"
+  | "expectedRevenue"
+  | "status"
+  | "actions";
+
+type ColumnConfig = {
+  key: ColumnKey;
+  label: string;
+  defaultWidth: number;
+  minWidth: number;
+  maxWidth: number;
+  align?: "left" | "right";
 };
+
+const COLUMN_CONFIG: ColumnConfig[] = [
+  { key: "contactName", label: "Tên liên hệ", defaultWidth: 140, minWidth: 110, maxWidth: 220 },
+  { key: "companyName", label: "Công ty", defaultWidth: 140, minWidth: 110, maxWidth: 220 },
+  { key: "phone", label: "Điện thoại", defaultWidth: 120, minWidth: 100, maxWidth: 160 },
+  { key: "email", label: "Email", defaultWidth: 160, minWidth: 120, maxWidth: 240 },
+  { key: "province", label: "Tỉnh/TP", defaultWidth: 110, minWidth: 100, maxWidth: 160 },
+  { key: "expectedRevenue", label: "Doanh số DK", defaultWidth: 120, minWidth: 100, maxWidth: 180 },
+  { key: "status", label: "Trạng thái", defaultWidth: 130, minWidth: 90, maxWidth: 190 },
+  { key: "actions", label: "Thao tác", defaultWidth: 90, minWidth: 80, maxWidth: 260, align: "right" },
+];
 
 function maskPhone(phone?: string) {
   if (!phone) {
@@ -70,77 +98,42 @@ function maskEmail(email?: string) {
   return `${maskedLocal}@${maskedDomain}${domainExt}`;
 }
 
-function getStatusBadgeClass(statusName?: string) {
+function getStatusToneClass(statusName?: string) {
   const normalizedStatus = (statusName || "").toLowerCase();
 
   if (normalizedStatus.includes("mới") || normalizedStatus.includes("new")) {
-    return "bg-sky-100 text-sky-700 ring-1 ring-sky-200";
+    return styles.statusToneNew;
   }
 
   if (
     normalizedStatus.includes("liên hệ") ||
     normalizedStatus.includes("contact")
   ) {
-    return "bg-amber-100 text-amber-700 ring-1 ring-amber-200";
+    return styles.statusToneContact;
   }
 
   if (
     normalizedStatus.includes("chuyển đổi") ||
     normalizedStatus.includes("convert")
   ) {
-    return "bg-emerald-100 text-emerald-700 ring-1 ring-emerald-200";
+    return styles.statusToneConverted;
   }
 
   if (
     normalizedStatus.includes("giao dịch") ||
     normalizedStatus.includes("transaction")
   ) {
-    return "bg-violet-100 text-violet-700 ring-1 ring-violet-200";
+    return styles.statusToneTransaction;
   }
 
   if (
     normalizedStatus.includes("ngừng") ||
     normalizedStatus.includes("stop")
   ) {
-    return "bg-rose-100 text-rose-700 ring-1 ring-rose-200";
+    return styles.statusToneStopped;
   }
 
-  return "bg-slate-100 text-slate-700 ring-1 ring-slate-200";
-}
-
-function LeadActivityCells({ leadId }: LeadActivityCellsProps) {
-  const statisticsQuery = useLeadActivityStatistics(leadId);
-
-  if (!leadId) {
-    return <span className="text-slate-400">-</span>;
-  }
-
-  if (statisticsQuery.isLoading) {
-    return <span className="text-slate-400">...</span>;
-  }
-
-  const statistics = statisticsQuery.data;
-
-  if (!statistics) {
-    return <span className="text-slate-400">-</span>;
-  }
-
-  return (
-    <div className="flex items-center gap-3 text-slate-500 text-[11px]">
-      <span className="inline-flex items-center gap-1">
-        <span className="text-[12px]">☎</span>
-        <span>{statistics.callCount}</span>
-      </span>
-      <span className="inline-flex items-center gap-1">
-        <span className="text-[12px]">👤</span>
-        <span>{statistics.meetingCount}</span>
-      </span>
-      <span className="inline-flex items-center gap-1">
-        <span className="text-[12px]">✉</span>
-        <span>{statistics.emailCount}</span>
-      </span>
-    </div>
-  );
+  return styles.statusToneDefault;
 }
 
 export default function LeadTable({
@@ -156,9 +149,61 @@ export default function LeadTable({
   onConvert,
   onStatusChange,
 }: LeadTableProps) {
+  const [columnWidths, setColumnWidths] = useState<Record<ColumnKey, number>>(() => {
+    return COLUMN_CONFIG.reduce((acc, column) => {
+      acc[column.key] = column.defaultWidth;
+      return acc;
+    }, {} as Record<ColumnKey, number>);
+  });
+
+  const columnMinWidths = useMemo(() => {
+    return COLUMN_CONFIG.reduce((acc, column) => {
+      acc[column.key] = column.minWidth;
+      return acc;
+    }, {} as Record<ColumnKey, number>);
+  }, []);
+
+  const columnMaxWidths = useMemo(() => {
+    return COLUMN_CONFIG.reduce((acc, column) => {
+      acc[column.key] = column.maxWidth;
+      return acc;
+    }, {} as Record<ColumnKey, number>);
+  }, []);
+
+  const totalTableWidth = useMemo(() => {
+    return COLUMN_CONFIG.reduce((sum, column) => sum + columnWidths[column.key], 0);
+  }, [columnWidths]);
+
+  const startColumnResize = (columnKey: ColumnKey, event: React.MouseEvent<HTMLButtonElement>) => {
+    event.preventDefault();
+
+    const startX = event.clientX;
+    const startWidth = columnWidths[columnKey];
+
+    const handleMouseMove = (moveEvent: MouseEvent) => {
+      const deltaX = moveEvent.clientX - startX;
+      const nextWidth = Math.min(
+        columnMaxWidths[columnKey],
+        Math.max(columnMinWidths[columnKey], startWidth + deltaX)
+      );
+      setColumnWidths((current) => ({
+        ...current,
+        [columnKey]: nextWidth,
+      }));
+    };
+
+    const handleMouseUp = () => {
+      window.removeEventListener("mousemove", handleMouseMove);
+      window.removeEventListener("mouseup", handleMouseUp);
+    };
+
+    window.addEventListener("mousemove", handleMouseMove);
+    window.addEventListener("mouseup", handleMouseUp);
+  };
+
   if (loading) {
     return (
-      <div className="rounded-3xl border border-slate-200 bg-white p-6 text-[12px] text-slate-500">
+      <div className={styles.loadingRow}>
         Đang tải danh sách Lead...
       </div>
     );
@@ -166,56 +211,70 @@ export default function LeadTable({
 
   if (!leads.length) {
     return (
-      <div className="rounded-3xl border border-slate-200 bg-white p-6 text-[12px] text-slate-500">
+      <div className={styles.emptyRow}>
         Không có dữ liệu lead.
       </div>
     );
   }
 
   return (
-    <div className="overflow-x-auto rounded-3xl border border-slate-200 bg-white">
-      <table className="min-w-full border-collapse text-[12px] text-slate-700">
-        <thead className="border-b border-slate-200 bg-[rgb(21,0,211)] text-left font-semibold text-white">
+    <div className={styles.tableContainer}>
+      <table
+        className={styles.table}
+        style={{ width: `${totalTableWidth}px`, minWidth: "100%" }}
+      >
+        <colgroup>
+          {COLUMN_CONFIG.map((column) => (
+            <col key={column.key} style={{ width: `${columnWidths[column.key]}px` }} />
+          ))}
+        </colgroup>
+        <thead>
           <tr>
-            <th className="whitespace-nowrap px-3 py-2">Tên liên hệ</th>
-            <th className="whitespace-nowrap px-3 py-2">Công ty</th>
-            <th className="whitespace-nowrap px-3 py-2">Điện thoại</th>
-            <th className="whitespace-nowrap px-3 py-2">Email</th>
-            <th className="whitespace-nowrap px-3 py-2">Tỉnh/TP</th>
-            <th className="whitespace-nowrap px-3 py-2">Doanh số DK</th>
-            <th className="whitespace-nowrap px-3 py-2">Trạng thái</th>
-            <th className="whitespace-nowrap px-3 py-2">Hoạt động</th>
-            <th className="whitespace-nowrap px-3 py-2 text-right">Thao tác</th>
+            {COLUMN_CONFIG.map((column) => (
+              <th
+                key={column.key}
+                className={`${styles.headerCell} ${column.align === "right" ? styles.headerCellRight : ""}`}
+              >
+                <span className={styles.headerLabel}>{column.label}</span>
+                <button
+                  type="button"
+                  aria-label={`Resize ${column.label}`}
+                  onMouseDown={(event) => startColumnResize(column.key, event)}
+                  className={styles.resizeHandle}
+                >
+                </button>
+              </th>
+            ))}
           </tr>
         </thead>
-        <tbody className="bg-white">
+        <tbody>
           {leads.map((lead) => (
-            <tr key={lead.id} className="border-b border-slate-100 hover:bg-slate-50/80">
-              <td className="whitespace-nowrap px-3 py-2 align-middle font-medium text-slate-900">
+            <tr key={lead.id}>
+              <td>
                 {lead.id ? (
-                  <Link href={`/leads/${lead.id}`} className="hover:text-sky-600 hover:underline">
+                  <Link href={`/leads/${lead.id}`} className={`${styles.leadLink} no-underline`}>
                     {lead.contactName || "-"}
                   </Link>
                 ) : (
                   lead.contactName || "-"
                 )}
               </td>
-              <td className="max-w-[150px] truncate px-3 py-2 align-middle" title={lead.companyName || ""}>
+              <td title={lead.companyName || ""}>
                 {lead.companyName || "-"}
               </td>
-              <td className="whitespace-nowrap px-3 py-2 align-middle">
+              <td>
                 {maskPhoneEnabled ? maskPhone(lead.phone) : (lead.phone || "-")}
               </td>
-              <td className="max-w-[150px] truncate px-3 py-2 align-middle" title={lead.email || ""}>
+              <td title={lead.email || ""}>
                 {maskEmailEnabled ? maskEmail(lead.email) : (lead.email || "-")}
               </td>
-              <td className="whitespace-nowrap px-3 py-2 align-middle">
+              <td>
                 {lead.provinceId ? provinceNameById[lead.provinceId] ?? `#${lead.provinceId}` : "-"}
               </td>
-              <td className="whitespace-nowrap px-3 py-2 align-middle font-medium text-slate-900">
+              <td>
                 {(lead.expectedRevenue ?? 0).toLocaleString("vi-VN")} đ
               </td>
-              <td className="whitespace-nowrap px-3 py-2 align-middle">
+              <td>
                 {(() => {
                   const isConvertedStatus = lead.statusId && statusNameById[lead.statusId] &&
                     (statusNameById[lead.statusId].toLowerCase().includes("chuyển đổi") ||
@@ -226,9 +285,7 @@ export default function LeadTable({
                     const statusName = statusNameById[lead.statusId!];
                     return (
                       <span
-                        className={`inline-block rounded px-2 py-0.5 text-[11px] font-medium cursor-not-allowed ${getStatusBadgeClass(
-                          statusName
-                        )}`}
+                        className={`${styles.statusPill} ${getStatusToneClass(statusName)}`}
                         title="Trạng thái không thể thay đổi"
                       >
                         {statusName}
@@ -245,10 +302,10 @@ export default function LeadTable({
                           onStatusChange(lead, newStatusId);
                         }
                       }}
-                      className={`cursor-pointer appearance-none rounded border-none px-2 py-0.5 text-[11px] font-medium outline-none ring-0 focus:ring-2 focus:ring-purple-500 ${
+                      className={`${styles.statusSelect} ${
                         lead.statusId && statusNameById[lead.statusId]
-                          ? getStatusBadgeClass(statusNameById[lead.statusId])
-                          : "bg-slate-100 text-slate-700 ring-1 ring-slate-200"
+                          ? getStatusToneClass(statusNameById[lead.statusId])
+                          : styles.statusToneDefault
                       }`}
                       title="Thay đổi trạng thái"
                     >
@@ -259,7 +316,7 @@ export default function LeadTable({
                           return !lowerName.includes("chuyển đổi") && !lowerName.includes("converted");
                         })
                         .map(([id, name]) => (
-                          <option key={id} value={id} className="bg-white text-slate-700">
+                          <option key={id} value={id}>
                             {name}
                           </option>
                       ))}
@@ -267,36 +324,44 @@ export default function LeadTable({
                   );
                 })()}
               </td>
-              <td className="whitespace-nowrap px-3 py-2 align-middle">
-                <LeadActivityCells leadId={lead.id} />
-              </td>
-              <td className="whitespace-nowrap px-3 py-2 align-middle">
-                <div className="flex justify-end gap-2 text-[14px]">
+              <td className={styles.actionsCell}>
+                <div className={styles.actions}>
                   <button
                     type="button"
                     onClick={() => onEdit(lead)}
                     disabled={Boolean(lead.id && loadingEditLeadId === lead.id)}
-                    className="text-emerald-600 transition hover:text-emerald-500 disabled:cursor-not-allowed disabled:opacity-50"
+                    className={`${styles.actionBtn} ${styles.editBtn}`}
                     title="Chỉnh sửa"
                   >
-                    {lead.id && loadingEditLeadId === lead.id ? "..." : "✎"}
+                    <Pencil size={14} />
                   </button>
                   <button
                     type="button"
                     onClick={() => onDelete(lead)}
-                    className="text-red-500 transition hover:text-red-400"
+                    className={`${styles.actionBtn} ${styles.deleteBtn}`}
                     title="Xóa"
                   >
-                    🗑
+                    <Trash2 size={14} />
                   </button>
-                  {!lead.isConverted && (
+                  {lead.isConverted ? (
+                    <button
+                      type="button"
+                      disabled
+                      tabIndex={-1}
+                      aria-hidden="true"
+                      className="invisible"
+                      title="Chuyển đổi"
+                    >
+                      <ChevronsRight size={14} />
+                    </button>
+                  ) : (
                     <button
                       type="button"
                       onClick={() => onConvert(lead)}
-                      className="text-blue-500 transition hover:text-blue-400"
+                      className={`${styles.actionBtn} ${styles.convertBtn}`}
                       title="Chuyển đổi"
                     >
-                      ⦿
+                      <ChevronsRight size={14} />
                     </button>
                   )}
                 </div>

@@ -33,7 +33,7 @@ export function KeyboardShortcutBadge({
 
   return (
     <kbd
-      className={`inline-block rounded-sm bg-slate-100 px-1 py-0.5 text-[8px] font-medium text-black border border-slate-300 ${className}`}
+      className={`inline-flex items-center rounded-md border border-sky-200 bg-sky-50 px-1.5 py-0.5 text-[8px] font-semibold text-sky-700 shadow-sm ${className}`}
       title={shortcut.label}
     >
       {parts.join("+")}

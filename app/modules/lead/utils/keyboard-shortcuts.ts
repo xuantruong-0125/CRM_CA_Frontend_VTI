@@ -2,7 +2,15 @@
  * Keyboard shortcuts utilities for Lead module
  */
 
-export const LEAD_SHORTCUTS = {
+export interface Shortcut {
+  key: string;
+  ctrl?: boolean;
+  shift?: boolean;
+  alt?: boolean;
+  label: string;
+}
+
+export const LEAD_SHORTCUTS: Record<string, Shortcut> = {
   // LeadListPage
   CREATE_LEAD: { key: "n", alt: true, label: "Alt+N - Tạo lead mới" },
   TOGGLE_FILTER: { key: "f", ctrl: true, label: "Ctrl+F - Mở/đóng filter nâng cao" },
@@ -30,11 +38,11 @@ export const LEAD_SHORTCUTS = {
   INTERACTION_RESET: { key: "r", ctrl: true, label: "Ctrl+R - Reset form" },
 };
 
-export function getShortcutLabel(shortcut: typeof LEAD_SHORTCUTS[keyof typeof LEAD_SHORTCUTS]): string {
+export function getShortcutLabel(shortcut: Shortcut): string {
   return shortcut.label;
 }
 
-export function getShortcutDisplay(shortcut: typeof LEAD_SHORTCUTS[keyof typeof LEAD_SHORTCUTS]): string {
+export function getShortcutDisplay(shortcut: Shortcut): string {
   const parts: string[] = [];
   if (shortcut.ctrl) parts.push("Ctrl");
   if (shortcut.shift) parts.push("Shift");
@@ -45,7 +53,7 @@ export function getShortcutDisplay(shortcut: typeof LEAD_SHORTCUTS[keyof typeof 
 
 export function matchesShortcut(
   event: KeyboardEvent,
-  shortcut: typeof LEAD_SHORTCUTS[keyof typeof LEAD_SHORTCUTS]
+  shortcut: Shortcut
 ): boolean {
   const keyMatch = event.key.toLowerCase() === shortcut.key.toLowerCase() ||
                    (shortcut.key === "Escape" && event.key === "Escape") ||

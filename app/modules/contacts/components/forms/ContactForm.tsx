@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Contact, CreateContactRequest } from "../../types/contact.type";
 import { contactApi } from "../../api/contact.api";
 import { CustomerComboBox } from "../shared/CustomerComboBox";
@@ -14,6 +14,8 @@ interface ContactFormProps {
 
 export const ContactForm: React.FC<ContactFormProps> = ({ initialData, isEditMode = false }) => {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const queryCustomerId = searchParams.get("customerId");
   const { customers } = useCustomers();
   const [formData, setFormData] = useState<CreateContactRequest>({
     fullName: "",
@@ -46,6 +48,12 @@ export const ContactForm: React.FC<ContactFormProps> = ({ initialData, isEditMod
       });
     }
   }, [initialData]);
+
+  useEffect(() => {
+    if (queryCustomerId && !isEditMode) {
+      setFormData(prev => ({ ...prev, customerId: Number(queryCustomerId) }));
+    }
+  }, [queryCustomerId, isEditMode]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value, type } = e.target;

@@ -122,8 +122,6 @@ export interface CustomerAddressResponseDTO {
   fullAddress: string;
   provinceId?: number;
   isPrimary: boolean;
-  createdAt?: ISODateTimeString;
-  updatedAt?: ISODateTimeString;
 }
 
 export interface CreateContactDTO {
@@ -172,7 +170,9 @@ export interface OpportunityResponseDTO {
   name: string;
   customerId: number;
   pipelineId?: number;
+  pipelineName?: string;
   stageId?: number;
+  stageName?: string;
   totalAmount?: number;
   depositAmount?: number;
   remainingAmount?: number;
@@ -180,8 +180,10 @@ export interface OpportunityResponseDTO {
   exchangeRate?: number;
   expectedCloseDate?: string;
   lossReasonId?: number;
+  lossReasonName?: string;
   healthStatus?: string;
   assignedUserId?: number;
+  assignedUserFullName?: string;
   createdAt?: ISODateTimeString;
   updatedAt?: ISODateTimeString;
 }
@@ -298,9 +300,9 @@ export interface ActivityResponseDTO {
   outcome?: string;
   relatedToType?: string;
   relatedToId?: number;
-  performedBy?: number;
-  createdBy?: number;
-  updatedBy?: number;
+  performedBy?: number | { id: number; fullName?: string; name?: string; email?: string };
+  createdBy?: number | { id: number; fullName?: string; email?: string };
+  updatedBy?: number | { id: number; fullName?: string; email?: string };
   createdAt?: ISODateTimeString;
   updatedAt?: ISODateTimeString;
   status?: number;
@@ -385,6 +387,17 @@ export interface TaskResponseDTO {
   updatedBy?: number;
   createdAt?: ISODateTimeString;
   updatedAt?: ISODateTimeString;
+}
+
+export interface NoteResponseDTO {
+  id: number;
+  content: string;
+  notableType: string;
+  notableId: number;
+  privateNote: boolean;
+  createdBy?: number;
+  creatorName?: string;
+  createdDate?: ISODateTimeString;
 }
 
 export type CreateCustomerRequest = CreateCustomerDTO;

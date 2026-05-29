@@ -1,14 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import {
   ChevronsLeft,
   ChevronLeft,
   ChevronRight,
   ChevronsRight,
   Pencil,
-  Plus,
   Search,
   Trash2,
   SlidersHorizontal,
@@ -38,8 +37,39 @@ import {
 import { customerApi } from "@/modules/customer/api/customer.api";
 import { getApiErrorMessage } from "@/shared/utils/api-error";
 import ConfirmDeleteModal from "@/shared/components/ConfirmDeleteModal/ConfirmDeleteModal";
+import styles from "@/modules/customer/styles/customer.module.css";
 
 type FormMode = "hidden" | "create" | "edit";
+
+type ColumnKey =
+  | "customerCode"
+  | "customerName"
+  | "taxCode"
+  | "customerType"
+  | "assignedTo"
+  | "status"
+  | "tier"
+  | "actions";
+
+type ColumnConfig = {
+  key: ColumnKey;
+  label: string;
+  defaultWidth: number;
+  minWidth: number;
+  maxWidth: number;
+  align?: "left" | "right";
+};
+
+const COLUMN_CONFIG: ColumnConfig[] = [
+  { key: "customerCode", label: "Mã KH", defaultWidth: 100, minWidth: 80, maxWidth: 180 },
+  { key: "customerName", label: "Tên KH", defaultWidth: 150, minWidth: 100, maxWidth: 200 },
+  { key: "taxCode", label: "Mã số thuế", defaultWidth: 120, minWidth: 80, maxWidth: 220 },
+  { key: "customerType", label: "Nhóm KH", defaultWidth: 80, minWidth:60, maxWidth: 150 },
+  { key: "assignedTo", label: "Sale phụ trách", defaultWidth: 180, minWidth: 140, maxWidth: 260 },
+  { key: "status", label: "Trạng thái", defaultWidth: 140, minWidth: 120, maxWidth: 220 },
+  { key: "tier", label: "Phân hạng", defaultWidth: 140, minWidth: 120, maxWidth: 220 },
+  { key: "actions", label: "Thao tác", defaultWidth: 180, minWidth: 160, maxWidth: 260, align: "right" },
+];
 
 const STATUS_ID_MAP: Record<CustomerStatus, number> = {
   CARING: 1,
@@ -79,8 +109,15 @@ function emptyMessage(message: string) {
 }
 
 export default function CustomerListPage() {
+  const [columnWidths, setColumnWidths] = useState<Record<ColumnKey, number>>(() => {
+    return COLUMN_CONFIG.reduce((acc, column) => {
+      acc[column.key] = column.defaultWidth;
+      return acc;
+    }, {} as Record<ColumnKey, number>);
+  });
   const [page, setPage] = useState(0);
   const [size, setSize] = useState(10);
+  const [pageInput, setPageInput] = useState("1");
   const [searchTerm, setSearchTerm] = useState("");
   const [customerType, setCustomerType] = useState<"" | CustomerType>("");
   const [status, setStatus] = useState<"" | CustomerStatus>("");
@@ -112,6 +149,24 @@ export default function CustomerListPage() {
   const customers = customerQuery.data?.content ?? [];
   const totalPages = Math.max(customerQuery.data?.totalPages ?? 1, 1);
   const saleNameById = Object.fromEntries((salesUsersQuery.data ?? []).map((sale) => [sale.id, sale.fullName])) as Record<number, string>;
+
+  const columnMinWidths = useMemo(() => {
+    return COLUMN_CONFIG.reduce((acc, column) => {
+      acc[column.key] = column.minWidth;
+      return acc;
+    }, {} as Record<ColumnKey, number>);
+  }, []);
+
+  const columnMaxWidths = useMemo(() => {
+    return COLUMN_CONFIG.reduce((acc, column) => {
+      acc[column.key] = column.maxWidth;
+      return acc;
+    }, {} as Record<ColumnKey, number>);
+  }, []);
+
+  const totalTableWidth = useMemo(() => {
+    return COLUMN_CONFIG.reduce((sum, column) => sum + columnWidths[column.key], 0);
+  }, [columnWidths]);
 
   const openCreateForm = () => {
     setEditingCustomer(null);
@@ -200,95 +255,135 @@ export default function CustomerListPage() {
     toast.success("Cập nhật phân hạng thành công");
   };
 
+  const handleGoToPage = () => {
+    let target = Number(pageInput);
+
+    if (isNaN(target)) return;
+
+    // giới hạn trong khoảng hợp lệ
+    if (target < 1) target = 1;
+    if (target > totalPages) target = totalPages;
+
+    setPage(target - 1);
+    setPageInput(String(target));
+  };
+
+  const startColumnResize = (columnKey: ColumnKey, event: React.MouseEvent<HTMLButtonElement>) => {
+    event.preventDefault();
+
+    const startX = event.clientX;
+    const startWidth = columnWidths[columnKey];
+
+    const handleMouseMove = (moveEvent: MouseEvent) => {
+      const deltaX = moveEvent.clientX - startX;
+      const nextWidth = Math.min(
+        columnMaxWidths[columnKey],
+        Math.max(columnMinWidths[columnKey], startWidth + deltaX)
+      );
+
+      setColumnWidths((current) => ({
+        ...current,
+        [columnKey]: nextWidth,
+      }));
+    };
+
+    const handleMouseUp = () => {
+      window.removeEventListener("mousemove", handleMouseMove);
+      window.removeEventListener("mouseup", handleMouseUp);
+    };
+
+    window.addEventListener("mousemove", handleMouseMove);
+    window.addEventListener("mouseup", handleMouseUp);
+  };
+
   return (
-    <main className="min-h-screen bg-slate-100 px-4 py-6 md:px-8">
-      <div className="mx-auto max-w-[1600px] space-y-6">
-        <section className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
-          <div className="bg-[rgb(21,0,211)] px-6 py-4 text-white">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-white/70">Customer module</p>
-            <h1 className="mt-1 text-[18px] font-bold leading-tight text-white">Quản lý khách hàng</h1>
+    <main className={styles.page}>
+      <div className={styles.pageShell}>
+        <section>
+          <div className={styles.pageTopBar}>
+            <h1 className={styles.pageTopBarTitle}>Quản lý khách hàng</h1>
           </div>
 
-          <div className="border-b border-slate-200 px-6 py-4">
-            <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
-              <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2">
-                <label className="relative block w-full min-w-[240px] max-w-[420px] flex-1">
-                  <Search className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
-                  <input
-                    value={searchTerm}
-                    onChange={(event) => {
-                      setPage(0);
-                      setSearchTerm(event.target.value);
-                    }}
-                    placeholder="Tìm theo tên, mã, MST, email..."
-                    className="w-full rounded-[5px] border border-slate-300 bg-white py-2 pl-10 pr-4 text-[12px] text-slate-900 outline-none transition focus:border-[rgb(21,0,211)] focus:ring-2 focus:ring-[rgb(21,0,211)]/20"
-                  />
-                </label>
+          <div className={styles.toolbar}>
+            <div className={styles.toolbarLeft}>
+              <div className={styles.searchBox}>
+                <Search className={styles.searchIcon} size={14} />
+                <input
+                  type="text"
+                  value={searchTerm}
+                  onChange={(event) => {
+                    setPage(0);
+                    setPageInput("1");
+                    setSearchTerm(event.target.value);
+                  }}
+                  placeholder="Tìm theo tên, mã, MST, email..."
+                  className={styles.searchInput}
+                />
+              </div>
 
-                <div className="flex flex-wrap items-center gap-2">
+              <div className={styles.statusTabs}>
+                <button
+                  type="button"
+                  onClick={() => handleCustomerTypeSelect("")}
+                  className={`${styles.statusTab} ${customerType === "" ? styles.statusTabActive : ""}`}
+                >
+                  Tất cả
+                </button>
+                {CUSTOMER_TYPE_OPTIONS.map((option) => (
                   <button
+                    key={option.value}
                     type="button"
-                    onClick={() => handleCustomerTypeSelect("")}
-                    className={`rounded-[5px] px-3 py-2 text-[12px] font-semibold transition ${customerType === "" ? "bg-[rgb(21,0,211)] text-white" : "border border-slate-300 bg-white text-slate-700 hover:bg-slate-50"}`}
+                    onClick={() => handleCustomerTypeSelect(option.value)}
+                    className={`${styles.statusTab} ${customerType === option.value ? styles.statusTabActive : ""}`}
                   >
-                    Tất cả
+                    {option.label}
                   </button>
-                  {CUSTOMER_TYPE_OPTIONS.map((option) => (
-                    <button
-                      key={option.value}
-                      type="button"
-                      onClick={() => handleCustomerTypeSelect(option.value)}
-                      className={`rounded-[5px] px-3 py-2 text-[12px] font-semibold transition ${customerType === option.value ? "bg-[rgb(21,0,211)] text-white" : "border border-slate-300 bg-white text-slate-700 hover:bg-slate-50"}`}
-                    >
-                      {option.label}
-                    </button>
-                  ))}
-                </div>
+                ))}
+              </div>
 
+              <div className={styles.searchBox}>
                 <select
                   value={size}
                   onChange={(event) => {
                     setPage(0);
+                    setPageInput("1");
                     setSize(Number(event.target.value));
                   }}
-                  className="w-full min-w-[120px] max-w-[140px] rounded-[5px] border border-slate-300 bg-white px-3 py-2 text-[12px] text-slate-900 outline-none transition focus:border-[rgb(21,0,211)] focus:ring-2 focus:ring-[rgb(21,0,211)]/20"
+                  className={styles.perPageSelect}
                 >
                   <option value={10}>10 / trang</option>
                   <option value={20}>20 / trang</option>
                   <option value={50}>50 / trang</option>
                 </select>
-
-                <button
-                  type="button"
-                  onClick={() => setShowFilters((s) => !s)}
-                  className="inline-flex items-center gap-2 rounded-[5px] border border-slate-300 bg-white px-3 py-2 text-[12px] font-semibold text-slate-700 transition hover:bg-slate-50"
-                >
-                  <SlidersHorizontal size={16} />
-                  Bộ lọc
-                </button>
               </div>
 
               <button
                 type="button"
-                onClick={openCreateForm}
-                className="inline-flex shrink-0 items-center justify-center gap-2 rounded-[5px] bg-emerald-600 px-3 py-2 text-[12px] font-semibold text-white transition hover:bg-emerald-500"
+                onClick={() => setShowFilters((current) => !current)}
+                className={styles.btnFilter}
               >
-                Thêm khách hàng
+                <SlidersHorizontal size={14} />
+                Bộ lọc
               </button>
             </div>
+
+            <button type="button" onClick={openCreateForm} className={`${styles.btnPrimary} ${styles.btnPrimarySuccess}`}>
+              Thêm khách hàng
+            </button>
           </div>
 
           {showFilters && (
-            <div className="border-b border-slate-200 bg-slate-50/70 px-6 py-4">
-              <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
-                <div className="grid gap-3 sm:grid-cols-2 lg:max-w-2xl lg:flex-1">
+            <div className={styles.filterSection}>
+              <div className={styles.filterGrid}>
+                <div className={styles.filterCard}>
+                  <label>Trạng thái</label>
                   <select
                     value={status}
                     onChange={(event) => {
                       setPage(0);
+                      setPageInput("1");
                       setStatus(event.target.value as CustomerStatus | "");
                     }}
-                    className="w-full rounded-[5px] border border-slate-300 bg-white px-3 py-2 text-[12px] text-slate-900 outline-none transition focus:border-[rgb(21,0,211)] focus:ring-2 focus:ring-[rgb(21,0,211)]/20"
                   >
                     <option value="">Trạng thái</option>
                     {Object.entries(CUSTOMER_STATUS_LABELS).map(([value, label]) => (
@@ -297,14 +392,17 @@ export default function CustomerListPage() {
                       </option>
                     ))}
                   </select>
+                </div>
 
+                <div className={styles.filterCard}>
+                  <label>Phân hạng</label>
                   <select
                     value={tier}
                     onChange={(event) => {
                       setPage(0);
+                      setPageInput("1");
                       setTier(event.target.value as CustomerTier | "");
                     }}
-                    className="w-full rounded-[5px] border border-slate-300 bg-white px-3 py-2 text-[12px] text-slate-900 outline-none transition focus:border-[rgb(21,0,211)] focus:ring-2 focus:ring-[rgb(21,0,211)]/20"
                   >
                     <option value="">Phân hạng</option>
                     {Object.entries(CUSTOMER_TIER_LABELS).map(([value, label]) => (
@@ -314,101 +412,110 @@ export default function CustomerListPage() {
                     ))}
                   </select>
                 </div>
+              </div>
 
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setPage(0);
-                      setShowFilters(false);
-                    }}
-                    className="rounded-[5px] bg-[rgb(21,0,211)] px-3 py-2 text-[12px] font-semibold text-white transition hover:opacity-90"
-                  >
-                    Lọc
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setStatus("");
-                      setTier("");
-                      setPage(0);
-                      setShowFilters(false);
-                    }}
-                    className="rounded-[5px] border border-slate-300 bg-white px-3 py-2 text-[12px] font-semibold text-slate-700 transition hover:bg-slate-50"
-                  >
-                    Đặt lại
-                  </button>
-                </div>
+              <div className={styles.filterActions}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setPage(0);
+                    setPageInput("1");
+                    setShowFilters(false);
+                  }}
+                  className={styles.btnPrimary}
+                >
+                  Lọc
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setStatus("");
+                    setTier("");
+                    setPage(0);
+                    setPageInput("1");
+                    setShowFilters(false);
+                  }}
+                  className={styles.btnOutline}
+                >
+                  Đặt lại
+                </button>
               </div>
             </div>
           )}
 
-          <div className="overflow-x-auto">
+          {customerQuery.error && <div className={styles.errorMessage}>{getApiErrorMessage(customerQuery.error)}</div>}
+
+          <div className={styles.tableContainer}>
+            <div className={styles.tableNote}>KH = Khách hàng</div>
+
             {customerQuery.isLoading ? (
-              <div className="p-8 text-sm text-slate-500">Đang tải danh sách khách hàng...</div>
+              <div className={styles.loadingRow}>Đang tải danh sách khách hàng...</div>
             ) : customerQuery.error ? (
-              <div className="p-8 text-sm text-red-700">{getApiErrorMessage(customerQuery.error)}</div>
+              <div className={styles.loadingRow}>{getApiErrorMessage(customerQuery.error)}</div>
             ) : customers.length === 0 ? (
-              <div className="p-8">{emptyMessage("Chưa có dữ liệu khách hàng phù hợp bộ lọc hiện tại.")}</div>
+              <div className={styles.emptyRow}>{emptyMessage("Chưa có dữ liệu khách hàng phù hợp bộ lọc hiện tại.")}</div>
             ) : (
-              <table className="min-w-full divide-y divide-slate-200 text-left text-[12px]">
-                <thead className="bg-[rgb(21,0,211)] text-[12px] uppercase tracking-[0.14em] text-white">
+              <table className={styles.table} style={{ width: `${totalTableWidth}px`, minWidth: "100%" }}>
+                <colgroup>
+                  {COLUMN_CONFIG.map((column) => (
+                    <col key={column.key} style={{ width: `${columnWidths[column.key]}px` }} />
+                  ))}
+                </colgroup>
+                <thead>
                   <tr>
-                    <th className="px-4 py-3">Mã KH</th>
-                    <th className="px-4 py-3">Tên KH</th>
-                    <th className="px-4 py-3">MST</th>
-                    <th className="px-4 py-3">Nhóm KH</th>
-                    <th className="px-4 py-3">Sale phụ trách</th>
-                    <th className="px-4 py-3">Trạng thái</th>
-                    <th className="px-4 py-3">Phân hạng</th>
-                    <th className="px-4 py-3 text-right">Thao tác</th>
+                    {COLUMN_CONFIG.map((column) => (
+                      <th
+                        key={column.key}
+                        className={`${styles.headerCell} ${column.align === "right" ? styles.headerCellRight : ""}`}
+                      >
+                        <span className={styles.headerLabel}>{column.label}</span>
+                        <button
+                          type="button"
+                          aria-label={`Resize ${column.label}`}
+                          onMouseDown={(event) => startColumnResize(column.key, event)}
+                          className={styles.resizeHandle}
+                        />
+                      </th>
+                    ))}
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100 bg-white">
+                <tbody>
                   {customers.map((customer) => {
                     const currentStatus = normalizeCustomerStatus(customer.statusName);
                     const currentTier = normalizeCustomerTier(customer.tierName);
 
                     return (
-                      <tr key={customer.id} className="hover:bg-slate-50/60">
-                        <td className="px-4 py-4 font-medium text-slate-900">{customer.customerCode}</td>
-                        <td className="px-4 py-4">
-                          <Link href={`/customers/${customer.id}`} className="font-semibold text-blue-700 hover:underline">
+                      <tr key={customer.id}>
+                        <td>{customer.customerCode}</td>
+                        <td>
+                          <Link href={`/customers/${customer.id}`} className={`${styles.customerLink} no-underline`}>
                             {getCustomerDisplayName(customer)}
                           </Link>
                         </td>
-                        <td className="px-4 py-4 text-slate-800">{getCustomerTaxCode(customer) ?? "-"}</td>
-                        <td className="px-4 py-4 text-slate-800">{getTypeLabel(customer.type)}</td>
-                        <td className="px-4 py-4 text-slate-800">{getAssignedLabel(customer.assignedTo, saleNameById)}</td>
-                        <td className="px-4 py-4">
+                        <td>{getCustomerTaxCode(customer) ?? "-"}</td>
+                        <td>{getTypeLabel(customer.type)}</td>
+                        <td>{getAssignedLabel(customer.assignedTo, saleNameById)}</td>
+                        <td>
                           <StatusBadge
                             value={currentStatus}
                             onStatusChange={(value) => updateStatus(customer, value)}
                             isLoading={statusMutation.isPending}
                           />
                         </td>
-                        <td className="px-4 py-4">
+                        <td>
                           <ClassificationBadge
                             value={currentTier}
                             onClassificationChange={(value) => updateTier(customer, value)}
                             isLoading={tierMutation.isPending}
                           />
                         </td>
-                        <td className="px-4 py-4">
-                          <div className="flex items-center justify-end gap-2">
-                            <button
-                              type="button"
-                              onClick={() => openEditForm(customer)}
-                              className="inline-flex items-center gap-1 rounded-[5px] border border-slate-300 px-3 py-2 text-[12px] font-semibold text-slate-700 transition hover:bg-slate-50"
-                            >
+                        <td>
+                          <div className={styles.actions}>
+                            <button type="button" onClick={() => openEditForm(customer)} className={`${styles.actionBtn} ${styles.editBtn}`}>
                               <Pencil size={14} />
                               Sửa
                             </button>
-                            <button
-                              type="button"
-                              onClick={() => handleDelete(customer)}
-                              className="inline-flex items-center gap-1 rounded-[5px] border border-red-200 px-3 py-2 text-[12px] font-semibold text-red-700 transition hover:bg-red-50"
-                            >
+                            <button type="button" onClick={() => handleDelete(customer)} className={`${styles.actionBtn} ${styles.deleteBtn}`}>
                               <Trash2 size={14} />
                               Xóa
                             </button>
@@ -422,57 +529,86 @@ export default function CustomerListPage() {
             )}
           </div>
 
-          <div className="border-t border-slate-200 px-6 py-4">
-            <div className="grid items-center gap-4 lg:grid-cols-[1fr_auto_1fr]">
-              <div className="text-[12px] font-medium text-slate-600">
-                Total: {countQuery.data ?? customerQuery.data?.totalElements ?? 0} users
+          <div className={styles.pagination}>
+            <span className={styles.userNum}>Total: {countQuery.data ?? customerQuery.data?.totalElements ?? 0} customers</span>
+
+            <div className={styles.paginationControls}>
+              <button
+                type="button"
+                disabled={page <= 0}
+                onClick={() => {
+                  setPage(0);
+                  setPageInput("1");
+                }}
+                className={styles.pageBtn}
+                title="Trang đầu"
+              >
+                <ChevronsLeft size={16} />
+              </button>
+
+              <button
+                type="button"
+                disabled={page <= 0}
+                onClick={() => {
+                  const newPage = Math.max(page - 1, 0);
+                  setPage(newPage);
+                  setPageInput(String(newPage + 1));
+                }}
+                className={styles.pageBtn}
+                title="Trang trước"
+              >
+                <ChevronLeft size={16} />
+              </button>
+
+              <div className={styles.pageInputWrapper}>
+                <span>Trang</span>
+                <input
+                  type="number"
+                  className={styles.pageInput}
+                  value={pageInput}
+                  min={1}
+                  max={totalPages}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    setPageInput(value === "" ? "1" : value);
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") handleGoToPage();
+                  }}
+                />
+                <span>/ {totalPages}</span>
               </div>
 
-              <div className="flex items-center justify-center gap-2">
-                <button
-                  type="button"
-                  disabled={page <= 0}
-                  onClick={() => setPage(0)}
-                  className="inline-flex h-9 w-9 items-center justify-center rounded-[5px] border border-slate-300 bg-white text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
-                  title="Trang đầu"
-                >
-                  <ChevronsLeft size={16} />
-                </button>
-                <button
-                  type="button"
-                  disabled={page <= 0}
-                  onClick={() => setPage((current) => Math.max(current - 1, 0))}
-                  className="inline-flex h-9 w-9 items-center justify-center rounded-[5px] border border-slate-300 bg-white text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
-                  title="Trang trước"
-                >
-                  <ChevronLeft size={16} />
-                </button>
+              <button type="button" onClick={handleGoToPage} className={styles.btnPrimary}>
+                Đi
+              </button>
 
-                <div className="rounded-[5px] border border-slate-200 bg-slate-50 px-4 py-2 text-[12px] font-semibold text-slate-700">
-                  Trang {page + 1} / {totalPages}
-                </div>
+              <button
+                type="button"
+                disabled={page + 1 >= totalPages}
+                onClick={() => {
+                  const newPage = Math.min(page + 1, totalPages - 1);
+                  setPage(newPage);
+                  setPageInput(String(newPage + 1));
+                }}
+                className={styles.pageBtn}
+                title="Trang sau"
+              >
+                <ChevronRight size={16} />
+              </button>
 
-                <button
-                  type="button"
-                  disabled={page + 1 >= totalPages}
-                  onClick={() => setPage((current) => Math.min(current + 1, totalPages - 1))}
-                  className="inline-flex h-9 w-9 items-center justify-center rounded-[5px] border border-slate-300 bg-white text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
-                  title="Trang sau"
-                >
-                  <ChevronRight size={16} />
-                </button>
-                <button
-                  type="button"
-                  disabled={page + 1 >= totalPages}
-                  onClick={() => setPage(totalPages - 1)}
-                  className="inline-flex h-9 w-9 items-center justify-center rounded-[5px] border border-slate-300 bg-white text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
-                  title="Trang cuối"
-                >
-                  <ChevronsRight size={16} />
-                </button>
-              </div>
-
-              <div className="hidden lg:block" />
+              <button
+                type="button"
+                disabled={page + 1 >= totalPages}
+                onClick={() => {
+                  setPage(totalPages - 1);
+                  setPageInput(String(totalPages));
+                }}
+                className={styles.pageBtn}
+                title="Trang cuối"
+              >
+                <ChevronsRight size={16} />
+              </button>
             </div>
           </div>
         </section>

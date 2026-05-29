@@ -20,9 +20,10 @@ import {
   useCustomerInvoices,
   useCustomerOpportunities,
   useCustomerQuotes,
+  useCustomerNotes,
 } from "@/modules/customer/hooks/useCustomers";
 import { useUpdateCustomer } from "@/modules/customer/hooks/useCustomerMutations";
-import { useCustomerSalesUsers } from "@/modules/customer/hooks/useCustomers";
+import { useAllUsers } from "@/modules/customer/hooks/useCustomers";
 import type { CustomerFormValues } from "@/modules/customer/schemas/customer.schema";
 import {
   getCustomerTaxCode,
@@ -48,6 +49,7 @@ import type {
   InvoiceResponseDTO,
   OpportunityResponseDTO,
   QuoteResponseDTO,
+  NoteResponseDTO,
 } from "@/modules/customer/types/customer.types";
 
 type CustomerDetailPageProps = {
@@ -60,6 +62,10 @@ const TEMP_ADD_ROUTE = "/customers";
 
 function formatDate(value?: string) {
   return value ? new Date(value).toLocaleDateString("vi-VN") : "-";
+}
+
+function formatDateTime(value?: string) {
+  return value ? new Date(value).toLocaleString("vi-VN") : "-";
 }
 
 function formatCurrency(value?: number) {
@@ -382,7 +388,7 @@ export default function CustomerDetailPage({ id }: CustomerDetailPageProps) {
 
   const customerQuery = useCustomerById(id);
   const updateMutation = useUpdateCustomer();
-  const salesUsersQuery = useCustomerSalesUsers();
+  const salesUsersQuery = useAllUsers();
   const referencesQuery = useLeadReferences();
 
   const addressesQuery = useCustomerAddresses(id, true);
@@ -394,6 +400,7 @@ export default function CustomerDetailPage({ id }: CustomerDetailPageProps) {
   const contractsQuery = useCustomerContracts(id, activeTab === "contracts");
   const invoicesQuery = useCustomerInvoices(id, activeTab === "invoices");
   const feedbacksQuery = useCustomerFeedbacks(id, activeTab === "feedbacks");
+  const notesQuery = useCustomerNotes(id, activeTab === "notes");
 
   const customer = customerQuery.data;
   const provinces = referencesQuery.data?.provinces ?? [];
@@ -403,6 +410,15 @@ export default function CustomerDetailPage({ id }: CustomerDetailPageProps) {
   >;
   const saleNameById = Object.fromEntries((salesUsersQuery.data ?? []).map((sale) => [sale.id, sale.fullName])) as Record<number, string>;
   const sourceNameById = Object.fromEntries((referencesQuery.data?.sources ?? []).map((source) => [source.id, source.name])) as Record<number, string>;
+  
+  const getPerformerName = (performedBy?: number | { id: number; fullName?: string; name?: string; email?: string }) => {
+    if (!performedBy) return "-";
+    if (typeof performedBy === "object") {
+      return performedBy.fullName ?? performedBy.name ?? `Người dùng #${performedBy.id}`;
+    }
+    return saleNameById[performedBy] ?? `Người dùng #${performedBy}`;
+  };
+
   const customerAddresses = addressesQuery.data ?? [];
 
   const handleUpdate = async (values: CustomerFormValues) => {
@@ -620,12 +636,7 @@ export default function CustomerDetailPage({ id }: CustomerDetailPageProps) {
                 {item.provinceId ? provinceNameById[item.provinceId] ?? `#${item.provinceId}` : "-"}
               </dd>
             </div>
-            <div>
-              <dt className="text-[12px] font-semibold uppercase tracking-[0.14em] text-slate-500">Cập nhật</dt>
-              <dd className="mt-1 text-[12px] text-slate-800">
-                {item.updatedAt ? formatDate(item.updatedAt) : item.createdAt ? formatDate(item.createdAt) : "-"}
-              </dd>
-            </div>
+            {/* createdAt/updatedAt removed from backend DTO; skip display */}
           </dl>
         </div>
       ))}
@@ -639,13 +650,12 @@ export default function CustomerDetailPage({ id }: CustomerDetailPageProps) {
           <h3 className="text-[16px] font-semibold text-slate-900">Liên hệ</h3>
           <p className="mt-1 text-[12px] text-slate-500">Danh sách người liên hệ gắn với khách hàng.</p>
         </div>
-        <button
-          type="button"
-          onClick={openNewContact}
-          className="rounded-[5px] bg-sky-600 px-3 py-2 text-[12px] font-semibold text-white transition hover:bg-sky-500"
+        <Link
+          href={`/contacts/create?customerId=${customer?.id}`}
+          className="rounded-[5px] bg-sky-600 px-3 py-2 text-[12px] font-semibold text-white no-underline transition hover:bg-sky-500"
         >
           Thêm người liên hệ
-        </button>
+        </Link>
       </div>
 
       {renderPageItems(contactsQuery.data ?? [], (item) => (
@@ -658,7 +668,6 @@ export default function CustomerDetailPage({ id }: CustomerDetailPageProps) {
             { label: "Số điện thoại", value: item.phone ?? "-" },
             { label: "Email", value: item.email ?? "-" },
             { label: "Địa chỉ", value: item.address ?? "-" },
-            { label: "Ngày sinh", value: item.dateOfBirth ? formatDate(item.dateOfBirth) : "-" },
           ]}
         />
       ))}
@@ -674,8 +683,8 @@ export default function CustomerDetailPage({ id }: CustomerDetailPageProps) {
           <p className="mt-1 text-[12px] text-slate-500">Danh sách cơ hội gắn với khách hàng.</p>
         </div>
         <Link
-          href={TEMP_ADD_ROUTE}
-          className="rounded-[5px] bg-sky-600 px-3 py-2 text-[12px] font-semibold text-white transition hover:bg-sky-500"
+          href={`/opportunities?customerId=${customer?.id}&create=true`}
+          className="rounded-[5px] bg-sky-600 px-3 py-2 text-[12px] font-semibold text-white no-underline transition hover:bg-sky-500"
         >
           Thêm mới
         </Link>
@@ -690,8 +699,8 @@ export default function CustomerDetailPage({ id }: CustomerDetailPageProps) {
           meta={[
             { label: "Tổng tiền", value: formatCurrency(item.totalAmount) },
             { label: "Ngày chốt dự kiến", value: item.expectedCloseDate ? formatDate(item.expectedCloseDate) : "-" },
-            { label: "Assigned User ID", value: item.assignedUserId ?? "-" },
-            { label: "Stage ID", value: item.stageId ?? "-" },
+            { label: "Người phụ trách", value: item.assignedUserFullName || (typeof item.assignedUserId === "number" ? saleNameById[item.assignedUserId] ?? `Nhân viên #${item.assignedUserId}` : "-") },
+            { label: "Giai đoạn", value: item.stageName ?? (item.stageId ? `Giai đoạn #${item.stageId}` : "-") },
           ]}
         />
       ))}
@@ -708,8 +717,8 @@ export default function CustomerDetailPage({ id }: CustomerDetailPageProps) {
           <p className="mt-1 text-[12px] text-slate-500">Danh sách báo giá gắn với khách hàng.</p>
         </div>
         <Link
-          href={TEMP_ADD_ROUTE}
-          className="rounded-[5px] bg-sky-600 px-3 py-2 text-[12px] font-semibold text-white transition hover:bg-sky-500"
+          href={`/quotes/new?customerId=${customer?.id}`}
+          className="rounded-[5px] bg-sky-600 px-3 py-2 text-[12px] font-semibold text-white no-underline transition hover:bg-sky-500"
         >
           Thêm mới
         </Link>
@@ -743,7 +752,7 @@ export default function CustomerDetailPage({ id }: CustomerDetailPageProps) {
         </div>
         <Link
           href={TEMP_ADD_ROUTE}
-          className="rounded-[5px] bg-sky-600 px-3 py-2 text-[12px] font-semibold text-white transition hover:bg-sky-500"
+          className="rounded-[5px] bg-sky-600 px-3 py-2 text-[12px] font-semibold text-white no-underline transition hover:bg-sky-500"
         >
           Thêm mới
         </Link>
@@ -777,7 +786,7 @@ export default function CustomerDetailPage({ id }: CustomerDetailPageProps) {
         </div>
         <Link
           href={TEMP_ADD_ROUTE}
-          className="rounded-[5px] bg-sky-600 px-3 py-2 text-[12px] font-semibold text-white transition hover:bg-sky-500"
+          className="rounded-[5px] bg-sky-600 px-3 py-2 text-[12px] font-semibold text-white no-underline transition hover:bg-sky-500"
         >
           Thêm mới
         </Link>
@@ -808,13 +817,12 @@ export default function CustomerDetailPage({ id }: CustomerDetailPageProps) {
           <h3 className="text-[16px] font-semibold text-slate-900">Hoạt động</h3>
           <p className="mt-1 text-[12px] text-slate-500">Lịch sử tương tác và xử lý khách hàng.</p>
         </div>
-        <button
-          type="button"
-          onClick={openNewActivity}
-          className="rounded-[5px] bg-sky-600 px-3 py-2 text-[12px] font-semibold text-white transition hover:bg-sky-500"
+        <Link
+          href={`/activity/create?customerId=${customer?.id}`}
+          className="rounded-[5px] bg-sky-600 px-3 py-2 text-[12px] font-semibold text-white no-underline transition hover:bg-sky-500 text-center"
         >
           Thêm hoạt động
-        </button>
+        </Link>
       </div>
 
       {renderPageItems(activitiesQuery.data?.content ?? [], (item) => (
@@ -826,8 +834,9 @@ export default function CustomerDetailPage({ id }: CustomerDetailPageProps) {
           meta={[
             { label: "Mô tả", value: item.description },
             { label: "Kết quả", value: item.outcome },
+            { label: "Người thực hiện", value: getPerformerName(item.performedBy) },
             { label: "Ưu tiên", value: item.isImportant ? "Quan trọng" : "Bình thường" },
-            { label: "Thời gian", value: item.createdAt ? formatDate(item.createdAt) : "-" },
+            { label: "Thời gian", value: item.startDate ? formatDateTime(item.startDate) : "-" },
           ]}
         />
       ))}
@@ -844,7 +853,7 @@ export default function CustomerDetailPage({ id }: CustomerDetailPageProps) {
         </div>
         <Link
           href={TEMP_ADD_ROUTE}
-          className="rounded-[5px] bg-sky-600 px-3 py-2 text-[12px] font-semibold text-white transition hover:bg-sky-500"
+          className="rounded-[5px] bg-sky-600 px-3 py-2 text-[12px] font-semibold text-white no-underline transition hover:bg-sky-500"
         >
           Thêm mới
         </Link>
@@ -859,7 +868,7 @@ export default function CustomerDetailPage({ id }: CustomerDetailPageProps) {
           meta={[
             { label: "Mức độ ưu tiên", value: item.priority },
             { label: "Nội dung", value: item.description },
-            { label: "Assigned To", value: item.assignedTo ?? "-" },
+            { label: "Người phụ trách", value: typeof item.assignedTo === "number" ? saleNameById[item.assignedTo] ?? `Nhân viên #${item.assignedTo}` : "-" },
             { label: "Cập nhật", value: item.updatedAt ? formatDate(item.updatedAt) : "-" },
           ]}
         />
@@ -873,17 +882,27 @@ export default function CustomerDetailPage({ id }: CustomerDetailPageProps) {
       <div className="flex flex-col gap-3 border-b border-slate-200 pb-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h3 className="text-[16px] font-semibold text-slate-900">Ghi chú</h3>
-          <p className="mt-1 text-[12px] text-slate-500">Chưa có ghi chú nhanh cho khách hàng này.</p>
+          <p className="mt-1 text-[12px] text-slate-500">Danh sách ghi chú nội bộ liên quan đến khách hàng.</p>
         </div>
         <Link
           href={TEMP_ADD_ROUTE}
-          className="rounded-[5px] bg-sky-600 px-3 py-2 text-[12px] font-semibold text-white transition hover:bg-sky-500"
+          className="rounded-[5px] bg-sky-600 px-3 py-2 text-[12px] font-semibold text-white no-underline transition hover:bg-sky-500"
         >
           Thêm mới
         </Link>
       </div>
 
-      <EmptyState message="Chưa có ghi chú nhanh cho khách hàng này." />
+      {renderPageItems(notesQuery.data ?? [], (item) => (
+        <EntityCard
+          key={item.id}
+          title={item.creatorName ?? `Người dùng #${item.createdBy}`}
+          primary={item.content}
+          meta={[
+            { label: "Riêng tư", value: item.privateNote ? "Có" : "Không" },
+            { label: "Ngày tạo", value: item.createdDate ? formatDate(item.createdDate) : "-" },
+          ]}
+        />
+      ))}
     </div>
   );
 
@@ -969,8 +988,7 @@ export default function CustomerDetailPage({ id }: CustomerDetailPageProps) {
                 value: selectedDetail.item.provinceId ? provinceNameById[selectedDetail.item.provinceId] ?? `#${selectedDetail.item.provinceId}` : "-",
               },
               { label: "Mặc định", value: selectedDetail.item.isPrimary ? "Có" : "Không" },
-              { label: "Ngày tạo", value: selectedDetail.item.createdAt ? formatDate(selectedDetail.item.createdAt) : "-" },
-              { label: "Cập nhật", value: selectedDetail.item.updatedAt ? formatDate(selectedDetail.item.updatedAt) : "-" },
+              // createdAt/updatedAt removed from backend DTO; not available for address details
             ]}
             onClose={closeDetail}
             onEdit={() => setAddressFormState({ mode: "edit", item: selectedDetail.item })}
@@ -988,7 +1006,6 @@ export default function CustomerDetailPage({ id }: CustomerDetailPageProps) {
               { label: "Số điện thoại", value: selectedDetail.item.phone ?? "-" },
               { label: "Email", value: selectedDetail.item.email ?? "-" },
               { label: "Địa chỉ", value: selectedDetail.item.address ?? "-" },
-              { label: "Ngày sinh", value: selectedDetail.item.dateOfBirth ? formatDate(selectedDetail.item.dateOfBirth) : "-" },
             ]}
             onClose={closeDetail}
             onEdit={() => setContactFormState({ mode: "edit", item: selectedDetail.item })}
@@ -1005,7 +1022,9 @@ export default function CustomerDetailPage({ id }: CustomerDetailPageProps) {
               { label: "Tiêu đề", value: selectedDetail.item.subject },
               { label: "Mô tả", value: selectedDetail.item.description ?? "-" },
               { label: "Kết quả", value: selectedDetail.item.outcome ?? "-" },
-              { label: "Bắt đầu", value: selectedDetail.item.startDate ? formatDate(selectedDetail.item.startDate) : "-" },
+              { label: "Bắt đầu", value: selectedDetail.item.startDate ? formatDateTime(selectedDetail.item.startDate) : "-" },
+              { label: "Kết thúc", value: selectedDetail.item.endDate ? formatDateTime(selectedDetail.item.endDate) : "-" },
+              { label: "Người thực hiện", value: getPerformerName(selectedDetail.item.performedBy) },
               { label: "Quan trọng", value: selectedDetail.item.isImportant ? "Có" : "Không" },
             ]}
             onClose={closeDetail}
@@ -1033,9 +1052,9 @@ export default function CustomerDetailPage({ id }: CustomerDetailPageProps) {
         return <DetailDialog open title={selectedDetail.item.name} subtitle={selectedDetail.item.healthStatus} fields={[
           { label: "Tổng tiền", value: formatCurrency(selectedDetail.item.totalAmount) },
           { label: "Ngày chốt dự kiến", value: selectedDetail.item.expectedCloseDate ? formatDate(selectedDetail.item.expectedCloseDate) : "-" },
-          { label: "Pipeline ID", value: selectedDetail.item.pipelineId ?? "-" },
-          { label: "Stage ID", value: selectedDetail.item.stageId ?? "-" },
-          { label: "Assigned User ID", value: selectedDetail.item.assignedUserId ?? "-" },
+          { label: "Quy trình", value: selectedDetail.item.pipelineName ?? (selectedDetail.item.pipelineId ? `Quy trình #${selectedDetail.item.pipelineId}` : "-") },
+          { label: "Giai đoạn", value: selectedDetail.item.stageName ?? (selectedDetail.item.stageId ? `Giai đoạn #${selectedDetail.item.stageId}` : "-") },
+          { label: "Người phụ trách", value: selectedDetail.item.assignedUserFullName || (typeof selectedDetail.item.assignedUserId === "number" ? saleNameById[selectedDetail.item.assignedUserId] ?? `Nhân viên #${selectedDetail.item.assignedUserId}` : "-") },
           { label: "Ngày tạo", value: selectedDetail.item.createdAt ? formatDate(selectedDetail.item.createdAt) : "-" },
         ]} onClose={closeDetail} />;
       case "quote":
@@ -1063,7 +1082,7 @@ export default function CustomerDetailPage({ id }: CustomerDetailPageProps) {
         return <DetailDialog open title={selectedDetail.item.subject} subtitle={selectedDetail.item.status} fields={[
           { label: "Mức độ ưu tiên", value: selectedDetail.item.priority ?? "-" },
           { label: "Nội dung", value: selectedDetail.item.description ?? "-" },
-          { label: "Assigned To", value: selectedDetail.item.assignedTo ?? "-" },
+          { label: "Người phụ trách", value: typeof selectedDetail.item.assignedTo === "number" ? saleNameById[selectedDetail.item.assignedTo] ?? `Nhân viên #${selectedDetail.item.assignedTo}` : "-" },
           { label: "Ngày cập nhật", value: selectedDetail.item.updatedAt ? formatDate(selectedDetail.item.updatedAt) : "-" },
         ]} onClose={closeDetail} />;
       default:
@@ -1087,7 +1106,7 @@ export default function CustomerDetailPage({ id }: CustomerDetailPageProps) {
             <div className="flex flex-wrap items-center gap-3">
               <Link
                 href="/customers"
-                className="rounded-[5px] border border-slate-300 bg-white px-3 py-2 text-[12px] font-medium text-slate-700 transition hover:bg-slate-50"
+                className="rounded-[5px] border border-slate-300 bg-white px-3 py-2 text-[12px] font-medium text-slate-700 no-underline transition hover:bg-slate-50"
               >
                 Quay lại danh sách
               </Link>
