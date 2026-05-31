@@ -134,6 +134,7 @@ export interface CreateContactDTO {
   dateOfBirth?: string;
   notes?: string;
   isPrimary?: boolean;
+  isActive?: boolean;
 }
 
 export interface ContactResponseDTO {
@@ -145,6 +146,7 @@ export interface ContactResponseDTO {
   email?: string;
   address?: string;
   dateOfBirth?: string;
+  notes?: string;
   isPrimary?: boolean;
   createdAt?: ISODateTimeString;
 }

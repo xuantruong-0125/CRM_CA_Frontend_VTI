@@ -2,9 +2,11 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { toast } from "react-toastify";
 import LeadDetailCard from "@/modules/lead/components/LeadDetailCard";
 import LeadForm from "@/modules/lead/components/LeadForm";
+import styles from "@/modules/lead/styles/lead.module.css";
 import {
   useAssigneeMetadata,
   useProductMetadata,
@@ -30,6 +32,7 @@ type LeadDetailPageProps = {
 };
 
 export default function LeadDetailPage({ id }: LeadDetailPageProps) {
+  const router = useRouter();
   const [isEditMode, setIsEditMode] = useState(false);
   const [isInteractionFormVisible, setIsInteractionFormVisible] = useState(false);
   const [interactionMode, setInteractionMode] = useState<"activity" | "task">("activity");
@@ -103,6 +106,9 @@ export default function LeadDetailPage({ id }: LeadDetailPageProps) {
         if (matchesShortcut(e, LEAD_SHORTCUTS.EDIT_LEAD)) {
           e.preventDefault();
           setIsEditMode(true);
+        } else if (matchesShortcut(e, LEAD_SHORTCUTS.BACK_TO_LIST)) {
+          e.preventDefault();
+          router.push("/leads");
         } else if (matchesShortcut(e, LEAD_SHORTCUTS.CREATE_ACTIVITY)) {
           e.preventDefault();
           openInteractionForm("activity");
@@ -115,7 +121,7 @@ export default function LeadDetailPage({ id }: LeadDetailPageProps) {
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isEditMode, isInteractionFormVisible]);
+  }, [isEditMode, isInteractionFormVisible, router]);
 
   return (
     <main className="min-h-screen bg-slate-100 px-4 py-6 md:px-8">
@@ -143,11 +149,11 @@ export default function LeadDetailPage({ id }: LeadDetailPageProps) {
                 )}
                 <Link
                   href="/leads"
-                  className="rounded-[5px] border border-white/40 bg-white/10 px-3 py-2 text-[12px] font-semibold text-white no-underline shadow-sm transition hover:bg-white/20 hover:text-white"
-                  title="Quay lại danh sách"
-                  style={{ textDecoration: "none" }}
+                  className={styles.backButton}
+                  title={LEAD_SHORTCUTS.BACK_TO_LIST.label}
                 >
                   Quay lại danh sách
+                  <KeyboardShortcutBadge shortcut={LEAD_SHORTCUTS.BACK_TO_LIST} className="ml-2 border-slate-300 bg-white text-slate-700" />
                 </Link>
               </div>
             </div>

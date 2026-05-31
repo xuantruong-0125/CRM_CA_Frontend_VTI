@@ -1,7 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
+import { useRouter } from "next/navigation";
+import styles from "@/modules/customer/styles/customer.module.css";
 import { toast } from "react-toastify";
 import CustomerForm from "@/modules/customer/components/CustomerForm";
 import {
@@ -29,14 +31,27 @@ import {
   getCustomerTaxCode,
   normalizeCustomerStatus,
   normalizeCustomerTier,
-  toCreateCustomerAddressPayload,
   toUpdateCustomerPayload,
+  saveCustomerContacts,
+  saveCustomerAddresses,
 } from "@/modules/customer/utils/customer.mapper";
 import ContactForm from "@/modules/customer/components/ContactForm";
 import ActivityForm from "@/modules/customer/components/ActivityForm";
 import AttachmentUploadForm from "@/modules/customer/components/AttachmentUploadForm";
 import ConfirmDeleteModal from "@/shared/components/ConfirmDeleteModal/ConfirmDeleteModal";
+import FeedbackForm from "@/modules/customer/components/FeedbackForm";
+import NoteForm from "@/modules/customer/components/NoteForm";
 import { getApiErrorMessage } from "@/shared/utils/api-error";
+import { KeyboardShortcutBadge } from "@/modules/lead/components/KeyboardShortcutBadge";
+import { CUSTOMER_SHORTCUTS, matchesShortcut, shouldIgnoreShortcutTarget } from "@/modules/customer/utils/keyboard-shortcuts";
+import {
+  useCreateFeedback,
+  useUpdateFeedback,
+  useDeleteFeedback,
+  useCreateNote,
+  useUpdateNote,
+  useDeleteNote,
+} from "@/modules/customer/hooks/useCustomerMutations";
 import { useLeadReferences } from "@/modules/lead/hooks/useLeadReferences";
 import { customerApi } from "@/modules/customer/api/customer.api";
 import type {
@@ -97,11 +112,13 @@ function EntityCard({
   primary,
   meta,
   onClick,
+  actions,
 }: {
-  title: string;
+  title: ReactNode;
   primary: string;
   meta: Array<{ label: string; value?: ReactNode }>;
   onClick?: () => void;
+  actions?: ReactNode;
 }) {
   const classes = `w-full rounded-2xl border border-slate-200 bg-white p-4 text-left shadow-sm transition ${
     onClick ? "hover:border-sky-300 hover:bg-sky-50/40 hover:shadow-md" : ""
@@ -114,7 +131,10 @@ function EntityCard({
           <h4 className="text-[13px] font-semibold text-slate-900">{title}</h4>
           <p className="mt-1 text-[13px] font-medium text-slate-700">{primary}</p>
         </div>
-        {onClick ? <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-sky-700">Mở</span> : null}
+        <div className="flex items-center gap-3">
+          {onClick ? <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-sky-700">Mở</span> : null}
+          {actions ? <div className="flex items-center gap-2">{actions}</div> : null}
+        </div>
       </div>
 
       <dl className="mt-4 grid gap-3 sm:grid-cols-2">
@@ -129,10 +149,26 @@ function EntityCard({
   );
 
   if (onClick) {
+    // Use a non-button container for clickable card to avoid nested <button> when
+    // actions contain button elements. Provide keyboard accessibility.
     return (
-      <button type="button" onClick={onClick} className={classes}>
+      <div
+        role="button"
+        tabIndex={0}
+        onClick={(e) => {
+          // allow action buttons to stopPropagation
+          onClick();
+        }}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            onClick();
+          }
+        }}
+        className={classes}
+      >
         {content}
-      </button>
+      </div>
     );
   }
 
@@ -377,6 +413,7 @@ function AddressEditorDialog({
 }
 
 export default function CustomerDetailPage({ id }: CustomerDetailPageProps) {
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState<DetailTab>("overview");
   const [isEditMode, setIsEditMode] = useState(false);
   const [selectedDetail, setSelectedDetail] = useState<DetailSelection | null>(null);
@@ -384,12 +421,26 @@ export default function CustomerDetailPage({ id }: CustomerDetailPageProps) {
   const [activityFormState, setActivityFormState] = useState<{ mode: "create" | "edit"; item?: ActivityResponseDTO | null } | null>(null);
   const [addressFormState, setAddressFormState] = useState<{ mode: "create" | "edit"; item?: CustomerAddressResponseDTO | null } | null>(null);
   const [showAttachmentModal, setShowAttachmentModal] = useState(false);
+  const [feedbackFormState, setFeedbackFormState] = useState<
+    | { mode: "create" | "edit"; item?: FeedbackResponseDTO | null }
+    | null
+  >(null);
+  const [noteFormState, setNoteFormState] = useState<
+    | { mode: "create" | "edit"; item?: NoteResponseDTO | null }
+    | null
+  >(null);
   const [deleteAddressTarget, setDeleteAddressTarget] = useState<CustomerAddressResponseDTO | null>(null);
+  const [deleteFeedbackTarget, setDeleteFeedbackTarget] = useState<FeedbackResponseDTO | null>(null);
+  const [deleteNoteTarget, setDeleteNoteTarget] = useState<NoteResponseDTO | null>(null);
 
   const customerQuery = useCustomerById(id);
   const updateMutation = useUpdateCustomer();
   const salesUsersQuery = useAllUsers();
   const referencesQuery = useLeadReferences();
+
+  // feedback/note mutation hooks for deletes (create/update are used inside forms)
+  const deleteFeedback = useDeleteFeedback();
+  const deleteNote = useDeleteNote();
 
   const addressesQuery = useCustomerAddresses(id, true);
   const contactsQuery = useCustomerContacts(id, activeTab === "contacts");
@@ -429,17 +480,11 @@ export default function CustomerDetailPage({ id }: CustomerDetailPageProps) {
     try {
       await updateMutation.mutateAsync({ id: customer.id, payload: toUpdateCustomerPayload(values) });
 
-      const addressPayload = toCreateCustomerAddressPayload(values, customer.id);
-      if (addressPayload) {
-        const currentAddresses = await customerApi.getAddressesByCustomerId(customer.id);
-        const primaryAddress = currentAddresses.find((item) => item.isPrimary) ?? currentAddresses[0];
+      await saveCustomerAddresses(customer.id, values.addresses ?? []);
+      await addressesQuery.refetch();
 
-        if (primaryAddress?.id) {
-          await customerApi.updateCustomerAddress(primaryAddress.id, addressPayload);
-        } else {
-          await customerApi.createCustomerAddress(addressPayload);
-        }
-      }
+      await saveCustomerContacts(customer.id, values.contacts ?? []);
+      await contactsQuery.refetch();
 
       setIsEditMode(false);
       toast.success("Cập nhật khách hàng thành công");
@@ -463,6 +508,94 @@ export default function CustomerDetailPage({ id }: CustomerDetailPageProps) {
   const openNewAddress = () => setAddressFormState({ mode: "create" });
   const openNewContact = () => setContactFormState({ mode: "create" });
   const openNewActivity = () => setActivityFormState({ mode: "create" });
+
+  const handleAddByActiveTab = () => {
+    switch (activeTab) {
+      case "addresses":
+        openNewAddress();
+        break;
+      case "contacts":
+        if (customer?.id) router.push(`/contacts/create?customerId=${customer.id}`);
+        break;
+      case "activities":
+        if (customer?.id) router.push(`/activity/create?customerId=${customer.id}`);
+        break;
+      case "attachments":
+        setShowAttachmentModal(true);
+        break;
+      case "opportunities":
+        if (customer?.id) router.push(`/opportunities?customerId=${customer.id}&create=true`);
+        break;
+      case "quotes":
+        if (customer?.id) router.push(`/quotes/new?customerId=${customer.id}`);
+        break;
+      case "contracts":
+        setFeedbackFormState({ mode: "create" });
+        break;
+      case "invoices":
+        setNoteFormState({ mode: "create" });
+        break;
+      case "feedbacks":
+        setFeedbackFormState({ mode: "create" });
+        break;
+      case "notes":
+        setNoteFormState({ mode: "create" });
+        break;
+      default:
+        break;
+    }
+  };
+
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (shouldIgnoreShortcutTarget(event.target)) {
+        return;
+      }
+
+      if (matchesShortcut(event, CUSTOMER_SHORTCUTS.BACK_TO_LIST)) {
+        event.preventDefault();
+        router.push("/customers");
+        return;
+      }
+
+      const hasBlockingOverlay =
+        isEditMode ||
+        !!addressFormState ||
+        !!contactFormState ||
+        !!activityFormState ||
+        !!feedbackFormState ||
+        !!noteFormState ||
+        showAttachmentModal ||
+        !!selectedDetail;
+
+      if (hasBlockingOverlay) {
+        return;
+      }
+
+      if (matchesShortcut(event, CUSTOMER_SHORTCUTS.EDIT_CUSTOMER)) {
+        event.preventDefault();
+        setIsEditMode(true);
+      } else if (matchesShortcut(event, CUSTOMER_SHORTCUTS.ADD_NEW)) {
+        event.preventDefault();
+        handleAddByActiveTab();
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [
+    activeTab,
+    addressFormState,
+    contactFormState,
+    activityFormState,
+    feedbackFormState,
+    noteFormState,
+    isEditMode,
+    selectedDetail,
+    showAttachmentModal,
+    customer?.id,
+    router,
+  ]);
 
   const handleAddressSaved = async () => {
     await refreshCoreData();
@@ -560,8 +693,10 @@ export default function CustomerDetailPage({ id }: CustomerDetailPageProps) {
           type="button"
           onClick={openNewAddress}
           className="rounded-[5px] bg-sky-600 px-3 py-2 text-[12px] font-semibold text-white transition hover:bg-sky-500"
+          title={CUSTOMER_SHORTCUTS.ADD_NEW.label}
         >
           Thêm địa chỉ
+          <KeyboardShortcutBadge shortcut={CUSTOMER_SHORTCUTS.ADD_NEW} className="ml-2 border-white/40 bg-white/15 text-white" />
         </button>
       </div>
 
@@ -652,16 +787,31 @@ export default function CustomerDetailPage({ id }: CustomerDetailPageProps) {
         </div>
         <Link
           href={`/contacts/create?customerId=${customer?.id}`}
-          className="rounded-[5px] bg-sky-600 px-3 py-2 text-[12px] font-semibold text-white no-underline transition hover:bg-sky-500"
+          className={styles.addButton}
+          title={CUSTOMER_SHORTCUTS.ADD_NEW.label}
         >
           Thêm người liên hệ
+          <KeyboardShortcutBadge shortcut={CUSTOMER_SHORTCUTS.ADD_NEW} className="ml-2 border-white/40 bg-white/15 text-white" />
         </Link>
       </div>
 
       {renderPageItems(contactsQuery.data ?? [], (item) => (
         <EntityCard
           key={item.id}
-          title={item.fullName}
+          title={
+            <div className="flex items-center gap-2">
+              <span className="font-semibold text-slate-900">{item.fullName}</span>
+              {item.isPrimary ? (
+                <span className="inline-flex items-center rounded-md bg-sky-50 px-2 py-0.5 text-[10px] font-medium text-sky-700 ring-1 ring-inset ring-sky-700/10">
+                  Liên hệ chính
+                </span>
+              ) : (
+                <span className="inline-flex items-center rounded-md bg-slate-50 px-2 py-0.5 text-[10px] font-medium text-slate-600 ring-1 ring-inset ring-slate-500/10">
+                  Liên hệ phụ
+                </span>
+              )}
+            </div>
+          }
           primary={item.position ?? item.phone ?? item.email ?? "-"}
           onClick={() => openDetail({ kind: "contact", item })}
           meta={[
@@ -684,9 +834,11 @@ export default function CustomerDetailPage({ id }: CustomerDetailPageProps) {
         </div>
         <Link
           href={`/opportunities?customerId=${customer?.id}&create=true`}
-          className="rounded-[5px] bg-sky-600 px-3 py-2 text-[12px] font-semibold text-white no-underline transition hover:bg-sky-500"
+          className={styles.addButton}
+          title={CUSTOMER_SHORTCUTS.ADD_NEW.label}
         >
           Thêm mới
+          <KeyboardShortcutBadge shortcut={CUSTOMER_SHORTCUTS.ADD_NEW} className="ml-2 border-white/40 bg-white/15 text-white" />
         </Link>
       </div>
 
@@ -718,9 +870,11 @@ export default function CustomerDetailPage({ id }: CustomerDetailPageProps) {
         </div>
         <Link
           href={`/quotes/new?customerId=${customer?.id}`}
-          className="rounded-[5px] bg-sky-600 px-3 py-2 text-[12px] font-semibold text-white no-underline transition hover:bg-sky-500"
+          className={styles.addButton}
+          title={CUSTOMER_SHORTCUTS.ADD_NEW.label}
         >
           Thêm mới
+          <KeyboardShortcutBadge shortcut={CUSTOMER_SHORTCUTS.ADD_NEW} className="ml-2 border-white/40 bg-white/15 text-white" />
         </Link>
       </div>
 
@@ -750,12 +904,15 @@ export default function CustomerDetailPage({ id }: CustomerDetailPageProps) {
           <h3 className="text-[16px] font-semibold text-slate-900">Hợp đồng</h3>
           <p className="mt-1 text-[12px] text-slate-500">Danh sách hợp đồng gắn với khách hàng.</p>
         </div>
-        <Link
-          href={TEMP_ADD_ROUTE}
-          className="rounded-[5px] bg-sky-600 px-3 py-2 text-[12px] font-semibold text-white no-underline transition hover:bg-sky-500"
+        <button
+          type="button"
+          onClick={() => setFeedbackFormState({ mode: "create" })}
+          className={styles.addButton}
+          title={CUSTOMER_SHORTCUTS.ADD_NEW.label}
         >
           Thêm mới
-        </Link>
+          <KeyboardShortcutBadge shortcut={CUSTOMER_SHORTCUTS.ADD_NEW} className="ml-2 border-white/40 bg-white/15 text-white" />
+        </button>
       </div>
 
       {renderPageItems(contractsQuery.data?.content ?? [], (item) => (
@@ -784,12 +941,15 @@ export default function CustomerDetailPage({ id }: CustomerDetailPageProps) {
           <h3 className="text-[16px] font-semibold text-slate-900">Hóa đơn</h3>
           <p className="mt-1 text-[12px] text-slate-500">Danh sách hóa đơn gắn với khách hàng.</p>
         </div>
-        <Link
-          href={TEMP_ADD_ROUTE}
-          className="rounded-[5px] bg-sky-600 px-3 py-2 text-[12px] font-semibold text-white no-underline transition hover:bg-sky-500"
+        <button
+          type="button"
+          onClick={() => setNoteFormState({ mode: "create" })}
+          className={styles.addButton}
+          title={CUSTOMER_SHORTCUTS.ADD_NEW.label}
         >
           Thêm mới
-        </Link>
+          <KeyboardShortcutBadge shortcut={CUSTOMER_SHORTCUTS.ADD_NEW} className="ml-2 border-white/40 bg-white/15 text-white" />
+        </button>
       </div>
 
       {renderPageItems(invoicesQuery.data?.content ?? [], (item) => (
@@ -819,9 +979,11 @@ export default function CustomerDetailPage({ id }: CustomerDetailPageProps) {
         </div>
         <Link
           href={`/activity/create?customerId=${customer?.id}`}
-          className="rounded-[5px] bg-sky-600 px-3 py-2 text-[12px] font-semibold text-white no-underline transition hover:bg-sky-500 text-center"
+          className={styles.addButton}
+          title={CUSTOMER_SHORTCUTS.ADD_NEW.label}
         >
           Thêm hoạt động
+          <KeyboardShortcutBadge shortcut={CUSTOMER_SHORTCUTS.ADD_NEW} className="ml-2 border-white/40 bg-white/15 text-white" />
         </Link>
       </div>
 
@@ -851,12 +1013,15 @@ export default function CustomerDetailPage({ id }: CustomerDetailPageProps) {
           <h3 className="text-[16px] font-semibold text-slate-900">Phản hồi</h3>
           <p className="mt-1 text-[12px] text-slate-500">Danh sách phản hồi gắn với khách hàng.</p>
         </div>
-        <Link
-          href={TEMP_ADD_ROUTE}
-          className="rounded-[5px] bg-sky-600 px-3 py-2 text-[12px] font-semibold text-white no-underline transition hover:bg-sky-500"
+        <button
+          type="button"
+          onClick={() => setFeedbackFormState({ mode: "create" })}
+          className={styles.addButton}
+          title={CUSTOMER_SHORTCUTS.ADD_NEW.label}
         >
           Thêm mới
-        </Link>
+          <KeyboardShortcutBadge shortcut={CUSTOMER_SHORTCUTS.ADD_NEW} className="ml-2 border-white/40 bg-white/15 text-white" />
+        </button>
       </div>
 
       {renderPageItems(feedbacksQuery.data?.content ?? [], (item) => (
@@ -871,6 +1036,30 @@ export default function CustomerDetailPage({ id }: CustomerDetailPageProps) {
             { label: "Người phụ trách", value: typeof item.assignedTo === "number" ? saleNameById[item.assignedTo] ?? `Nhân viên #${item.assignedTo}` : "-" },
             { label: "Cập nhật", value: item.updatedAt ? formatDate(item.updatedAt) : "-" },
           ]}
+          actions={
+            <>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setFeedbackFormState({ mode: "edit", item });
+                }}
+                className="rounded-[5px] border border-slate-300 px-2 py-1 text-[12px] text-slate-700"
+              >
+                Chỉnh sửa
+              </button>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setDeleteFeedbackTarget(item);
+                }}
+                className="rounded-[5px] border border-red-100 bg-red-50 px-2 py-1 text-[12px] text-red-600"
+              >
+                Xóa
+              </button>
+            </>
+          }
         />
       ))}
     </div>
@@ -884,12 +1073,15 @@ export default function CustomerDetailPage({ id }: CustomerDetailPageProps) {
           <h3 className="text-[16px] font-semibold text-slate-900">Ghi chú</h3>
           <p className="mt-1 text-[12px] text-slate-500">Danh sách ghi chú nội bộ liên quan đến khách hàng.</p>
         </div>
-        <Link
-          href={TEMP_ADD_ROUTE}
-          className="rounded-[5px] bg-sky-600 px-3 py-2 text-[12px] font-semibold text-white no-underline transition hover:bg-sky-500"
+        <button
+          type="button"
+          onClick={() => setNoteFormState({ mode: "create" })}
+          className={styles.addButton}
+          title={CUSTOMER_SHORTCUTS.ADD_NEW.label}
         >
           Thêm mới
-        </Link>
+          <KeyboardShortcutBadge shortcut={CUSTOMER_SHORTCUTS.ADD_NEW} className="ml-2 border-white/40 bg-white/15 text-white" />
+        </button>
       </div>
 
       {renderPageItems(notesQuery.data ?? [], (item) => (
@@ -901,6 +1093,30 @@ export default function CustomerDetailPage({ id }: CustomerDetailPageProps) {
             { label: "Riêng tư", value: item.privateNote ? "Có" : "Không" },
             { label: "Ngày tạo", value: item.createdDate ? formatDate(item.createdDate) : "-" },
           ]}
+          actions={
+            <>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setNoteFormState({ mode: "edit", item });
+                }}
+                className="rounded-[5px] border border-slate-300 px-2 py-1 text-[12px] text-slate-700"
+              >
+                Chỉnh sửa
+              </button>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setDeleteNoteTarget(item);
+                }}
+                className="rounded-[5px] border border-red-100 bg-red-50 px-2 py-1 text-[12px] text-red-600"
+              >
+                Xóa
+              </button>
+            </>
+          }
         />
       ))}
     </div>
@@ -1106,16 +1322,20 @@ export default function CustomerDetailPage({ id }: CustomerDetailPageProps) {
             <div className="flex flex-wrap items-center gap-3">
               <Link
                 href="/customers"
-                className="rounded-[5px] border border-slate-300 bg-white px-3 py-2 text-[12px] font-medium text-slate-700 no-underline transition hover:bg-slate-50"
+                className={styles.backButton}
+                title={CUSTOMER_SHORTCUTS.BACK_TO_LIST.label}
               >
                 Quay lại danh sách
+                <KeyboardShortcutBadge shortcut={CUSTOMER_SHORTCUTS.BACK_TO_LIST} className="ml-2 border-slate-300 bg-white text-slate-700" />
               </Link>
               <button
                 type="button"
                 onClick={() => setIsEditMode(true)}
                 className="rounded-[5px] bg-sky-600 px-3 py-2 text-[12px] font-semibold text-white transition hover:bg-sky-500"
+                title={CUSTOMER_SHORTCUTS.EDIT_CUSTOMER.label}
               >
                 Chỉnh sửa
+                <KeyboardShortcutBadge shortcut={CUSTOMER_SHORTCUTS.EDIT_CUSTOMER} className="ml-2 border-white/40 bg-white/15 text-white" />
               </button>
             </div>
           </div>
@@ -1236,12 +1456,76 @@ export default function CustomerDetailPage({ id }: CustomerDetailPageProps) {
         </div>
       )}
 
+        {feedbackFormState && customer && (
+          <div className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-950/55 p-4 backdrop-blur-sm">
+            <div className="max-h-[92vh] w-full max-w-2xl overflow-y-auto rounded-3xl bg-white p-6 shadow-2xl">
+              <div className="mb-5 flex items-center justify-between gap-4">
+                <div>
+                  <h2 className="text-[16px] font-bold text-slate-900">{feedbackFormState.mode === "edit" ? "Chỉnh sửa phản hồi" : "Tạo phản hồi / Kiếu nại"}</h2>
+                </div>
+                <button type="button" onClick={() => setFeedbackFormState(null)} className="rounded-[5px] border border-slate-300 px-3 py-2 text-[12px] text-slate-700">Đóng</button>
+              </div>
+
+              <FeedbackForm customerId={customer.id} onClose={() => setFeedbackFormState(null)} mode={feedbackFormState.mode} initialValues={feedbackFormState.item} id={feedbackFormState.item?.id} />
+            </div>
+          </div>
+        )}
+
+        {noteFormState && customer && (
+          <div className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-950/55 p-4 backdrop-blur-sm">
+            <div className="max-h-[92vh] w-full max-w-2xl overflow-y-auto rounded-3xl bg-white p-6 shadow-2xl">
+              <div className="mb-5 flex items-center justify-between gap-4">
+                <div>
+                  <h2 className="text-[16px] font-bold text-slate-900">{noteFormState.mode === "edit" ? "Chỉnh sửa ghi chú" : "Ghi chú nhanh"}</h2>
+                </div>
+                <button type="button" onClick={() => setNoteFormState(null)} className="rounded-[5px] border border-slate-300 px-3 py-2 text-[12px] text-slate-700">Đóng</button>
+              </div>
+
+              <NoteForm customerId={customer.id} onClose={() => setNoteFormState(null)} mode={noteFormState.mode} initialValues={noteFormState.item} id={noteFormState.item?.id} />
+            </div>
+          </div>
+        )}
+
       <ConfirmDeleteModal
         open={!!deleteAddressTarget}
         title="Xóa địa chỉ"
         message={deleteAddressTarget ? `Bạn có chắc chắn muốn xóa địa chỉ này?\n\n${deleteAddressTarget.fullAddress}` : "Bạn có chắc chắn muốn xóa địa chỉ này?"}
         onClose={() => setDeleteAddressTarget(null)}
         onConfirm={confirmDeleteAddress}
+      />
+
+      <ConfirmDeleteModal
+        open={!!deleteFeedbackTarget}
+        title="Xóa phản hồi"
+        message={deleteFeedbackTarget ? `Bạn có chắc chắn muốn xóa phản hồi: \n\n${deleteFeedbackTarget.subject}` : "Bạn có chắc chắn muốn xóa phản hồi này?"}
+        onClose={() => setDeleteFeedbackTarget(null)}
+          onConfirm={async () => {
+            if (!deleteFeedbackTarget || !customer) return;
+            try {
+              await deleteFeedback.mutateAsync({ id: deleteFeedbackTarget.id, customerId: customer.id });
+              toast.success("Xóa phản hồi thành công");
+              setDeleteFeedbackTarget(null);
+            } catch (err) {
+              toast.error(getApiErrorMessage(err));
+            }
+          }}
+      />
+
+      <ConfirmDeleteModal
+        open={!!deleteNoteTarget}
+        title="Xóa ghi chú"
+        message={deleteNoteTarget ? `Bạn có chắc chắn muốn xóa ghi chú: \n\n${deleteNoteTarget.content}` : "Bạn có chắc chắn muốn xóa ghi chú này?"}
+        onClose={() => setDeleteNoteTarget(null)}
+          onConfirm={async () => {
+            if (!deleteNoteTarget || !customer) return;
+            try {
+              await deleteNote.mutateAsync({ id: deleteNoteTarget.id, notableId: customer.id });
+              toast.success("Xóa ghi chú thành công");
+              setDeleteNoteTarget(null);
+            } catch (err) {
+              toast.error(getApiErrorMessage(err));
+            }
+          }}
       />
     </main>
   );

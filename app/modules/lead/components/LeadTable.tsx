@@ -40,14 +40,14 @@ type ColumnConfig = {
 };
 
 const COLUMN_CONFIG: ColumnConfig[] = [
-  { key: "contactName", label: "Tên liên hệ", defaultWidth: 140, minWidth: 110, maxWidth: 220 },
-  { key: "companyName", label: "Công ty", defaultWidth: 140, minWidth: 110, maxWidth: 220 },
-  { key: "phone", label: "Điện thoại", defaultWidth: 120, minWidth: 100, maxWidth: 160 },
-  { key: "email", label: "Email", defaultWidth: 160, minWidth: 120, maxWidth: 240 },
-  { key: "province", label: "Tỉnh/TP", defaultWidth: 110, minWidth: 100, maxWidth: 160 },
-  { key: "expectedRevenue", label: "Doanh số DK", defaultWidth: 120, minWidth: 100, maxWidth: 180 },
-  { key: "status", label: "Trạng thái", defaultWidth: 130, minWidth: 90, maxWidth: 190 },
-  { key: "actions", label: "Thao tác", defaultWidth: 90, minWidth: 80, maxWidth: 260, align: "right" },
+  { key: "contactName", label: "Tên liên hệ", defaultWidth: 140, minWidth: 30, maxWidth: 220 },
+  { key: "companyName", label: "Công ty", defaultWidth: 140, minWidth: 30, maxWidth: 220 },
+  { key: "phone", label: "Điện thoại", defaultWidth: 100, minWidth: 30, maxWidth: 160 },
+  { key: "email", label: "Email", defaultWidth: 160, minWidth: 30, maxWidth: 240 },
+  { key: "province", label: "Tỉnh/TP", defaultWidth: 110, minWidth: 30, maxWidth: 160 },
+  { key: "expectedRevenue", label: "Doanh số DK", defaultWidth: 120, minWidth: 30, maxWidth: 180 },
+  { key: "status", label: "Trạng thái", defaultWidth: 130, minWidth: 30, maxWidth: 190 },
+  { key: "actions", label: "Thao tác", defaultWidth: 120, minWidth: 30, maxWidth: 260, align: "left" },
 ];
 
 function maskPhone(phone?: string) {
@@ -252,7 +252,7 @@ export default function LeadTable({
             <tr key={lead.id}>
               <td>
                 {lead.id ? (
-                  <Link href={`/leads/${lead.id}`} className={`${styles.leadLink} no-underline`}>
+                  <Link href={`/leads/${lead.id}`} className={styles.leadLink}>
                     {lead.contactName || "-"}
                   </Link>
                 ) : (
@@ -349,7 +349,7 @@ export default function LeadTable({
                       disabled
                       tabIndex={-1}
                       aria-hidden="true"
-                      className="invisible"
+                      className={`${styles.actionBtn} ${styles.convertBtn} invisible pointer-events-none`}
                       title="Chuyển đổi"
                     >
                       <ChevronsRight size={14} />

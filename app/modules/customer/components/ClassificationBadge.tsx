@@ -40,12 +40,12 @@ export default function ClassificationBadge({ value, onClassificationChange, isL
   };
 
   return (
-    <div className="relative inline-block">
+    <div className="relative block w-full">
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
         disabled={isLoading || isUpdating}
-        className={`inline-flex w-[130px] items-center justify-between gap-1.5 whitespace-nowrap rounded-[5px] border ${config.borderColor} px-3 py-1.5 text-[12px] font-semibold transition ${config.bgColor} ${config.textColor} hover:opacity-80 disabled:cursor-not-allowed disabled:opacity-50`}
+        className={`inline-flex w-full items-center justify-between gap-1.5 whitespace-nowrap rounded-[5px] border ${config.borderColor} px-3 py-1.5 text-[12px] font-semibold transition ${config.bgColor} ${config.textColor} hover:opacity-80 disabled:cursor-not-allowed disabled:opacity-50`}
       >
         <span className="truncate">{config.label}</span>
         <ChevronDown size={13} className={`transition-transform ${isOpen ? "rotate-180" : ""}`} />
@@ -54,7 +54,7 @@ export default function ClassificationBadge({ value, onClassificationChange, isL
       {isOpen && (
         <>
           <div className="fixed inset-0 z-20" onClick={() => setIsOpen(false)} />
-          <div className="absolute top-full right-0 z-30 mt-1 w-[130px] rounded-[5px] border border-slate-200 bg-white shadow-lg">
+          <div className="absolute top-full right-0 z-30 mt-1 w-full rounded-[5px] border border-slate-200 bg-white shadow-lg">
             {(Object.keys(classificationConfig) as CustomerClassification[]).map((classification) => {
               const cfg = classificationConfig[classification];
               return (

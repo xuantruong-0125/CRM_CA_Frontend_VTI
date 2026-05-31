@@ -39,6 +39,7 @@ import type {
 } from "@/modules/lead/types/lead.types";
 import { getApiErrorMessage } from "@/shared/utils/api-error";
 import { LEAD_SHORTCUTS, matchesShortcut } from "@/modules/lead/utils/keyboard-shortcuts";
+import { KeyboardShortcutBadge } from "@/modules/lead/components/KeyboardShortcutBadge";
 import ConfirmDeleteModal from "@/shared/components/ConfirmDeleteModal/ConfirmDeleteModal";
 
 type FormMode = "hidden" | "create" | "edit";
@@ -498,6 +499,7 @@ export default function LeadListPage() {
               title={LEAD_SHORTCUTS.CREATE_LEAD.label}
             >
               Thêm mới
+              <KeyboardShortcutBadge shortcut={LEAD_SHORTCUTS.CREATE_LEAD} className="ml-1 border-white/40 bg-white/15 text-white" />
             </button>
           </div>
 

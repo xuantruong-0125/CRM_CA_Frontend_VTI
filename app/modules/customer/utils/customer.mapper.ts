@@ -8,6 +8,7 @@ import type {
   UpdateCustomerDTO,
 } from "@/modules/customer/types/customer.types";
 import type { CustomerFormValues } from "@/modules/customer/schemas/customer.schema";
+import { customerApi } from "@/modules/customer/api/customer.api";
 
 const statusAliasMap: Record<string, CustomerStatus> = {
   CARING: "CARING",
@@ -128,4 +129,66 @@ export function toCreateCustomerAddressPayload(
     provinceId: cleanNumber(values.provinceId),
     isPrimary: values.isPrimaryAddress ?? true,
   };
+}
+
+export async function saveCustomerContacts(customerId: number, formContacts: any[]) {
+  // 1. Fetch current contacts from BE
+  const currentContacts = await customerApi.getContactsByCustomerId(customerId);
+  const formContactIds = new Set(formContacts.map((c) => c.id).filter(Boolean));
+
+  // 2. Delete contacts that are no longer in formContacts
+  const toDelete = currentContacts.filter((c) => c.id && !formContactIds.has(c.id));
+  await Promise.all(toDelete.map((c) => customerApi.deleteContact(c.id)));
+
+  // 3. Create or update form contacts
+  await Promise.all(
+    formContacts.map(async (c) => {
+      const payload = {
+        customerId,
+        fullName: c.fullName.trim(),
+        phone: c.phone?.trim() || undefined,
+        email: c.email?.trim() || undefined,
+        position: c.position?.trim() || undefined,
+        address: c.address?.trim() || undefined,
+        notes: c.notes?.trim() || undefined,
+        isPrimary: c.isPrimary ?? false,
+        isActive: true,
+      };
+
+      if (c.id) {
+        await customerApi.updateContact(c.id, payload);
+      } else {
+        await customerApi.createContact(payload);
+      }
+    })
+  );
+}
+
+export async function saveCustomerAddresses(customerId: number, formAddresses: any[]) {
+  // 1. Fetch current addresses from BE
+  const currentAddresses = await customerApi.getAddressesByCustomerId(customerId);
+  const formAddressIds = new Set(formAddresses.map((a) => a.id).filter(Boolean));
+
+  // 2. Delete addresses that are no longer in formAddresses
+  const toDelete = currentAddresses.filter((a) => a.id && !formAddressIds.has(a.id));
+  await Promise.all(toDelete.map((a) => customerApi.deleteCustomerAddress(a.id)));
+
+  // 3. Create or update form addresses
+  await Promise.all(
+    formAddresses.map(async (a) => {
+      const payload = {
+        customerId,
+        addressType: a.addressType || "OFFICE",
+        fullAddress: a.fullAddress.trim(),
+        provinceId: typeof a.provinceId === "number" && Number.isFinite(a.provinceId) ? a.provinceId : undefined,
+        isPrimary: a.isPrimary ?? false,
+      };
+
+      if (a.id) {
+        await customerApi.updateCustomerAddress(a.id, payload);
+      } else {
+        await customerApi.createCustomerAddress(payload);
+      }
+    })
+  );
 }

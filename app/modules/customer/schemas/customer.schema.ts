@@ -57,6 +57,44 @@ export const customerFormSchema = z
     fullAddress: optionalText(500),
     provinceId: optionalNumber(),
     isPrimaryAddress: z.boolean().optional(),
+    addresses: z
+      .array(
+        z.object({
+          id: optionalNumber(),
+          addressType: z.string().trim().max(30).default("OFFICE"),
+          fullAddress: z.string().trim().min(1, "Vui lòng nhập địa chỉ đầy đủ").max(500),
+          provinceId: optionalNumber(),
+          isPrimary: z.boolean().optional().default(false),
+        })
+      )
+      .optional()
+      .default([]),
+    contacts: z
+      .array(
+        z.object({
+          id: optionalNumber(),
+          fullName: z.string().trim().min(1, "Vui lòng nhập tên liên hệ").max(120),
+          phone: optionalText(20),
+          email: z
+            .string()
+            .trim()
+            .max(120)
+            .optional()
+            .refine((value) => !value || z.string().email().safeParse(value).success, {
+              message: "Email liên hệ không hợp lệ",
+            })
+            .transform((value) => {
+              const trimmed = value?.trim();
+              return trimmed ? trimmed : undefined;
+            }),
+          position: optionalText(120),
+          address: optionalText(255),
+          notes: optionalText(500),
+          isPrimary: z.boolean().optional().default(false),
+        })
+      )
+      .optional()
+      .default([]),
   })
   .superRefine((values, context) => {
     if (values.type === "B2B" && !values.taxCode) {
@@ -65,6 +103,30 @@ export const customerFormSchema = z
         path: ["taxCode"],
         message: "Mã số thuế là bắt buộc với khách hàng B2B",
       });
+    }
+
+    const addresses = values.addresses ?? [];
+    if (addresses.length > 0) {
+      const primaryCount = addresses.filter((item) => item.isPrimary).length;
+      if (primaryCount !== 1) {
+        context.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["addresses"],
+          message: "Vui lòng chọn đúng 1 địa chỉ chính",
+        });
+      }
+    }
+
+    const contacts = values.contacts ?? [];
+    if (contacts.length > 0) {
+      const primaryCount = contacts.filter((item) => item.isPrimary).length;
+      if (primaryCount !== 1) {
+        context.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["contacts"],
+          message: "Vui lòng chọn đúng 1 liên hệ chính",
+        });
+      }
     }
   });
 

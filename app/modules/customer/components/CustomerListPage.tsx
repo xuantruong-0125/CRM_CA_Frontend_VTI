@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   ChevronsLeft,
   ChevronLeft,
@@ -30,13 +30,16 @@ import {
   getCustomerTaxCode,
   normalizeCustomerStatus,
   normalizeCustomerTier,
-  toCreateCustomerAddressPayload,
   toCreateCustomerPayload,
   toUpdateCustomerPayload,
+  saveCustomerContacts,
+  saveCustomerAddresses,
 } from "@/modules/customer/utils/customer.mapper";
 import { customerApi } from "@/modules/customer/api/customer.api";
 import { getApiErrorMessage } from "@/shared/utils/api-error";
 import ConfirmDeleteModal from "@/shared/components/ConfirmDeleteModal/ConfirmDeleteModal";
+import { KeyboardShortcutBadge } from "@/modules/lead/components/KeyboardShortcutBadge";
+import { CUSTOMER_SHORTCUTS, matchesShortcut, shouldIgnoreShortcutTarget } from "@/modules/customer/utils/keyboard-shortcuts";
 import styles from "@/modules/customer/styles/customer.module.css";
 
 type FormMode = "hidden" | "create" | "edit";
@@ -61,14 +64,14 @@ type ColumnConfig = {
 };
 
 const COLUMN_CONFIG: ColumnConfig[] = [
-  { key: "customerCode", label: "Mã KH", defaultWidth: 100, minWidth: 80, maxWidth: 180 },
-  { key: "customerName", label: "Tên KH", defaultWidth: 150, minWidth: 100, maxWidth: 200 },
-  { key: "taxCode", label: "Mã số thuế", defaultWidth: 120, minWidth: 80, maxWidth: 220 },
-  { key: "customerType", label: "Nhóm KH", defaultWidth: 80, minWidth:60, maxWidth: 150 },
-  { key: "assignedTo", label: "Sale phụ trách", defaultWidth: 180, minWidth: 140, maxWidth: 260 },
-  { key: "status", label: "Trạng thái", defaultWidth: 140, minWidth: 120, maxWidth: 220 },
-  { key: "tier", label: "Phân hạng", defaultWidth: 140, minWidth: 120, maxWidth: 220 },
-  { key: "actions", label: "Thao tác", defaultWidth: 180, minWidth: 160, maxWidth: 260, align: "right" },
+  { key: "customerCode", label: "Mã KH", defaultWidth: 100, minWidth: 30, maxWidth: 180 },
+  { key: "customerName", label: "Tên KH", defaultWidth: 150, minWidth: 30, maxWidth: 200 },
+  { key: "taxCode", label: "Mã số thuế", defaultWidth: 120, minWidth: 30, maxWidth: 220 },
+  { key: "customerType", label: "Nhóm KH", defaultWidth: 80, minWidth: 30, maxWidth: 150 },
+  { key: "assignedTo", label: "Sale phụ trách", defaultWidth: 180, minWidth: 30, maxWidth: 260 },
+  { key: "status", label: "Trạng thái", defaultWidth: 140, minWidth: 30, maxWidth: 220 },
+  { key: "tier", label: "Phân hạng", defaultWidth: 140, minWidth: 30, maxWidth: 220 },
+  { key: "actions", label: "Thao tác", defaultWidth: 180, minWidth: 30, maxWidth: 260, align: "left" },
 ];
 
 const STATUS_ID_MAP: Record<CustomerStatus, number> = {
@@ -193,26 +196,15 @@ export default function CustomerListPage() {
       if (formMode === "create") {
         const createdCustomer = await createMutation.mutateAsync(toCreateCustomerPayload(values));
 
-        const addressPayload = toCreateCustomerAddressPayload(values, createdCustomer.id);
-        if (addressPayload) {
-          await customerApi.createCustomerAddress(addressPayload);
-        }
+        await saveCustomerAddresses(createdCustomer.id, values.addresses ?? []);
+        await saveCustomerContacts(createdCustomer.id, values.contacts ?? []);
 
         toast.success("Tạo khách hàng thành công");
       } else if (editingCustomer?.id) {
         await updateMutation.mutateAsync({ id: editingCustomer.id, payload: toUpdateCustomerPayload(values) });
 
-        const addressPayload = toCreateCustomerAddressPayload(values, editingCustomer.id);
-        if (addressPayload) {
-          const currentAddresses = await customerApi.getAddressesByCustomerId(editingCustomer.id);
-          const primaryAddress = currentAddresses.find((item) => item.isPrimary) ?? currentAddresses[0];
-
-          if (primaryAddress?.id) {
-            await customerApi.updateCustomerAddress(primaryAddress.id, addressPayload);
-          } else {
-            await customerApi.createCustomerAddress(addressPayload);
-          }
-        }
+        await saveCustomerAddresses(editingCustomer.id, values.addresses ?? []);
+        await saveCustomerContacts(editingCustomer.id, values.contacts ?? []);
 
         toast.success("Cập nhật khách hàng thành công");
       }
@@ -296,6 +288,25 @@ export default function CustomerListPage() {
     window.addEventListener("mouseup", handleMouseUp);
   };
 
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (shouldIgnoreShortcutTarget(event.target)) {
+        return;
+      }
+
+      if (matchesShortcut(event, CUSTOMER_SHORTCUTS.ADD_NEW)) {
+        event.preventDefault();
+        openCreateForm();
+      } else if (matchesShortcut(event, CUSTOMER_SHORTCUTS.TOGGLE_FILTER)) {
+        event.preventDefault();
+        setShowFilters((current) => !current);
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
+
   return (
     <main className={styles.page}>
       <div className={styles.pageShell}>
@@ -361,14 +372,22 @@ export default function CustomerListPage() {
                 type="button"
                 onClick={() => setShowFilters((current) => !current)}
                 className={styles.btnFilter}
+                title={CUSTOMER_SHORTCUTS.TOGGLE_FILTER.label}
               >
                 <SlidersHorizontal size={14} />
                 Bộ lọc
+                <KeyboardShortcutBadge shortcut={CUSTOMER_SHORTCUTS.TOGGLE_FILTER} className="ml-1 border-slate-300 bg-white text-slate-700" />
               </button>
             </div>
 
-            <button type="button" onClick={openCreateForm} className={`${styles.btnPrimary} ${styles.btnPrimarySuccess}`}>
+            <button
+              type="button"
+              onClick={openCreateForm}
+              className={`${styles.btnPrimary} ${styles.btnPrimarySuccess}`}
+              title={CUSTOMER_SHORTCUTS.ADD_NEW.label}
+            >
               Thêm khách hàng
+              <KeyboardShortcutBadge shortcut={CUSTOMER_SHORTCUTS.ADD_NEW} className="ml-1 border-white/40 bg-white/15 text-white" />
             </button>
           </div>
 
@@ -488,21 +507,21 @@ export default function CustomerListPage() {
                       <tr key={customer.id}>
                         <td>{customer.customerCode}</td>
                         <td>
-                          <Link href={`/customers/${customer.id}`} className={`${styles.customerLink} no-underline`}>
+                          <Link href={`/customers/${customer.id}`} className={styles.customerLink}>
                             {getCustomerDisplayName(customer)}
                           </Link>
                         </td>
                         <td>{getCustomerTaxCode(customer) ?? "-"}</td>
                         <td>{getTypeLabel(customer.type)}</td>
                         <td>{getAssignedLabel(customer.assignedTo, saleNameById)}</td>
-                        <td>
+                        <td className={styles.cellOverflowVisible}>
                           <StatusBadge
                             value={currentStatus}
                             onStatusChange={(value) => updateStatus(customer, value)}
                             isLoading={statusMutation.isPending}
                           />
                         </td>
-                        <td>
+                        <td className={styles.cellOverflowVisible}>
                           <ClassificationBadge
                             value={currentTier}
                             onClassificationChange={(value) => updateTier(customer, value)}
