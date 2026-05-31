@@ -11,6 +11,7 @@ import {
   Search,
   Trash2,
   SlidersHorizontal,
+  Plus
 } from "lucide-react";
 import { toast } from "react-toastify";
 import ClassificationBadge from "@/modules/customer/components/ClassificationBadge";

@@ -92,7 +92,7 @@ export const MENU_CONFIG: MenuItem[] = [
         label: "Liên hệ",
         path: "/contacts",
         icon: Phone,
-        roles: ["SALE", "MANAGER", "ADMIN"],
+        roles: ["SALE", "ADMIN"],
     },
     {
         key: "kpi-config",
@@ -120,21 +120,21 @@ export const MENU_CONFIG: MenuItem[] = [
         label: "Khách hàng tiềm năng",
         path: "/leads",
         icon: Trophy,
-        roles: ["SALE", "MANAGER", "ADMIN"],
+        roles: ["SALE", "MANAGER"],
     },
     {
         key: "customer",
         label: "Khách hàng",
         path: "/customers",
         icon: Trophy,
-        roles: ["SALE", "MANAGER", "ADMIN"],
+        roles: ["SALE", "MANAGER"],
     }, 
     {
         key: "tasks",
         label: "Công việc",
         path: "/task",
         icon: CheckSquare,
-        roles: ["SALE", "MANAGER", "ADMIN"],
+        roles: ["SALE", "MANAGER"],
         group: "CRM",
     },
     {
@@ -142,7 +142,7 @@ export const MENU_CONFIG: MenuItem[] = [
         label: "Hoạt động",
         path: "/activity",
         icon: Calendar,
-        roles: [ "SALE", "MANAGER", "ADMIN"],
+        roles: [ "SALE", "MANAGER"],
         group: "CRM",
     },
 ];

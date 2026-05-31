@@ -13,6 +13,7 @@ import {
   Search,
   SlidersHorizontal,
   X,
+  Plus
 } from "lucide-react";
 import { leadApi } from "@/modules/lead/api/lead.api";
 import LeadFilters, { type LeadFilterValues } from "@/modules/lead/components/LeadFilters";
@@ -498,6 +499,7 @@ export default function LeadListPage() {
               className={`${styles.btnPrimary} ${styles.btnPrimarySuccess}`}
               title={LEAD_SHORTCUTS.CREATE_LEAD.label}
             >
+              <Plus size={17}/>
               Thêm mới
               <KeyboardShortcutBadge shortcut={LEAD_SHORTCUTS.CREATE_LEAD} className="ml-1 border-white/40 bg-white/15 text-white" />
             </button>

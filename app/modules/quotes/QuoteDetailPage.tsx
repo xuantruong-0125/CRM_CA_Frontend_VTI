@@ -107,7 +107,8 @@ export default function QuoteDetailPage() {
     const grandTotal = subtotal - totalDiscount;
 
     return (
-        <div style={{ maxWidth: 1100, margin: "0 auto" }}>
+        <div className={styles.container}>
+
             {/* Page top bar */}
             <div className={styles.pageTopBar}>
                 <span className={styles.pageTopBarTitle}>Chi tiết Báo giá</span>

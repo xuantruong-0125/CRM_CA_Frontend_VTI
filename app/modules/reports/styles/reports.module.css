@@ -183,7 +183,7 @@
   box-shadow: 0 0 0 1px #e67e22;
 }
 
-.reportTableWrap {
+.reportTableWrap {margin-top: 20px;
   width: 100%;
   border-collapse: collapse;
   font-size: 12px;
@@ -191,7 +191,7 @@
   border-radius: 10px;
   overflow: hidden;
   background-color: white;
-  min-width: 1200px;
+  min-width: 1280px;
 }
 
 .reportTableTh {

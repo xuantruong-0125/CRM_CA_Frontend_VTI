@@ -443,7 +443,7 @@ export default function LeadForm({
   };
 
   return (
-    <form onSubmit={handleSubmit(handleFormSubmit)} className={DS.formSpacing}>
+    <form onSubmit={handleSubmit(handleFormSubmit)} className={`${DS.formSpacing} text-[15px]`}>
       {isFormLocked && (
         <div className="rounded-sm border border-amber-200 bg-amber-50 px-3 py-1.5 text-[11px] text-amber-700">
           Lead đang ở trạng thái &quot;Đã chuyển đổi&quot;, không thể chỉnh sửa thông tin.
