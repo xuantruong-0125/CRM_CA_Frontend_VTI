@@ -78,7 +78,7 @@ export default function ConfirmDeleteModal({
             onClick={onConfirm}
             disabled={loading}
           >
-            {loading ? "Đang xóa..." : confirmLabel}
+            {loading ? `Dang ${confirmLabel}...` : confirmLabel}
           </button>
         </div>
       </div>

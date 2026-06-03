@@ -42,6 +42,7 @@ import ConfirmDeleteModal from "@/shared/components/ConfirmDeleteModal/ConfirmDe
 import { KeyboardShortcutBadge } from "@/modules/lead/components/KeyboardShortcutBadge";
 import { CUSTOMER_SHORTCUTS, matchesShortcut, shouldIgnoreShortcutTarget } from "@/modules/customer/utils/keyboard-shortcuts";
 import styles from "@/modules/customer/styles/customer.module.css";
+import { useCurrentUser } from "@/core/auth/useCurrentUser";
 
 type FormMode = "hidden" | "create" | "edit";
 
@@ -113,6 +114,7 @@ function emptyMessage(message: string) {
 }
 
 export default function CustomerListPage() {
+  const { mounted, isSale } = useCurrentUser();
   const [columnWidths, setColumnWidths] = useState<Record<ColumnKey, number>>(() => {
     return COLUMN_CONFIG.reduce((acc, column) => {
       acc[column.key] = column.defaultWidth;
@@ -171,6 +173,8 @@ export default function CustomerListPage() {
   const totalTableWidth = useMemo(() => {
     return COLUMN_CONFIG.reduce((sum, column) => sum + columnWidths[column.key], 0);
   }, [columnWidths]);
+
+  const canDelete = mounted ? !isSale : false;
 
   const openCreateForm = () => {
     setEditingCustomer(null);
@@ -535,10 +539,12 @@ export default function CustomerListPage() {
                               <Pencil size={14} />
                               Sửa
                             </button>
-                            <button type="button" onClick={() => handleDelete(customer)} className={`${styles.actionBtn} ${styles.deleteBtn}`}>
-                              <Trash2 size={14} />
-                              Xóa
-                            </button>
+                            {canDelete && (
+                              <button type="button" onClick={() => handleDelete(customer)} className={`${styles.actionBtn} ${styles.deleteBtn}`}>
+                                <Trash2 size={14} />
+                                Xóa
+                              </button>
+                            )}
                           </div>
                         </td>
                       </tr>

@@ -1,6 +1,7 @@
 import { http } from "@/shared/api/http";
 import type {
   ActivityResponseDTO,
+  CreateAttachmentDTO,
   AttachmentResponseDTO,
   CreateActivityDTO,
   CreateContactDTO,
@@ -18,6 +19,8 @@ import type {
   QuoteResponseDTO,
   UpdateCustomerDTO,
   NoteResponseDTO,
+  UploadAttachmentResponseDTO,
+  UploadCustomerAttachmentRequest,
 } from "@/modules/customer/types/customer.types";
 
 type LeadAssigneeResponseDTO = {
@@ -313,13 +316,52 @@ export const customerApi = {
     return response.data?.data ?? response.data;
   },
 
-  // Upload attachment (multipart/form-data)
-  uploadAttachment: async (formData: FormData): Promise<AttachmentResponseDTO> => {
-    const response = await http.post<any>(`/api/attachments`, formData, {
-      headers: { "Content-Type": "multipart/form-data" },
-    });
+  // Upload attachment in 2 steps: upload file first, then persist metadata.
+  uploadAttachment: async ({
+    customerId,
+    file,
+    uploadedBy,
+    onProgress,
+  }: UploadCustomerAttachmentRequest): Promise<AttachmentResponseDTO> => {
+    const formData = new FormData();
+    formData.append("file", file);
 
-    return response.data?.data ?? response.data;
+    const uploadResponse = await http.post<UploadAttachmentResponseDTO>(
+      `/api/attachments/upload`,
+      formData,
+      {
+        headers: { "Content-Type": "multipart/form-data" },
+        onUploadProgress: onProgress
+          ? (event) => {
+              if (typeof event.total !== "number" || event.total <= 0) {
+                return;
+              }
+
+              const progress = Math.min(100, Math.round((event.loaded * 100) / event.total));
+              onProgress(progress);
+            }
+          : undefined,
+      }
+    );
+
+    const uploaded = uploadResponse.data?.data ?? uploadResponse.data;
+
+    const createPayload: CreateAttachmentDTO = {
+      ...uploaded,
+      relatedToType: "CUSTOMER",
+      relatedToId: customerId,
+      uploadedBy,
+    };
+
+    const response = await http.post<AttachmentResponseDTO>(`/api/attachments`, createPayload);
+
+    return response.data;
+  },
+
+  createAttachment: async (payload: CreateAttachmentDTO): Promise<AttachmentResponseDTO> => {
+    const response = await http.post<AttachmentResponseDTO>(`/api/attachments`, payload);
+
+    return response.data;
   },
 
   // Feedback methods

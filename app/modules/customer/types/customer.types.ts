@@ -342,6 +342,22 @@ export interface CreateAttachmentDTO {
   uploadedBy?: number;
 }
 
+export interface UploadAttachmentResponseDTO {
+  fileName: string;
+  fileType?: string;
+  fileSize?: number;
+  filePath: string;
+}
+
+export type UploadAttachmentProgressHandler = (progress: number) => void;
+
+export type UploadCustomerAttachmentRequest = {
+  customerId: number;
+  file: File;
+  uploadedBy: number;
+  onProgress?: UploadAttachmentProgressHandler;
+};
+
 export interface AttachmentResponseDTO {
   id: number;
   fileName: string;

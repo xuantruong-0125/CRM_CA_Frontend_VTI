@@ -89,6 +89,19 @@ function formatCurrency(value?: number) {
     : "-";
 }
 
+function resolveAttachmentUrl(filePath?: string) {
+  if (!filePath) {
+    return "";
+  }
+
+  if (/^https?:\/\//i.test(filePath)) {
+    return filePath;
+  }
+
+  const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8080";
+  return `${apiBaseUrl}${filePath.startsWith("/") ? "" : "/"}${filePath}`;
+}
+
 function SectionTitle({ title, description }: { title: string; description?: string }) {
   return (
     <div className="border-b border-slate-200 pb-4">
@@ -213,7 +226,7 @@ function DetailDialog({
 
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-950/55 p-4 backdrop-blur-sm">
-      <div className="w-full max-w-2xl rounded-3xl border border-slate-200 bg-white p-6 shadow-2xl">
+      <div className="w-full max-w-2xl max-h-[86vh] overflow-hidden rounded-3xl border border-slate-200 bg-white p-6 shadow-2xl">
         <div className="flex items-start justify-between gap-4 border-b border-slate-200 pb-4">
           <div>
             <h3 className="text-[16px] font-semibold text-slate-900">{title}</h3>
@@ -223,15 +236,16 @@ function DetailDialog({
             Đóng
           </button>
         </div>
-
-        <dl className="mt-4 grid gap-4 sm:grid-cols-2">
-          {fields.map((field) => (
-            <div key={field.label} className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-              <dt className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">{field.label}</dt>
-              <dd className="mt-1 text-[12px] text-slate-800">{field.value ?? "-"}</dd>
-            </div>
-          ))}
-        </dl>
+        <div className="mt-4 overflow-y-auto max-h-[62vh] pr-2">
+          <dl className="grid gap-4 sm:grid-cols-2">
+            {fields.map((field) => (
+              <div key={field.label} className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                <dt className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">{field.label}</dt>
+                <dd className="mt-1 text-[12px] text-slate-800">{field.value ?? "-"}</dd>
+              </div>
+            ))}
+          </dl>
+        </div>
 
         <div className="mt-6 flex justify-end gap-3">
           {onEdit ? (
@@ -394,7 +408,7 @@ function AddressEditorDialog({
           </label>
 
           <label className="inline-flex items-center gap-2 md:col-span-2">
-            <input type="checkbox" checked={isPrimary} onChange={(e) => setIsPrimary(e.target.checked)} />
+            <input type="checkbox" checked={isPrimary} onChange={(e) => setIsPrimary(e.target.checked)} className="self-center align-middle !mr-[5px] rounded-[5px]" />
             <span className="text-[12px] text-slate-900">Đặt làm địa chỉ chính</span>
           </label>
         </div>
@@ -468,6 +482,14 @@ export default function CustomerDetailPage({ id }: CustomerDetailPageProps) {
       return performedBy.fullName ?? performedBy.name ?? `Người dùng #${performedBy.id}`;
     }
     return saleNameById[performedBy] ?? `Người dùng #${performedBy}`;
+  };
+
+  const getUploadedByName = (uploadedBy?: number) => {
+    if (typeof uploadedBy !== "number") {
+      return "-";
+    }
+
+    return saleNameById[uploadedBy] ?? `Người dùng #${uploadedBy}`;
   };
 
   const customerAddresses = addressesQuery.data ?? [];
@@ -692,7 +714,7 @@ export default function CustomerDetailPage({ id }: CustomerDetailPageProps) {
         <button
           type="button"
           onClick={openNewAddress}
-          className="rounded-[5px] bg-sky-600 px-3 py-2 text-[12px] font-semibold text-white transition hover:bg-sky-500"
+          className={styles.addButton}
           title={CUSTOMER_SHORTCUTS.ADD_NEW.label}
         >
           Thêm địa chỉ
@@ -737,6 +759,7 @@ export default function CustomerDetailPage({ id }: CustomerDetailPageProps) {
                       void handleSetPrimaryAddress(item);
                     }
                   }}
+                  className="self-center align-middle !mr-[5px] rounded-[5px]"
                 />
                 <span>Địa chỉ chính</span>
               </label>
@@ -1132,7 +1155,7 @@ export default function CustomerDetailPage({ id }: CustomerDetailPageProps) {
         <button
           type="button"
           onClick={() => setShowAttachmentModal(true)}
-          className="rounded-[5px] bg-sky-600 px-3 py-2 text-[12px] font-semibold text-white transition hover:bg-sky-500"
+          className={styles.addButton}
         >
           Tải file
         </button>
@@ -1145,10 +1168,9 @@ export default function CustomerDetailPage({ id }: CustomerDetailPageProps) {
           primary={item.fileType ?? "-"}
           onClick={() => openDetail({ kind: "attachment", item })}
           meta={[
-            { label: "Đường dẫn", value: item.filePath ? <a className="text-sky-700 hover:underline" href={item.filePath} target="_blank" rel="noreferrer">Mở file</a> : "-" },
+            { label: "Đường dẫn", value: item.filePath ? <a className="text-sky-700 hover:underline" href={resolveAttachmentUrl(item.filePath)} target="_blank" rel="noreferrer">Mở file</a> : "-" },
             { label: "Dung lượng", value: item.fileSize ? `${item.fileSize} bytes` : "-" },
-            { label: "Related To", value: item.relatedToType },
-            { label: "Uploaded By", value: item.uploadedBy ?? "-" },
+            { label: "Người upload", value: getUploadedByName(item.uploadedBy) },
           ]}
         />
       ))}
@@ -1257,9 +1279,9 @@ export default function CustomerDetailPage({ id }: CustomerDetailPageProps) {
               { label: "Tên file", value: selectedDetail.item.fileName },
               { label: "Loại file", value: selectedDetail.item.fileType ?? "-" },
               { label: "Dung lượng", value: selectedDetail.item.fileSize ? `${selectedDetail.item.fileSize} bytes` : "-" },
-              { label: "Đường dẫn", value: selectedDetail.item.filePath ? <a className="text-sky-700 hover:underline" href={selectedDetail.item.filePath} target="_blank" rel="noreferrer">Mở file</a> : "-" },
+              { label: "Đường dẫn", value: selectedDetail.item.filePath ? <a className="text-sky-700 hover:underline" href={resolveAttachmentUrl(selectedDetail.item.filePath)} target="_blank" rel="noreferrer">Mở file</a> : "-" },
               { label: "Related To", value: selectedDetail.item.relatedToType },
-              { label: "Uploaded By", value: selectedDetail.item.uploadedBy ?? "-" },
+              { label: "Người upload", value: getUploadedByName(selectedDetail.item.uploadedBy) },
             ]}
             onClose={closeDetail}
           />
@@ -1399,7 +1421,7 @@ export default function CustomerDetailPage({ id }: CustomerDetailPageProps) {
 
       {contactFormState && customer && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-950/55 p-4 backdrop-blur-sm">
-          <div className="max-h-[92vh] w-full max-w-2xl overflow-y-auto rounded-3xl bg-white p-6 shadow-2xl">
+          <div className="max-h-[92vh] w-full max-w-2xl overflow-hidden rounded-3xl bg-white p-6 shadow-2xl">
             <div className="mb-5 flex items-center justify-between gap-4">
               <div>
                 <h2 className="text-[16px] font-bold text-slate-900">{contactFormState.mode === "edit" ? "Chỉnh sửa người liên hệ" : "Tạo người liên hệ"}</h2>

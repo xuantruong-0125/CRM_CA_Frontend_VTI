@@ -8,6 +8,7 @@ import type {
   CreateContactDTO,
   CreateCustomerDTO,
   UpdateCustomerDTO,
+  UploadCustomerAttachmentRequest,
 } from "@/modules/customer/types/customer.types";
 import { queryKeys } from "@/shared/constants/query-keys";
 
@@ -159,7 +160,7 @@ export function useUploadAttachment() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (formData: FormData) => customerApi.uploadAttachment(formData),
+    mutationFn: (payload: UploadCustomerAttachmentRequest) => customerApi.uploadAttachment(payload),
     onSuccess: (data: AttachmentResponseDTO) => {
       const relatedId = data.relatedToId;
       queryClient.invalidateQueries({ queryKey: queryKeys.customer.attachments(relatedId) });

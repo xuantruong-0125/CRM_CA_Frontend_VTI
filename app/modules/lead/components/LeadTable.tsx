@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Pencil, Trash2, ChevronsRight } from "lucide-react";
 import type { LeadResponse } from "@/modules/lead/types/lead.types";
 import styles from "@/modules/lead/styles/lead.module.css";
+import { useCurrentUser } from "@/core/auth/useCurrentUser";
 
 type LeadTableProps = {
   leads: LeadResponse[];
@@ -149,6 +150,7 @@ export default function LeadTable({
   onConvert,
   onStatusChange,
 }: LeadTableProps) {
+  const { mounted, isSale } = useCurrentUser();
   const [columnWidths, setColumnWidths] = useState<Record<ColumnKey, number>>(() => {
     return COLUMN_CONFIG.reduce((acc, column) => {
       acc[column.key] = column.defaultWidth;
@@ -173,6 +175,8 @@ export default function LeadTable({
   const totalTableWidth = useMemo(() => {
     return COLUMN_CONFIG.reduce((sum, column) => sum + columnWidths[column.key], 0);
   }, [columnWidths]);
+
+  const canDelete = mounted ? !isSale : false;
 
   const startColumnResize = (columnKey: ColumnKey, event: React.MouseEvent<HTMLButtonElement>) => {
     event.preventDefault();
@@ -335,14 +339,16 @@ export default function LeadTable({
                   >
                     <Pencil size={14} />
                   </button>
-                  <button
-                    type="button"
-                    onClick={() => onDelete(lead)}
-                    className={`${styles.actionBtn} ${styles.deleteBtn}`}
-                    title="Xóa"
-                  >
-                    <Trash2 size={14} />
-                  </button>
+                  {canDelete && (
+                    <button
+                      type="button"
+                      onClick={() => onDelete(lead)}
+                      className={`${styles.actionBtn} ${styles.deleteBtn}`}
+                      title="Xóa"
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                  )}
                   {lead.isConverted ? (
                     <button
                       type="button"

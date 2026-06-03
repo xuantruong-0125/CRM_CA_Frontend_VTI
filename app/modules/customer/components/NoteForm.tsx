@@ -86,7 +86,7 @@ export default function NoteForm({
           type="checkbox"
           checked={privateNote}
           onChange={(e) => setPrivateNote(e.target.checked)}
-          className="h-4 w-4 cursor-pointer rounded border-slate-300 text-sky-600"
+          className="h-4 w-4 cursor-pointer rounded border-slate-300 text-sky-600 self-center align-middle !mr-[5px]"
         />
         <label htmlFor="privateNote" className="cursor-pointer text-[11px] font-medium text-slate-700">
           Ghi chú riêng tư

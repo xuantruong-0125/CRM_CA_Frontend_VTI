@@ -56,6 +56,9 @@ export type CreateLeadActivityRequest = {
   startDate?: ISODateTimeString;
   endDate?: ISODateTimeString;
   noteContent?: string;
+  // Optional fields also accepted when creating an activity
+  status?: number;
+  isImportant?: boolean;
 };
 
 export type UpdateLeadActivityRequest = {
@@ -77,28 +80,22 @@ export type CreateLeadTaskRequest = {
   description?: string;
   startDate?: ISODateTimeString;
   dueDate?: ISODateTimeString;
-  completedAt?: ISODateTimeString;
-  status?: string;
-  priority?: "LOW" | "NORMAL" | "HIGH" | "URGENT" | string;
-  progressPercent?: number;
+  priority?: "LOW" | "NORMAL" | "HIGH" | "URGENT";
+  relatedToType?: string; // Bắt buộc truyền là "LEAD" khi tạo task cho Lead
+  relatedToId?: number;   // Bắt buộc truyền là Lead ID tương ứng
   assignedTo?: number;
-  assignedBy?: number;
-  createdBy?: number;
   contactId?: number;
 };
 
 export type UpdateLeadTaskRequest = {
   subject?: string;
   description?: string;
+  status?: "NOT_STARTED" | "IN_PROGRESS" | "DEFERRED" | "COMPLETED" | "CANCELED";
+  progressPercent?: number;
+  priority?: "LOW" | "NORMAL" | "HIGH" | "URGENT";
   startDate?: ISODateTimeString;
   dueDate?: ISODateTimeString;
-  completedAt?: ISODateTimeString;
-  status?: string;
-  priority?: "LOW" | "NORMAL" | "HIGH" | "URGENT" | string;
-  progressPercent?: number;
-  assignedTo?: number;
-  assignedBy?: number;
-  updatedBy?: number;
+  assigneeId?: number; // Backend ở lớp Update dùng 'assigneeId' thay vì 'assignedTo'
   contactId?: number;
 };
 

@@ -5,7 +5,6 @@ import { CalendarDays, Check, ChevronRight, CircleX, Info, Users, Trash2, X } fr
 import { useEffect, useMemo, useState, useRef } from "react";
 import type { ReactNode } from "react";
 import { useForm, useFieldArray } from "react-hook-form";
-import { z } from "zod";
 import {
   CUSTOMER_STATUS_OPTIONS,
   CUSTOMER_TIER_OPTIONS,
@@ -20,6 +19,7 @@ import { getCustomerTaxCode, normalizeCustomerStatus, normalizeCustomerTier } fr
 import { useLeadReferences } from "@/modules/lead/hooks/useLeadReferences";
 import { customerFormSchema } from "@/modules/customer/schemas/customer.schema";
 import type { CustomerFormInput, CustomerFormValues } from "@/modules/customer/schemas/customer.schema";
+import { useCurrentUser } from "@/core/auth/useCurrentUser";
 
 type CustomerFormProps = {
   mode: "create" | "edit";
@@ -125,6 +125,7 @@ export default function CustomerForm({
   onCancel,
   isSubmitting,
 }: CustomerFormProps) {
+  const { mounted, currentUser, isSale } = useCurrentUser();
   const referencesQuery = useLeadReferences();
   const salesUsersQuery = useCustomerSalesUsers();
   const [activeTab, setActiveTab] = useState<TabKey>("management");
@@ -136,6 +137,7 @@ export default function CustomerForm({
   const sourceOptions = referencesQuery.data?.sources ?? [];
   const saleOptions = salesUsersQuery.data ?? [];
   const provinceOptions = referencesQuery.data?.provinces ?? [];
+  const lockSaleAssignee = mounted && isSale && !!currentUser;
 
   const defaultValues = useMemo<CustomerFormInput>(
     () => ({
@@ -169,6 +171,16 @@ export default function CustomerForm({
     resolver: zodResolver(customerFormSchema),
     defaultValues,
   });
+
+  useEffect(() => {
+    if (lockSaleAssignee && currentUser) {
+      form.setValue("assignedTo", currentUser.id, {
+        shouldDirty: false,
+        shouldTouch: false,
+        shouldValidate: true,
+      });
+    }
+  }, [currentUser, form, lockSaleAssignee]);
 
   const { fields, append, remove } = useFieldArray({
     control: form.control,
@@ -454,6 +466,7 @@ export default function CustomerForm({
                           {...form.register("assignedTo", {
                             setValueAs: (value) => (value === "" ? undefined : Number(value)),
                           })}
+                          disabled={lockSaleAssignee}
                         >
                           <option value="">Chọn sale phụ trách</option>
                           {saleOptions.length > 0 ? (
@@ -613,7 +626,7 @@ export default function CustomerForm({
                                   <label className="flex items-center gap-2 rounded-[10px] border border-slate-200 bg-slate-50 px-3 py-2 md:col-span-2 cursor-pointer">
                                     <input
                                       type="checkbox"
-                                      className="h-4 w-4 rounded border-slate-300 text-sky-600 focus:ring-sky-500"
+                                      className="h-4 w-4 rounded border-slate-300 text-sky-600 focus:ring-sky-500 self-center align-middle !mr-[5px]"
                                       checked={form.watch(`addresses.${index}.isPrimary`) || false}
                                       onChange={() => handleSetPrimaryAddress(index)}
                                     />
@@ -788,7 +801,7 @@ export default function CustomerForm({
                                   <label className="flex items-center gap-2 rounded-[8px] border border-slate-200 bg-slate-50 px-3 py-1.5 md:col-span-2 cursor-pointer transition hover:bg-slate-100">
                                     <input
                                       type="checkbox"
-                                      className="h-3.5 w-3.5 rounded-full border-slate-350 text-sky-600 focus:ring-sky-500"
+                                      className="h-3.5 w-3.5 rounded-full border-slate-350 text-sky-600 focus:ring-sky-500 self-center align-middle !mr-[5px]"
                                       checked={!!form.watch(`contacts.${index}.isPrimary`)}
                                       onChange={(e) => {
                                         if (e.target.checked) {

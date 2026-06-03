@@ -19,7 +19,7 @@ export function useAssigneeMetadata(params: AssigneeMetadataQuery) {
   const queryKeyValue = useMemo(() => toQueryKeyValue(params), [params]);
   return useQuery({
     queryKey: queryKeys.lead.assignees(queryKeyValue),
-    queryFn: () => leadApi.getAssigneeMetadata(params),
+    queryFn: () => leadApi.getAssigneeMetadata({ roleId: 3, ...params }),
   });
 }
 

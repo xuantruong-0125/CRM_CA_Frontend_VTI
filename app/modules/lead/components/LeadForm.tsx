@@ -10,6 +10,7 @@ import type {
 } from "@/modules/lead/types/lead.types";
 import { LEAD_SHORTCUTS, matchesShortcut } from "@/modules/lead/utils/keyboard-shortcuts";
 import { KeyboardShortcutBadge } from "@/modules/lead/components/KeyboardShortcutBadge";
+import { useCurrentUser } from "@/core/auth/useCurrentUser";
 
 type LeadFormProps = {
   mode: "create" | "edit";
@@ -31,12 +32,12 @@ type LeadFormProps = {
 
 const DS = {
   spacing: {
-    colGap: "gap-x-4",
-    rowGap: "gap-y-1.5",
-    innerGap: "gap-x-1.5",
+    colGap: "gap-x-3",
+    rowGap: "gap-y-1",
+    innerGap: "gap-x-1",
   },
   input: {
-    height: "h-[26px]",
+    height: "h-[27px]",
     padding: "px-2 py-0.5",
     border: "border border-slate-300",
     borderError: "border border-red-500",
@@ -44,12 +45,12 @@ const DS = {
     focus: "focus:border-blue-500 focus:ring-1 focus:ring-blue-500",
     focusError: "focus:border-red-500 focus:ring-1 focus:ring-red-500",
   },
-  sectionSpacing: "flex flex-col gap-y-1",
-  formSpacing: "flex flex-col space-y-1",
+  sectionSpacing: "flex flex-col gap-y-1 rounded-md border border-slate-200 bg-white/80 p-2",
+  formSpacing: "flex flex-col gap-y-1",
 };
 
 const getInputClassName = (hasError: boolean, isSelect: boolean = false) => {
-  let baseClasses = `w-full ${DS.input.height} ${DS.input.padding} ${DS.input.borderRadius} bg-white text-[11px] text-slate-900 outline-none transition-all duration-200`;
+  let baseClasses = `w-full ${DS.input.height} ${DS.input.padding} ${DS.input.borderRadius} bg-white text-[12px] text-slate-900 outline-none transition-all duration-200`;
   
   // Custom arrow cho select với màu slate-300 (#cbd5e1)
   if (isSelect) {
@@ -62,7 +63,7 @@ const getInputClassName = (hasError: boolean, isSelect: boolean = false) => {
 };
 
 const FormLabel = ({ children, required = false }: { children: React.ReactNode; required?: boolean }) => (
-  <label className="block text-[10px] font-medium text-slate-700 leading-none">
+  <label className="block text-[12px] font-medium text-slate-700 leading-none">
     {children}
     {required && <span className="ml-0.5 text-red-500 font-bold">*</span>}
   </label>
@@ -72,7 +73,7 @@ const ErrorText = ({ error }: { error?: unknown }) => {
   if (!error || typeof error !== "object" || !("message" in error)) return null;
   return (
     <span
-      className="text-[10px] text-red-500 font-medium leading-tight break-words text-right"
+      className="text-[9px] text-red-500 font-medium leading-tight break-words text-right"
       title={String(error.message)}
     >
       {String(error.message)}
@@ -81,9 +82,9 @@ const ErrorText = ({ error }: { error?: unknown }) => {
 };
 
 const SectionHeader = ({ title }: { title: string }) => (
-  <h3 className="text-[11px] font-bold text-slate-800 uppercase tracking-wide pb-0.5 border-b border-slate-200 mb-0.5 mt-0">
+  <h5 className="text-[10px] font-semibold tracking-wide text-slate-600 uppercase mb-0.5 mt-0">
     {title}
-  </h3>
+  </h5>
 );
 
 const isConvertedStatus = (status: LeadReferenceOptionResponse) => {
@@ -113,7 +114,7 @@ const FormField = ({
   const hasError = !!(error && typeof error === "object" && "message" in error);
   return (
     <div className={`flex flex-col ${className}`}>
-      <div className="mb-0.5 flex min-h-[12px] items-start justify-between gap-2">
+      <div className="mb-0.5 flex min-h-[11px] items-start justify-between gap-2">
         {label ? <FormLabel required={required}>{label}</FormLabel> : <div></div>}
         {hasError && <ErrorText error={error} />}
       </div>
@@ -174,15 +175,18 @@ function ProductSelectionModal({
   };
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/50 p-4 backdrop-blur-sm">
-      <div className="flex h-[82vh] max-h-[640px] w-full max-w-2xl flex-col overflow-hidden rounded-md bg-white shadow-2xl">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/55 p-4 backdrop-blur-sm">
+      <div className="flex h-[82vh] max-h-[640px] w-full max-w-2xl flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-2xl">
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-slate-200 bg-slate-50 px-3 py-2">
-          <h3 className="text-[13px] font-bold text-slate-800">Chọn sản phẩm quan tâm</h3>
+        <div className="flex items-start justify-between border-b border-slate-200 bg-gradient-to-r from-slate-50 to-blue-50 px-4 py-3">
+          <div>
+            <h3 className="text-[14px] font-semibold text-slate-900">Chọn sản phẩm quan tâm</h3>
+            <p className="mt-0.5 text-[11px] text-slate-500">Tìm kiếm nhanh và chọn nhiều sản phẩm trong một lần thao tác.</p>
+          </div>
           <button
             type="button"
             onClick={onClose}
-            className="text-slate-400 hover:text-slate-700 transition-colors"
+            className="inline-flex h-7 w-7 items-center justify-center rounded-md border border-slate-200 bg-white text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-800"
           >
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <line x1="18" y1="6" x2="6" y2="18"></line>
@@ -192,7 +196,7 @@ function ProductSelectionModal({
         </div>
 
         {/* Search & Bulk Action */}
-        <div className="space-y-2 border-b border-slate-200 bg-white p-2.5">
+        <div className="space-y-2 border-b border-slate-200 bg-white px-3 py-2.5">
           <div className="relative">
             <svg
               viewBox="0 0 24 24"
@@ -212,58 +216,58 @@ function ProductSelectionModal({
                 setSearch(e.target.value);
                 setCurrentPage(0);
               }}
-              className="h-7 w-full rounded-sm border border-slate-300 pl-8 pr-3 text-[11px] text-slate-900 outline-none transition-all focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+              className="h-8 w-full rounded-md border border-slate-300 bg-slate-50 pl-8 pr-3 text-[13px] text-slate-900 outline-none transition-all focus:border-blue-500 focus:bg-white focus:ring-1 focus:ring-blue-500"
             />
           </div>
           
-          <div className="flex items-center justify-between text-[11px]">
-            <label className="flex items-center gap-2 cursor-pointer text-slate-700 font-medium hover:text-blue-600 transition-colors">
+          <div className="flex items-center justify-between rounded-md border border-slate-200 bg-slate-50/70 px-2.5 py-1.5">
+            <label className="flex cursor-pointer items-center gap-1 text-[12px] font-medium text-slate-700 transition-colors hover:text-blue-600">
               <input
                 type="checkbox"
                 checked={isAllPageSelected}
                 onChange={handleToggleAllPage}
-                className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                className="h-4 w-4 rounded-[5px] border-slate-300 text-blue-600 focus:ring-blue-500 self-center align-middle !mr-[5px]"
               />
               Chọn tất cả {displayedProducts.length} sản phẩm trang này
             </label>
-            <div className="text-[10px] text-slate-500">
-              Đã chọn: <span className="font-bold text-blue-600">{selectedIds.length}</span> sản phẩm
+            <div className="text-[12px] text-slate-600">
+              Đã chọn: <span className="rounded bg-blue-100 px-1.5 py-0.5 font-semibold text-blue-700">{selectedIds.length}</span>
             </div>
           </div>
         </div>
 
         {/* Danh sách Sản phẩm */}
-        <div className="flex-1 overflow-y-auto bg-slate-50 p-1.5">
+        <div className="flex-1 overflow-y-auto bg-slate-50/60 p-2">
           {displayedProducts.length > 0 ? (
-            <div className="flex flex-col gap-1">
+            <div className="grid grid-cols-1 gap-1.5 sm:grid-cols-2">
               {displayedProducts.map((p) => (
                 <label
                   key={p.id}
-                  className={`flex cursor-pointer items-center gap-2 rounded-sm border px-2.5 py-1.5 transition-colors ${
+                  className={`group flex cursor-pointer items-center gap-1 rounded-md border px-2.5 py-2 transition-all ${
                     selectedIds.includes(Number(p.id))
-                      ? "border-blue-200 bg-blue-50"
-                      : "border-transparent bg-white hover:bg-slate-100"
+                      ? "border-blue-300 bg-blue-50 shadow-sm"
+                      : "border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-100/70"
                   }`}
                 >
                   <input
                     type="checkbox"
                     checked={selectedIds.includes(Number(p.id))}
                     onChange={() => handleToggle(Number(p.id))}
-                    className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                    className="h-4 w-4 rounded-[5px] border-slate-300 text-blue-600 focus:ring-blue-500 self-center align-middle !mr-[5px]"
                   />
-                  <span className="select-none text-[11px] text-slate-800">{p.name}</span>
+                  <span className="flex-1 select-none text-[12px] font-medium text-slate-800">{p.name}</span>
                 </label>
               ))}
             </div>
           ) : (
-            <div className="flex h-full items-center justify-center text-[11px] text-slate-500">
+            <div className="flex h-full items-center justify-center text-[13px] text-slate-500">
               Không tìm thấy sản phẩm nào phù hợp.
             </div>
           )}
         </div>
 
         {/* Phân trang (Pagination) */}
-        <div className="flex items-center justify-between border-t border-slate-200 bg-white px-3 py-1.5 text-[10px] text-slate-600">
+        <div className="flex items-center justify-between border-t border-slate-200 bg-white px-3 py-1.5 text-[12px] text-slate-600">
           <div>
             Hiển thị {filteredProducts.length === 0 ? 0 : currentPage * ITEMS_PER_PAGE + 1} - {Math.min((currentPage + 1) * ITEMS_PER_PAGE, filteredProducts.length)} / {filteredProducts.length}
           </div>
@@ -275,7 +279,7 @@ function ProductSelectionModal({
               onClick={() => goToPage(0)}
               className="inline-flex h-6 w-6 items-center justify-center rounded border border-slate-300 bg-white text-slate-700 transition hover:bg-slate-50 disabled:opacity-50"
             >
-              ⏮
+              «
             </button>
             <button
               type="button"
@@ -283,9 +287,9 @@ function ProductSelectionModal({
               onClick={() => goToPage(currentPage - 1)}
               className="inline-flex h-6 w-6 items-center justify-center rounded border border-slate-300 bg-white text-slate-700 transition hover:bg-slate-50 disabled:opacity-50"
             >
-              ◀
+              ‹
             </button>
-            <span className="px-2 font-medium">
+              <span className="px-2 font-medium text-[13px]">
               Trang {currentPage + 1} / {totalPages}
             </span>
             <button
@@ -294,7 +298,7 @@ function ProductSelectionModal({
               onClick={() => goToPage(currentPage + 1)}
               className="inline-flex h-6 w-6 items-center justify-center rounded border border-slate-300 bg-white text-slate-700 transition hover:bg-slate-50 disabled:opacity-50"
             >
-              ▶
+              ›
             </button>
             <button
               type="button"
@@ -302,27 +306,32 @@ function ProductSelectionModal({
               onClick={() => goToPage(totalPages - 1)}
               className="inline-flex h-6 w-6 items-center justify-center rounded border border-slate-300 bg-white text-slate-700 transition hover:bg-slate-50 disabled:opacity-50"
             >
-              ⏭
+              »
             </button>
           </div>
         </div>
 
         {/* Footer Buttons */}
-        <div className="flex items-center justify-end gap-2 border-t border-slate-200 bg-slate-50 px-3 py-2">
+        <div className="flex items-center justify-between gap-2 border-t border-slate-200 bg-slate-50 px-3 py-2">
+          <div className="text-[12px] text-slate-600">
+            Tổng sản phẩm đã chọn: <span className="font-semibold text-blue-700">{selectedIds.length}</span>
+          </div>
+          <div className="flex items-center gap-2">
           <button
             type="button"
             onClick={onClose}
-            className="h-7 rounded-sm border border-slate-300 bg-white px-3.5 text-[11px] font-medium text-slate-700 transition-colors hover:bg-slate-100"
+            className="h-8 rounded-md border border-slate-300 bg-white px-4 text-[12px] font-medium text-slate-700 transition-colors hover:bg-slate-100"
           >
             Hủy
           </button>
           <button
             type="button"
             onClick={() => onConfirm(selectedIds)}
-            className="h-7 rounded-sm bg-blue-600 px-5 text-[11px] font-medium text-white transition-colors shadow-sm hover:bg-blue-700"
+            className="h-8 rounded-md bg-blue-600 px-5 text-[12px] font-medium text-white transition-colors shadow-sm hover:bg-blue-700"
           >
             Xác nhận
           </button>
+          </div>
         </div>
       </div>
     </div>
@@ -342,6 +351,7 @@ export default function LeadForm({
   onCancel,
   isSubmitting,
 }: LeadFormProps) {
+  const { mounted, currentUser, isSale } = useCurrentUser();
   const [isProductModalOpen, setIsProductModalOpen] = useState(false);
   const submitButtonRef = useRef<HTMLButtonElement>(null);
   const cancelButtonRef = useRef<HTMLButtonElement>(null);
@@ -355,11 +365,13 @@ export default function LeadForm({
     initialValues?.statusId !== null &&
     convertedStatusIds.has(Number(initialValues.statusId));
   const isFormLocked = isConvertedLead;
+  const lockAssignee = mounted && isSale && !!currentUser;
 
   const {
     register,
     handleSubmit,
     control,
+    setValue,
     formState: { errors, isValid },
     reset,
   } = useForm({
@@ -403,6 +415,16 @@ export default function LeadForm({
   }, [initialValues, reset]);
 
   useEffect(() => {
+    if (lockAssignee && currentUser) {
+      setValue("assignedTo", currentUser.id, {
+        shouldDirty: false,
+        shouldTouch: false,
+        shouldValidate: true,
+      });
+    }
+  }, [currentUser, lockAssignee, setValue]);
+
+  useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (matchesShortcut(e, LEAD_SHORTCUTS.SAVE_FORM)) {
         e.preventDefault();
@@ -443,14 +465,14 @@ export default function LeadForm({
   };
 
   return (
-    <form onSubmit={handleSubmit(handleFormSubmit)} className={`${DS.formSpacing} text-[15px]`}>
+    <form onSubmit={handleSubmit(handleFormSubmit)} className={`${DS.formSpacing} text-[13px]`}>
       {isFormLocked && (
-        <div className="rounded-sm border border-amber-200 bg-amber-50 px-3 py-1.5 text-[11px] text-amber-700">
+        <div className="rounded-sm border border-amber-200 bg-amber-50 px-3 py-1.5 text-[14px] text-amber-700">
           Lead đang ở trạng thái &quot;Đã chuyển đổi&quot;, không thể chỉnh sửa thông tin.
         </div>
       )}
 
-      <fieldset disabled={isSubmitting || isFormLocked} className="min-w-0 space-y-1">
+      <fieldset disabled={isSubmitting || isFormLocked} className="min-w-0 space-y-0.5">
       {/* SECTION 1: Contact & Classification (2 columns) */}
       <div className={`grid grid-cols-1 md:grid-cols-2 ${DS.spacing.colGap}`}>
         
@@ -576,6 +598,7 @@ export default function LeadForm({
               <select
                 className={getInputClassName(!!errors.assignedTo, true)}
                 {...register("assignedTo")}
+                disabled={lockAssignee}
                 onKeyDown={handleKeyDown}
               >
                 <option value=""></option>
@@ -605,9 +628,9 @@ export default function LeadForm({
                         onChange(rawValue ? Number(rawValue) : undefined);
                       }}
                       onKeyDown={handleKeyDown}
-                      className={`${getInputClassName(!!errors.expectedRevenue)} pr-8 text-right`}
+                      className={`${getInputClassName(!!errors.expectedRevenue)} pr-14 text-right`}
                     />
-                    <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[12px] font-medium text-slate-500">
+                    <span className="pointer-events-none absolute inset-y-0 right-0 flex w-9 items-center justify-center rounded-r-[3px] border-l border-slate-200 bg-slate-50 text-[12px] font-medium text-slate-500">
                       ₫
                     </span>
                   </div>
@@ -634,47 +657,49 @@ export default function LeadForm({
                 };
 
                 return (
-                  <div className="flex flex-col gap-2">
-                    {/* Hộp hiển thị sản phẩm đã chọn */}
-                    <div className={`flex flex-wrap items-center content-start gap-1.5 min-h-[30px] max-h-[68px] overflow-y-auto p-1.5 ${DS.input.borderRadius} ${DS.input.border} bg-slate-50/50`}>
-                      {selectedProducts.length === 0 && (
-                        <span className="text-[11px] text-slate-400 px-1 italic">
-                          Chưa có sản phẩm nào được chọn...
-                        </span>
-                      )}
-                      {selectedProducts.map((p) => (
-                        <span
-                          key={p.id}
-                          className="inline-flex items-center gap-1 px-1.5 py-0.5 text-[11px] font-medium rounded-sm bg-blue-100 text-blue-700 border border-blue-200"
-                        >
-                          {p.name}
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleRemove(Number(p.id));
-                            }}
-                            className="flex h-3.5 w-3.5 items-center justify-center rounded-sm hover:bg-blue-200 hover:text-red-500 transition-colors"
+                  <div className="flex items-start gap-2">
+                    <div className={`min-w-0 flex-1 rounded-md border border-slate-300 bg-white px-2 py-1.5`}>
+                      <div className="mb-1 flex items-center justify-between">
+                        <span className="text-[12px] font-medium text-slate-600">Danh sách đã chọn</span>
+                        <span className="rounded bg-blue-100 px-1.5 py-0.5 text-[10px] font-semibold text-blue-700">{selectedProducts.length}</span>
+                      </div>
+                      <div className="flex max-h-[60px] min-h-[26px] flex-wrap items-center gap-1 overflow-auto pr-0.5">
+                        {selectedProducts.length === 0 && (
+                          <span className="text-[11px] italic text-slate-400">Chưa chọn sản phẩm</span>
+                        )}
+                        {selectedProducts.map((p) => (
+                          <span
+                            key={p.id}
+                            className="inline-flex items-center gap-1 rounded-md border border-blue-200 bg-blue-50 px-1.5 py-0.5 text-[11px] font-medium text-blue-700"
                           >
-                            <svg className="h-2.5 w-2.5" fill="currentColor" viewBox="0 0 24 24">
-                              <path d="M6 18L18 6M6 6l12 12" stroke="currentColor" strokeWidth={2} strokeLinecap="round" />
-                            </svg>
-                          </button>
-                        </span>
-                      ))}
+                            {p.name}
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleRemove(Number(p.id));
+                              }}
+                              className="flex h-3.5 w-3.5 items-center justify-center rounded hover:bg-blue-200 hover:text-red-500 transition-colors"
+                            >
+                              <svg className="h-2.5 w-2.5" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M6 18L18 6M6 6l12 12" stroke="currentColor" strokeWidth={2} strokeLinecap="round" />
+                              </svg>
+                            </button>
+                          </span>
+                        ))}
+                      </div>
                     </div>
 
-                    {/* Nút mở Modal */}
                     <button
                       type="button"
                       onClick={() => setIsProductModalOpen(true)}
-                      className="self-start inline-flex items-center gap-1 text-[11px] font-medium text-blue-600 border border-blue-600 border-dashed rounded-sm px-3 py-1 hover:bg-blue-50 transition-colors"
+                      className="inline-flex h-[31px] flex-shrink-0 items-center gap-1 rounded-md border border-blue-600 border-dashed bg-white px-2.5 text-[12px] font-medium text-blue-600 transition-colors hover:bg-blue-50"
                     >
-                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                         <circle cx="11" cy="11" r="8"></circle>
                         <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
                       </svg>
-                      Chọn sản phẩm
+                      Chọn
                     </button>
 
                     {/* Render Modal có phân trang */}
@@ -743,8 +768,8 @@ export default function LeadForm({
           <div className="flex flex-col gap-y-2 h-full">
             <FormField label="Mô tả / Ghi chú" error={errors.description} className="h-full">
               <textarea
-                rows={3}
-                className={`${getInputClassName(!!errors.description)} min-h-[70px] resize-none py-1`}
+                rows={2}
+                className={`${getInputClassName(!!errors.description)} min-h-[56px] resize-none py-1`}
                 {...register("description")}
               />
             </FormField>
@@ -760,7 +785,7 @@ export default function LeadForm({
           type="button"
           onClick={onCancel}
           disabled={isSubmitting}
-          className="inline-flex h-[26px] items-center gap-1.5 rounded-sm border border-slate-300 bg-white px-3 text-[11px] font-medium text-slate-700 transition hover:border-slate-400 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+          className="inline-flex h-[27px] items-center gap-1.5 rounded-sm border border-slate-300 bg-white px-3 text-[12px] font-medium text-slate-700 transition hover:border-slate-400 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
           title={LEAD_SHORTCUTS.CANCEL_FORM.label}
         >
           Hủy
@@ -770,7 +795,7 @@ export default function LeadForm({
           ref={submitButtonRef}
           type="submit"
           disabled={isSubmitting || !isValid || isFormLocked}
-          className="inline-flex h-[26px] items-center gap-1.5 rounded-sm bg-blue-600 px-4 text-[11px] font-medium text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50 shadow-sm"
+          className="inline-flex h-[27px] items-center gap-1.5 rounded-sm bg-blue-600 px-4 text-[12px] font-medium text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50 shadow-sm"
           title={LEAD_SHORTCUTS.SAVE_FORM.label}
         >
           {isSubmitting && (
@@ -796,11 +821,11 @@ export default function LeadForm({
       </div>
 
       {/* REQUIRED FIELDS EXPLANATION */}
-      <div className="mt-0.5 flex items-start gap-2 rounded-sm border border-blue-100 bg-blue-50/50 p-2">
+      <div className="mt-0.5 flex items-start gap-2 rounded-sm border border-blue-100 bg-blue-50/50 p-1.5">
         <svg className="h-3.5 w-3.5 text-blue-500 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 24 24">
           <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm0-14c-3.31 0-6 2.69-6 6s2.69 6 6 6 6-2.69 6-6-2.69-6-6-6zm0 10c-2.21 0-4-1.79-4-4s1.79-4 4-4 4 1.79 4 4-1.79 4-4 4z"/>
         </svg>
-        <div className="flex flex-1 flex-col text-[10px] text-blue-700 md:flex-row md:gap-6">
+        <div className="flex flex-1 flex-col text-[11px] text-blue-700 md:flex-row md:gap-4">
           <span><span className="text-red-500 font-bold">*</span> <strong>Tên liên hệ:</strong> Dùng để xưng hô và định danh khách hàng.</span>
           <span><span className="text-red-500 font-bold">*</span> <strong>Trạng thái:</strong> Xác định tiến độ trong quy trình Sales.</span>
         </div>

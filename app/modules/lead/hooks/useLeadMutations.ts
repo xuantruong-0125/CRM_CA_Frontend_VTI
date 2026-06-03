@@ -10,6 +10,7 @@ import type {
   LeadActivityResponse,
   UpdateLeadActivityRequest,
   UpdateLeadRequest,
+  UpdateLeadTaskRequest,
 } from "@/modules/lead/types/lead.types";
 import { queryKeys } from "@/shared/constants/query-keys";
 
@@ -147,6 +148,36 @@ export function useCreateLeadTask() {
       leadId: number;
       payload: CreateLeadTaskRequest;
     }) => leadApi.createLeadTask(leadId, payload),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.lead.taskList(variables.leadId),
+      });
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.lead.activities(variables.leadId),
+      });
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.lead.activityStatistics(variables.leadId),
+      });
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.lead.detail(variables.leadId),
+      });
+    },
+  });
+}
+
+export function useUpdateLeadTask() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      leadId,
+      taskId,
+      payload,
+    }: {
+      leadId: number;
+      taskId: number;
+      payload: UpdateLeadTaskRequest;
+    }) => leadApi.updateLeadTask(taskId, payload),
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({
         queryKey: queryKeys.lead.taskList(variables.leadId),
