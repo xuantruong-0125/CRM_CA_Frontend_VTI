@@ -1,6 +1,7 @@
 import { http } from "@/shared/api/http";
 import type {
   ActivityResponseDTO,
+  CreateAttachmentDTO,
   AttachmentResponseDTO,
   CreateActivityDTO,
   CreateContactDTO,
@@ -18,6 +19,8 @@ import type {
   QuoteResponseDTO,
   UpdateCustomerDTO,
   NoteResponseDTO,
+  UploadAttachmentResponseDTO,
+  UploadCustomerAttachmentRequest,
 } from "@/modules/customer/types/customer.types";
 
 type LeadAssigneeResponseDTO = {
@@ -87,18 +90,18 @@ export const customerApi = {
   },
 
   getCustomerById: async (id: number): Promise<CustomerResponseDTO> => {
-    const response = await http.get<CustomerResponseDTO>(`/api/customers/${id}`);
-    return response.data;
+    const response = await http.get<any>(`/api/customers/${id}`);
+    return response.data?.data ?? response.data;
   },
 
   createCustomer: async (payload: CreateCustomerDTO): Promise<CustomerResponseDTO> => {
-    const response = await http.post<CustomerResponseDTO>("/api/customers", payload);
-    return response.data;
+    const response = await http.post<any>("/api/customers", payload);
+    return response.data?.data ?? response.data;
   },
 
   updateCustomer: async (id: number, payload: UpdateCustomerDTO): Promise<CustomerResponseDTO> => {
-    const response = await http.put<CustomerResponseDTO>(`/api/customers/${id}`, payload);
-    return response.data;
+    const response = await http.put<any>(`/api/customers/${id}`, payload);
+    return response.data?.data ?? response.data;
   },
 
   deleteCustomer: async (id: number): Promise<void> => {
@@ -148,11 +151,11 @@ export const customerApi = {
   },
 
   getAddressesByCustomerId: async (customerId: number): Promise<CustomerAddressResponseDTO[]> => {
-    const response = await http.get<CustomerAddressResponseDTO[]>(
+    const response = await http.get<any>(
       `/api/customer-addresses/customer/${customerId}`
     );
 
-    return response.data;
+    return response.data?.data ?? response.data;
   },
 
   createCustomerAddress: async (payload: {
@@ -162,8 +165,8 @@ export const customerApi = {
     provinceId?: number;
     isPrimary?: boolean;
   }): Promise<CustomerAddressResponseDTO> => {
-    const response = await http.post<CustomerAddressResponseDTO>(`/api/customer-addresses`, payload);
-    return response.data;
+    const response = await http.post<any>(`/api/customer-addresses`, payload);
+    return response.data?.data ?? response.data;
   },
 
   updateCustomerAddress: async (
@@ -176,8 +179,8 @@ export const customerApi = {
       isPrimary?: boolean;
     }
   ): Promise<CustomerAddressResponseDTO> => {
-    const response = await http.put<CustomerAddressResponseDTO>(`/api/customer-addresses/${id}`, payload);
-    return response.data;
+    const response = await http.put<any>(`/api/customer-addresses/${id}`, payload);
+    return response.data?.data ?? response.data;
   },
 
   deleteCustomerAddress: async (id: number): Promise<void> => {
@@ -289,32 +292,124 @@ export const customerApi = {
 
   // Create contact for a customer
   createContact: async (payload: CreateContactDTO): Promise<ContactResponseDTO> => {
-    const response = await http.post<ContactResponseDTO>(`/api/v1/contacts`, payload);
-    return response.data;
+    const response = await http.post<any>(`/api/v1/contacts`, payload);
+    return response.data?.data ?? response.data;
   },
 
   updateContact: async (id: number, payload: CreateContactDTO): Promise<ContactResponseDTO> => {
-    const response = await http.put<ContactResponseDTO>(`/api/v1/contacts/${id}`, payload);
-    return response.data;
+    const response = await http.put<any>(`/api/v1/contacts/${id}`, payload);
+    return response.data?.data ?? response.data;
+  },
+
+  deleteContact: async (id: number): Promise<void> => {
+    await http.delete(`/api/v1/contacts/${id}`);
   },
 
   // Create activity (log) related to a customer
   createActivity: async (payload: CreateActivityDTO): Promise<ActivityResponseDTO> => {
-    const response = await http.post<ActivityResponseDTO>(`/api/activities`, payload);
-    return response.data;
+    const response = await http.post<any>(`/api/activities`, payload);
+    return response.data?.data ?? response.data;
   },
 
   updateActivity: async (id: number, payload: CreateActivityDTO): Promise<ActivityResponseDTO> => {
-    const response = await http.put<ActivityResponseDTO>(`/api/v1/activities/${id}`, payload);
+    const response = await http.put<any>(`/api/v1/activities/${id}`, payload);
+    return response.data?.data ?? response.data;
+  },
+
+  // Upload attachment in 2 steps: upload file first, then persist metadata.
+  uploadAttachment: async ({
+    customerId,
+    file,
+    uploadedBy,
+    onProgress,
+  }: UploadCustomerAttachmentRequest): Promise<AttachmentResponseDTO> => {
+    const formData = new FormData();
+    formData.append("file", file);
+
+    const uploadResponse = await http.post<UploadAttachmentResponseDTO>(
+      `/api/attachments/upload`,
+      formData,
+      {
+        headers: { "Content-Type": "multipart/form-data" },
+        onUploadProgress: onProgress
+          ? (event) => {
+              if (typeof event.total !== "number" || event.total <= 0) {
+                return;
+              }
+
+              const progress = Math.min(100, Math.round((event.loaded * 100) / event.total));
+              onProgress(progress);
+            }
+          : undefined,
+      }
+    );
+
+    const uploaded = uploadResponse.data?.data ?? uploadResponse.data;
+
+    const createPayload: CreateAttachmentDTO = {
+      ...uploaded,
+      relatedToType: "CUSTOMER",
+      relatedToId: customerId,
+      uploadedBy,
+    };
+
+    const response = await http.post<AttachmentResponseDTO>(`/api/attachments`, createPayload);
+
     return response.data;
   },
 
-  // Upload attachment (multipart/form-data)
-  uploadAttachment: async (formData: FormData): Promise<AttachmentResponseDTO> => {
-    const response = await http.post<AttachmentResponseDTO>(`/api/attachments`, formData, {
-      headers: { "Content-Type": "multipart/form-data" },
-    });
+  createAttachment: async (payload: CreateAttachmentDTO): Promise<AttachmentResponseDTO> => {
+    const response = await http.post<AttachmentResponseDTO>(`/api/attachments`, payload);
 
     return response.data;
+  },
+
+  // Feedback methods
+  createFeedback: async (payload: any): Promise<FeedbackResponseDTO> => {
+    const response = await http.post<any>(`/api/feedbacks`, payload);
+    return response.data?.data ?? response.data;
+  },
+
+  updateFeedback: async (id: number, payload: any): Promise<FeedbackResponseDTO> => {
+    const response = await http.put<any>(`/api/feedbacks/${id}`, payload);
+    return response.data?.data ?? response.data;
+  },
+
+  deleteFeedback: async (id: number): Promise<void> => {
+    try {
+      const response = await http.delete(`/api/feedbacks/${id}`);
+      // debug log to help diagnose why backend may not delete
+      // eslint-disable-next-line no-console
+      console.debug("customerApi.deleteFeedback", { id, status: response.status, data: response.data });
+      return response.data?.data ?? response.data;
+    } catch (err) {
+      // eslint-disable-next-line no-console
+      console.error("customerApi.deleteFeedback error", { id, err });
+      throw err;
+    }
+  },
+
+  // Note methods
+  createNote: async (payload: any): Promise<NoteResponseDTO> => {
+    const response = await http.post<any>(`/api/v1/notes`, payload);
+    return response.data?.data ?? response.data;
+  },
+
+  updateNote: async (id: number, payload: any): Promise<NoteResponseDTO> => {
+    const response = await http.put<any>(`/api/v1/notes/${id}`, payload);
+    return response.data?.data ?? response.data;
+  },
+
+  deleteNote: async (id: number): Promise<void> => {
+    try {
+      const response = await http.delete(`/api/v1/notes/${id}`);
+      // eslint-disable-next-line no-console
+      console.debug("customerApi.deleteNote", { id, status: response.status, data: response.data });
+      return response.data?.data ?? response.data;
+    } catch (err) {
+      // eslint-disable-next-line no-console
+      console.error("customerApi.deleteNote error", { id, err });
+      throw err;
+    }
   },
 };

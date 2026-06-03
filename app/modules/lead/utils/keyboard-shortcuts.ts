@@ -27,6 +27,7 @@ export const LEAD_SHORTCUTS: Record<string, Shortcut> = {
   
   // LeadDetailPage  
   EDIT_LEAD: { key: "e", ctrl: true, label: "Ctrl+E - Chỉnh sửa" },
+  BACK_TO_LIST: { key: "b", alt: true, label: "Alt+B - Quay lại danh sách" },
   CREATE_ACTIVITY: { key: "a", ctrl: true, label: "Ctrl+A - Log hoạt động" },
   CREATE_TASK: { key: "t", ctrl: true, label: "Ctrl+T - Tạo nhắc việc" },
 

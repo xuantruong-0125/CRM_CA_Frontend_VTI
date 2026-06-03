@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Pencil, Trash2, ChevronsRight } from "lucide-react";
 import type { LeadResponse } from "@/modules/lead/types/lead.types";
 import styles from "@/modules/lead/styles/lead.module.css";
+import { useCurrentUser } from "@/core/auth/useCurrentUser";
 
 type LeadTableProps = {
   leads: LeadResponse[];
@@ -40,14 +41,14 @@ type ColumnConfig = {
 };
 
 const COLUMN_CONFIG: ColumnConfig[] = [
-  { key: "contactName", label: "Tên liên hệ", defaultWidth: 140, minWidth: 110, maxWidth: 220 },
-  { key: "companyName", label: "Công ty", defaultWidth: 140, minWidth: 110, maxWidth: 220 },
-  { key: "phone", label: "Điện thoại", defaultWidth: 120, minWidth: 100, maxWidth: 160 },
-  { key: "email", label: "Email", defaultWidth: 160, minWidth: 120, maxWidth: 240 },
-  { key: "province", label: "Tỉnh/TP", defaultWidth: 110, minWidth: 100, maxWidth: 160 },
-  { key: "expectedRevenue", label: "Doanh số DK", defaultWidth: 120, minWidth: 100, maxWidth: 180 },
-  { key: "status", label: "Trạng thái", defaultWidth: 130, minWidth: 90, maxWidth: 190 },
-  { key: "actions", label: "Thao tác", defaultWidth: 90, minWidth: 80, maxWidth: 260, align: "right" },
+  { key: "contactName", label: "Tên liên hệ", defaultWidth: 140, minWidth: 30, maxWidth: 220 },
+  { key: "companyName", label: "Công ty", defaultWidth: 140, minWidth: 30, maxWidth: 220 },
+  { key: "phone", label: "Điện thoại", defaultWidth: 100, minWidth: 30, maxWidth: 160 },
+  { key: "email", label: "Email", defaultWidth: 160, minWidth: 30, maxWidth: 240 },
+  { key: "province", label: "Tỉnh/TP", defaultWidth: 110, minWidth: 30, maxWidth: 160 },
+  { key: "expectedRevenue", label: "Doanh số DK", defaultWidth: 120, minWidth: 30, maxWidth: 180 },
+  { key: "status", label: "Trạng thái", defaultWidth: 130, minWidth: 30, maxWidth: 190 },
+  { key: "actions", label: "Thao tác", defaultWidth: 120, minWidth: 30, maxWidth: 260, align: "left" },
 ];
 
 function maskPhone(phone?: string) {
@@ -149,6 +150,7 @@ export default function LeadTable({
   onConvert,
   onStatusChange,
 }: LeadTableProps) {
+  const { mounted, isSale } = useCurrentUser();
   const [columnWidths, setColumnWidths] = useState<Record<ColumnKey, number>>(() => {
     return COLUMN_CONFIG.reduce((acc, column) => {
       acc[column.key] = column.defaultWidth;
@@ -173,6 +175,8 @@ export default function LeadTable({
   const totalTableWidth = useMemo(() => {
     return COLUMN_CONFIG.reduce((sum, column) => sum + columnWidths[column.key], 0);
   }, [columnWidths]);
+
+  const canDelete = mounted ? !isSale : false;
 
   const startColumnResize = (columnKey: ColumnKey, event: React.MouseEvent<HTMLButtonElement>) => {
     event.preventDefault();
@@ -252,7 +256,7 @@ export default function LeadTable({
             <tr key={lead.id}>
               <td>
                 {lead.id ? (
-                  <Link href={`/leads/${lead.id}`} className={`${styles.leadLink} no-underline`}>
+                  <Link href={`/leads/${lead.id}`} className={styles.leadLink}>
                     {lead.contactName || "-"}
                   </Link>
                 ) : (
@@ -335,21 +339,23 @@ export default function LeadTable({
                   >
                     <Pencil size={14} />
                   </button>
-                  <button
-                    type="button"
-                    onClick={() => onDelete(lead)}
-                    className={`${styles.actionBtn} ${styles.deleteBtn}`}
-                    title="Xóa"
-                  >
-                    <Trash2 size={14} />
-                  </button>
+                  {canDelete && (
+                    <button
+                      type="button"
+                      onClick={() => onDelete(lead)}
+                      className={`${styles.actionBtn} ${styles.deleteBtn}`}
+                      title="Xóa"
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                  )}
                   {lead.isConverted ? (
                     <button
                       type="button"
                       disabled
                       tabIndex={-1}
                       aria-hidden="true"
-                      className="invisible"
+                      className={`${styles.actionBtn} ${styles.convertBtn} invisible pointer-events-none`}
                       title="Chuyển đổi"
                     >
                       <ChevronsRight size={14} />

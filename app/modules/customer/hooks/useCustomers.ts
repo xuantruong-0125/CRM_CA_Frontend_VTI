@@ -5,6 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import { customerApi } from "@/modules/customer/api/customer.api";
 import { userApi } from "@/modules/system/user/api/user.api";
 import type { CustomerListQuery } from "@/modules/customer/types/customer.types";
+import type { CustomerSaleUserResponseDTO } from "@/modules/customer/types/customer.types";
 import { queryKeys } from "@/shared/constants/query-keys";
 
 function toQueryKeyValue(params: object): string {
@@ -44,7 +45,23 @@ export function useCustomerCount() {
 export function useCustomerSalesUsers() {
   return useQuery({
     queryKey: queryKeys.customer.salesUsers,
-    queryFn: () => customerApi.getSalesUsers(),
+    queryFn: async (): Promise<CustomerSaleUserResponseDTO[]> => {
+      const users = await userApi.getUsers();
+
+      return users
+        .filter((user) => user.roleId === 3)
+        .map((user) => ({
+          id: user.id,
+          username: user.username,
+          email: user.email,
+          fullName: user.fullName,
+          roleId: user.roleId,
+          organizationId: user.organizationId,
+          status: user.status,
+          lastLogin: user.lastLogin,
+          createdAt: user.createdAt,
+        }));
+    },
     staleTime: 5 * 60 * 1000,
   });
 }

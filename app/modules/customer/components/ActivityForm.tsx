@@ -58,8 +58,8 @@ export default function ActivityForm({ customerId, onClose, mode = "create", ini
   };
 
   return (
-    <div>
-      <div className="space-y-3">
+    <div className="relative max-h-[560px]">
+      <div className="overflow-y-auto pr-2 space-y-3 pb-28">
         <label className="flex flex-col">
           <span className="text-sm font-medium text-slate-900">Loại hoạt động</span>
           <select className="mt-1 rounded border border-slate-300 px-2 py-1 text-slate-900" value={activityType} onChange={(e) => setActivityType(e.target.value)}>
@@ -110,16 +110,17 @@ export default function ActivityForm({ customerId, onClose, mode = "create", ini
         </label>
 
         <label className="flex items-center gap-2">
-          <input type="checkbox" checked={isImportant} onChange={(e) => setIsImportant(e.target.checked)} />
+          <input type="checkbox" checked={isImportant} onChange={(e) => setIsImportant(e.target.checked)} className="self-center align-middle !mr-[5px] rounded-[5px]" />
           <span className="text-sm font-medium text-slate-900">Quan trọng</span>
         </label>
 
-        <div className="flex gap-2 pt-3">
-          <button type="button" onClick={onClose} className="rounded border px-3 py-2">Hủy</button>
-          <button type="button" onClick={submit} className="rounded bg-sky-600 px-3 py-2 text-white">
-            {mode === "edit" ? "Cập nhật" : "Lưu"}
-          </button>
-        </div>
+      </div>
+
+      <div className="sticky bottom-0 left-0 right-0 z-20 bg-white/95 backdrop-blur-sm border-t border-slate-200 p-3 flex justify-end gap-2">
+        <button type="button" onClick={onClose} className="rounded border px-3 py-2">Hủy</button>
+        <button type="button" onClick={submit} className="rounded bg-sky-600 px-3 py-2 text-white">
+          {mode === "edit" ? "Cập nhật" : "Lưu"}
+        </button>
       </div>
     </div>
   );

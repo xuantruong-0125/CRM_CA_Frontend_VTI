@@ -8,7 +8,7 @@
     margin: 0 auto;
     padding: 0;
     background: #ffffff;
-    overflow: hidden;
+    overflow: visible;
     box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
 }
 
@@ -212,7 +212,8 @@
 .tableContainer {
     background: #ffffff;
     overflow-x: auto;
-    overflow-y: hidden;
+    /* allow dropdowns to overflow vertically so combobox/options render above the table */
+    overflow-y: visible;
 }
 
 .tableNote {
@@ -262,6 +263,11 @@
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+}
+
+/* allow specific table cells to show overflowing dropdowns */
+.cellOverflowVisible {
+    overflow: visible !important;
 }
 
 .table tbody tr {
@@ -468,6 +474,54 @@
         opacity: 1;
         transform: translateY(0);
     }
+}
+
+/* Add Button - Primary Blue */
+.addButton {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 8px 12px;
+    border: none;
+    border-radius: 5px;
+    background: #0ea5e9;
+    color: #ffffff;
+    font-size: 12px;
+    font-weight: 600;
+    text-decoration: none;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.addButton:hover {
+    background: #06b6d4;
+}
+
+.addButton:active {
+    transform: scale(0.98);
+}
+
+/* Back Button - Secondary White */
+.backButton {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 8px 12px;
+    border: 1px solid #d1d5db;
+    border-radius: 5px;
+    background: #ffffff;
+    color: #374151;
+    font-size: 12px;
+    font-weight: 500;
+    text-decoration: none;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.backButton:hover {
+    background: #f3f4f6;
+    border-color: #9ca3af;
+    color: #111827;
 }
 
 .modalHeader {
