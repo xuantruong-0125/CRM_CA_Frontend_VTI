@@ -38,9 +38,9 @@ interface ValidationErrors {
 export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({ initialData, isEditMode = false }) => {
   const router = useRouter();
   const { categories, mutate: mutateCategories } = useCategories();
-  
+
   const [activeTab, setActiveTab] = useState<TabType>("information");
-  
+
   const [formData, setFormData] = useState<CreateProductRequest>({
     skuCode: "",
     name: "",
@@ -153,9 +153,9 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({ initialDat
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({ 
-      ...prev, 
-      [name]: name === "categoryId" ? (value ? Number(value) : null) : value 
+    setFormData((prev) => ({
+      ...prev,
+      [name]: name === "categoryId" ? (value ? Number(value) : null) : value
     }));
     validateField(name, value);
   };
@@ -163,14 +163,14 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({ initialDat
   const handlePriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     let val: any = value;
-    
+
     if (name === "basePrice") {
       const cleanValue = value.replace(/\D/g, "");
       val = cleanValue === "" ? "" : Number(cleanValue);
     } else if (name === "taxRate") {
       val = value === "" ? "" : Number(value);
     }
-    
+
     setPriceData((prev) => ({ ...prev, [name]: val }));
     validateField(name, val);
 
@@ -250,7 +250,7 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({ initialDat
     errs.basePrice = validateField("basePrice", priceData.basePrice);
     errs.taxRate = validateField("taxRate", priceData.taxRate);
     errs.effectiveFrom = validateField("effectiveFrom", priceData.effectiveFrom);
-    
+
     if (priceData.effectiveFrom && priceData.effectiveTo && priceData.effectiveFrom > priceData.effectiveTo) {
       errs.effectiveTo = "Ngày kết thúc phải sau ngày bắt đầu";
     }
@@ -309,18 +309,10 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({ initialDat
       {/* Header / Action Bar */}
       <div className="flex items-center justify-between mb-6 bg-white p-4 rounded-[5px] border border-slate-200 shadow-sm">
         <div className="flex flex-col">
-          <div className="flex items-center gap-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-0.5">
-            <span className="hover:text-sky-600 cursor-pointer transition-colors" onClick={() => router.push("/products")}>Quản lý sản phẩm</span>
+          <div className="flex items-center gap-2 text-[18px] font-bold text-slate-400 uppercase tracking-widest mb-0.5">
+            <span className="hover:text-sky-600 cursor-pointer transition-colors text-blue" onClick={() => router.push("/products")}>Quản lý sản phẩm</span>
             <span>/</span>
             <span className="text-slate-600">{isEditMode ? "Chỉnh sửa" : "Thêm mới"}</span>
-          </div>
-          <div className="flex items-center gap-4">
-             <div className="flex items-center gap-1.5 text-[10px] text-slate-400">
-                <kbd className="px-1.5 py-0.5 bg-slate-100 border border-slate-200 rounded text-slate-500 font-bold">Ctrl + S</kbd> Lưu
-             </div>
-             <div className="flex items-center gap-1.5 text-[10px] text-slate-400">
-                <kbd className="px-1.5 py-0.5 bg-slate-100 border border-slate-200 rounded text-slate-500 font-bold">Esc</kbd> Hủy
-             </div>
           </div>
         </div>
         <div className="flex gap-3">
@@ -342,6 +334,8 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({ initialDat
         </div>
       </div>
 
+      
+
       <div className="bg-white border border-slate-200 rounded-[5px] shadow-sm overflow-hidden mb-6">
         {/* Main inputs section */}
         <div className="p-8">
@@ -362,9 +356,9 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({ initialDat
               <div className="flex flex-col gap-2">
                 <label className="text-sm font-bold text-slate-700">Danh mục sản phẩm <span className="text-rose-500">*</span></label>
                 <div className={`h-[38px] ${validationErrors.categoryId ? 'ring-1 ring-rose-400 rounded-[5px]' : ''}`}>
-                  <CategoryComboBox 
-                    categories={categories || []} 
-                    value={formData.categoryId} 
+                  <CategoryComboBox
+                    categories={categories || []}
+                    value={formData.categoryId}
                     onChange={handleCategoryChange}
                     onCategoryAdded={() => mutateCategories()}
                   />
@@ -375,9 +369,9 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({ initialDat
 
             <div className="lg:col-span-3 flex justify-center lg:justify-end">
               <div className="w-36 h-36 border-2 border-dashed border-slate-200 rounded-[5px] overflow-hidden bg-slate-50 flex items-center justify-center shadow-inner relative group">
-                <ImageUploader 
-                  value={getImageUrl(formData.imageUrl)} 
-                  onChange={handleFileChange} 
+                <ImageUploader
+                  value={getImageUrl(formData.imageUrl)}
+                  onChange={handleFileChange}
                   onClear={handleClearImage}
                 />
               </div>
@@ -390,11 +384,10 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({ initialDat
           <div className="flex px-4 pt-2 gap-2">
             <button
               onClick={() => setActiveTab("information")}
-              className={`px-6 py-3 text-sm font-bold transition-all flex items-center gap-2 rounded-t-[5px] border-t border-x ${
-                activeTab === "information" 
-                  ? "text-sky-600 border-slate-200 bg-white" 
-                  : "text-slate-500 border-transparent hover:text-slate-700 hover:bg-slate-100"
-              }`}
+              className={`px-6 py-3 text-sm font-bold transition-all flex items-center gap-2 rounded-t-[5px] border-t border-x ${activeTab === "information"
+                ? "text-sky-600 border-slate-200 bg-white"
+                : "text-slate-500 border-transparent hover:text-slate-700 hover:bg-slate-100"
+                }`}
             >
               <Info size={16} />
               Thông tin chung
@@ -402,11 +395,10 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({ initialDat
             </button>
             <button
               onClick={() => setActiveTab("price")}
-              className={`px-6 py-3 text-sm font-bold transition-all flex items-center gap-2 rounded-t-[5px] border-t border-x ${
-                activeTab === "price" 
-                  ? "text-sky-600 border-slate-200 bg-white" 
-                  : "text-slate-500 border-transparent hover:text-slate-700 hover:bg-slate-100"
-              }`}
+              className={`px-6 py-3 text-sm font-bold transition-all flex items-center gap-2 rounded-t-[5px] border-t border-x ${activeTab === "price"
+                ? "text-sky-600 border-slate-200 bg-white"
+                : "text-slate-500 border-transparent hover:text-slate-700 hover:bg-slate-100"
+                }`}
             >
               <DollarSign size={16} />
               Cấu hình giá
@@ -450,7 +442,7 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({ initialDat
                     {validationErrors.description && <p className="text-[11px] text-rose-500 font-bold">{validationErrors.description}</p>}
                   </div>
                 </div>
-                
+
                 <div className="bg-slate-50 p-4 rounded-[5px] border border-slate-100 flex flex-col md:flex-row items-start md:items-center gap-4 md:gap-8">
                   <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2 shrink-0">
                     <HelpCircle size={14} className="text-sky-500" />

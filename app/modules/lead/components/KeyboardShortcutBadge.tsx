@@ -13,6 +13,7 @@ export function KeyboardShortcutBadge({
   shortcut,
   className = "",
 }: KeyboardShortcutBadgeProps) {
+  const usesSolidWhiteBackground = /(?:^|\s)bg-white(?:\s|$)/.test(className);
   const parts: string[] = [];
   if ("ctrl" in shortcut && shortcut.ctrl) parts.push("Ctrl");
   if ("shift" in shortcut && shortcut.shift) parts.push("Shift");
@@ -32,11 +33,13 @@ export function KeyboardShortcutBadge({
   );
 
   return (
-    <kbd
-      className={`inline-flex items-center rounded-md border border-sky-200 bg-sky-50 px-1.5 py-0.5 text-[8px] font-semibold text-sky-700 shadow-sm ${className}`}
+    <span
+      role="img"
+      aria-label={shortcut.label}
+      className={`inline-flex items-center rounded-md border border-sky-200 bg-sky-50 px-1.5 py-0.5 text-xs font-semibold text-sky-700 shadow-sm ${className} ${usesSolidWhiteBackground ? "text-black" : ""}`}
       title={shortcut.label}
     >
       {parts.join("+")}
-    </kbd>
+    </span>
   );
 }

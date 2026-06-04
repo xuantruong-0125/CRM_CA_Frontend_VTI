@@ -18,6 +18,7 @@ type LeadDetailCardProps = {
   activityStatisticsError?: string;
   onCreateActivityClick?: () => void;
   onCreateTaskClick?: () => void;
+  onTaskEdit?: (task: LeadTaskResponse) => void;
   onActivityClick?: (activity: LeadActivityResponse) => void;
 };
 
@@ -169,6 +170,7 @@ export default function LeadDetailCard({
   activityStatisticsError,
   onCreateActivityClick,
   onCreateTaskClick,
+  onTaskEdit,
   onActivityClick,
 }: LeadDetailCardProps) {
   const sortedActivities = [...activities].sort((a, b) => {
@@ -244,20 +246,21 @@ export default function LeadDetailCard({
             <button
               type="button"
               onClick={onCreateActivityClick}
-              className="h-[30px] rounded-sm border border-blue-600 border-dashed bg-white px-3 text-[12px] font-medium text-blue-600 transition hover:bg-blue-50 inline-flex items-center gap-1.5"
+              className="inline-flex items-center gap-2 rounded-md bg-blue-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-700 transition"
               title={LEAD_SHORTCUTS.CREATE_ACTIVITY.label}
             >
-              Thêm log hoạt động
-              <KeyboardShortcutBadge shortcut={LEAD_SHORTCUTS.CREATE_ACTIVITY} />
+
+              Thêm log
+              <KeyboardShortcutBadge shortcut={LEAD_SHORTCUTS.CREATE_ACTIVITY} className="ml-2 hidden sm:inline-flex" />
             </button>
             <button
               type="button"
               onClick={onCreateTaskClick}
-              className="h-[30px] rounded-sm border border-slate-300 bg-white px-3 text-[12px] font-medium text-slate-700 transition hover:bg-slate-50 inline-flex items-center gap-1.5"
+              className="inline-flex items-center gap-2 rounded-md border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 transition"
               title={LEAD_SHORTCUTS.CREATE_TASK.label}
             >
               Tạo nhắc việc
-              <KeyboardShortcutBadge shortcut={LEAD_SHORTCUTS.CREATE_TASK} />
+              <KeyboardShortcutBadge shortcut={LEAD_SHORTCUTS.CREATE_TASK} className="ml-2 hidden sm:inline-flex" />
             </button>
           </div>
         </div>
@@ -340,9 +343,6 @@ export default function LeadDetailCard({
 
                   <div className="mt-2 grid grid-cols-1 gap-1 text-[11px] text-slate-500 md:grid-cols-2">
                     <p>
-                      Ghi chú: <span className="font-medium text-slate-700">{activity.noteContent || activity.outcome || "-"}</span>
-                    </p>
-                    <p>
                       Hạn công việc lúc: <span className="font-medium text-slate-700">{formatDateTime(activity.endDate || activity.completedAt)}</span>
                     </p>
                   </div>
@@ -379,32 +379,39 @@ export default function LeadDetailCard({
           <ul className="space-y-3 text-sm text-slate-700">
             {sortedTasks.map((task) => (
               <li key={task.id} className="rounded-xl border border-slate-200 bg-slate-50/40 p-3">
-                <div className="mb-2 flex flex-wrap items-center gap-2">
-                  <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-semibold ${getTaskPriorityClass(task.priority)}`}>
-                    {task.priority || "NORMAL"}
-                  </span>
-                  <span className="inline-flex items-center rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-600">
-                    {getTaskStatusLabel(task.status)}
-                  </span>
-                  <span className="text-[11px] text-slate-500">
-                    Hạn: {formatDateTime(task.dueDate || task.startDate || task.createdAt)}
-                  </span>
-                </div>
+                <button
+                  type="button"
+                  onClick={() => onTaskEdit?.(task)}
+                  className="block w-full text-left"
+                  title={onTaskEdit ? "Nhấn để chỉnh sửa task" : undefined}
+                >
+                  <div className="mb-2 flex flex-wrap items-center gap-2">
+                    <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-semibold ${getTaskPriorityClass(task.priority)}`}>
+                      {task.priority || "NORMAL"}
+                    </span>
+                    <span className="inline-flex items-center rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-600">
+                      {getTaskStatusLabel(task.status)}
+                    </span>
+                    <span className="text-[11px] text-slate-500">
+                      Hạn: {formatDateTime(task.dueDate || task.startDate || task.createdAt)}
+                    </span>
+                  </div>
 
-                <p className="text-[13px] font-semibold text-slate-900">
-                  {task.subject || "(Không có tiêu đề)"}
-                </p>
-
-                <p className="mt-1 text-[12px] text-slate-700">{task.description || "-"}</p>
-
-                <div className="mt-2 grid grid-cols-1 gap-1 text-[11px] text-slate-500 md:grid-cols-2">
-                  <p>
-                    Bắt đầu: <span className="font-medium text-slate-700">{formatDateTime(task.startDate)}</span>
+                  <p className="text-[13px] font-semibold text-slate-900">
+                    {task.subject || "(Không có tiêu đề)"}
                   </p>
-                  <p>
-                    Hoàn thành lúc: <span className="font-medium text-slate-700">{formatDateTime(task.completedAt)}</span>
-                  </p>
-                </div>
+
+                  <p className="mt-1 text-[12px] text-slate-700">{task.description || "-"}</p>
+
+                  <div className="mt-2 grid grid-cols-1 gap-1 text-[11px] text-slate-500 md:grid-cols-2">
+                    <p>
+                      Bắt đầu: <span className="font-medium text-slate-700">{formatDateTime(task.startDate)}</span>
+                    </p>
+                    <p>
+                      Hoàn thành lúc: <span className="font-medium text-slate-700">{formatDateTime(task.completedAt)}</span>
+                    </p>
+                  </div>
+                </button>
               </li>
             ))}
           </ul>

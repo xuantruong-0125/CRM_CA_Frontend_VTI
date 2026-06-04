@@ -12,8 +12,7 @@ import {
   EyeOff,
   Search,
   SlidersHorizontal,
-  X,
-  Plus
+  X
 } from "lucide-react";
 import { leadApi } from "@/modules/lead/api/lead.api";
 import LeadFilters, { type LeadFilterValues } from "@/modules/lead/components/LeadFilters";
@@ -40,6 +39,7 @@ import type {
 } from "@/modules/lead/types/lead.types";
 import { getApiErrorMessage } from "@/shared/utils/api-error";
 import { LEAD_SHORTCUTS, matchesShortcut } from "@/modules/lead/utils/keyboard-shortcuts";
+import { KeyboardShortcutBadge } from "@/modules/lead/components/KeyboardShortcutBadge";
 import ConfirmDeleteModal from "@/shared/components/ConfirmDeleteModal/ConfirmDeleteModal";
 
 type FormMode = "hidden" | "create" | "edit";
@@ -498,8 +498,8 @@ export default function LeadListPage() {
               className={`${styles.btnPrimary} ${styles.btnPrimarySuccess}`}
               title={LEAD_SHORTCUTS.CREATE_LEAD.label}
             >
-              <Plus size={17}/>
               Thêm mới
+              <KeyboardShortcutBadge shortcut={LEAD_SHORTCUTS.CREATE_LEAD} className="ml-1 border-white/40 bg-white/15 text-white" />
             </button>
           </div>
 

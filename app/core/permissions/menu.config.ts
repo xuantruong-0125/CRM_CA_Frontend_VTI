@@ -1,4 +1,4 @@
-import { Building2, ShieldCheck, Menu, Users, FileText, GitBranch, Layers, AlertOctagon, TrendingUp, Package, Banknote, Phone, Target, BarChart3, Trophy, CheckSquare, Calendar } from "lucide-react";
+import { Building2, ShieldCheck, Menu, Users, FileText, GitBranch, Layers, AlertOctagon, TrendingUp, Package, Banknote, Phone, Target, BarChart3, Trophy, CheckSquare, Calendar, UserPlus } from "lucide-react";
 
 import { LucideIcon } from "lucide-react";
 
@@ -84,7 +84,7 @@ export const MENU_CONFIG: MenuItem[] = [
         label: "Bảng giá",
         path: "/prices",
         icon: Banknote,
-        roles: ["MANAGER", "ADMIN"],
+        roles: ["MANAGERADMIN"],
     },
 
     {
@@ -106,7 +106,7 @@ export const MENU_CONFIG: MenuItem[] = [
         label: "Báo cáo KPI",
         path: "/reports",
         icon: BarChart3,
-        roles: ["ADMIN", "MANAGER", "DIRECTOR"],
+        roles: ["ADMIN", "MANAGER", "SALE","DIRECTOR"],
     },
     {
         key: "my-kpi",
@@ -119,15 +119,15 @@ export const MENU_CONFIG: MenuItem[] = [
         key: "lead",
         label: "Khách hàng tiềm năng",
         path: "/leads",
-        icon: Trophy,
-        roles: ["SALE", "MANAGER"],
+        icon: UserPlus,
+        roles: ["ADMIN", "SALE", "MANAGER"],
     },
     {
         key: "customer",
         label: "Khách hàng",
         path: "/customers",
-        icon: Trophy,
-        roles: ["SALE", "MANAGER"],
+        icon: Users,
+        roles: ["ADMIN", "SALE", "MANAGER"],
     }, 
     {
         key: "tasks",

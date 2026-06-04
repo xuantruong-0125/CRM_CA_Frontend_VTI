@@ -20,6 +20,7 @@ import type {
   SearchLeadRequest,
   UpdateLeadRequest,
   UpdateLeadActivityRequest,
+  UpdateLeadTaskRequest,
 } from "@/modules/lead/types/lead.types";
 
 export const leadApi = {
@@ -196,18 +197,21 @@ export const leadApi = {
   ): Promise<LeadTaskResponse> => {
     const response = await http.post<LeadTaskResponse>(
       `/api/v1/tasks`,
-      payload
+      {
+        ...payload,
+        relatedToType: payload.relatedToType ?? "LEAD",
+        relatedToId: payload.relatedToId ?? leadId,
+      }
     );
     return response.data;
   },
 
   updateLeadTask: async (
-    leadId: number,
     taskId: number,
-    payload: CreateLeadTaskRequest
+    payload: UpdateLeadTaskRequest
   ): Promise<LeadTaskResponse> => {
     const response = await http.put<LeadTaskResponse>(
-      `/api/leads/${leadId}/tasks/${taskId}`,
+      `/api/v1/tasks/${taskId}`,
       payload
     );
     return response.data;

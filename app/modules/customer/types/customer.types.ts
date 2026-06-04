@@ -134,6 +134,7 @@ export interface CreateContactDTO {
   dateOfBirth?: string;
   notes?: string;
   isPrimary?: boolean;
+  isActive?: boolean;
 }
 
 export interface ContactResponseDTO {
@@ -145,6 +146,7 @@ export interface ContactResponseDTO {
   email?: string;
   address?: string;
   dateOfBirth?: string;
+  notes?: string;
   isPrimary?: boolean;
   createdAt?: ISODateTimeString;
 }
@@ -339,6 +341,22 @@ export interface CreateAttachmentDTO {
   relatedToId: number;
   uploadedBy?: number;
 }
+
+export interface UploadAttachmentResponseDTO {
+  fileName: string;
+  fileType?: string;
+  fileSize?: number;
+  filePath: string;
+}
+
+export type UploadAttachmentProgressHandler = (progress: number) => void;
+
+export type UploadCustomerAttachmentRequest = {
+  customerId: number;
+  file: File;
+  uploadedBy: number;
+  onProgress?: UploadAttachmentProgressHandler;
+};
 
 export interface AttachmentResponseDTO {
   id: number;
