@@ -7,6 +7,11 @@ import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-r
 import { useRouter, useParams, useSearchParams } from 'next/navigation';
 
 import httpClient from '@/core/http/httpClient';
+import DatePicker from 'react-datepicker';
+import 'react-datepicker/dist/react-datepicker.css';
+
+import { toast } from 'react-toastify';
+import ConfirmDeleteModal from '@/shared/components/ConfirmDeleteModal/ConfirmDeleteModal';
 
 // import { useTask } from './hooks/useTask';
 
@@ -62,8 +67,11 @@ const TaskPage = () => {
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const router = useRouter();
-    // Lưu trữ danh sách ID các công việc đang được tích chọn
+
     const [selectedTaskIds, setSelectedTaskIds] = useState<number[]>([]);
+
+    const [openBulkDeleteModal, setOpenBulkDeleteModal] = useState(false);
+    const [isBulkDeleting, setIsBulkDeleting] = useState(false);
 
     const [showCreateModal, setShowCreateModal] = useState(false);
 
@@ -80,19 +88,21 @@ const TaskPage = () => {
         status: '',
         priority: ''
     });
+    const [searchTerm, setSearchTerm] = useState("");
 
-    // Thêm 1 state để báo hiệu "Trình duyệt đã load xong chưa?"
-    const [isMounted, setIsMounted] = useState(false);
+    const [isInitialized, setIsInitialized] = useState(false);
     const [isManager, setIsManager] = useState(false);
 
     useEffect(() => {
-        setIsMounted(true);
-
-        // Giờ mới lấy data từ Session đắp vào
         const savedFilters = sessionStorage.getItem('taskFilters');
         if (savedFilters) {
-            setFilters(JSON.parse(savedFilters));
+            const parsedFilters = JSON.parse(savedFilters);
+            setFilters(parsedFilters);
+            if (parsedFilters.subject) {
+                setSearchTerm(parsedFilters.subject);
+            }
         }
+
         const rolesStorage = localStorage.getItem('roles');
         if (rolesStorage) {
             try {
@@ -104,7 +114,22 @@ const TaskPage = () => {
                 console.error("Lỗi đọc phân quyền", e);
             }
         }
+
+        setIsInitialized(true);
     }, []);
+
+    useEffect(() => {
+        if (!isInitialized) return;
+
+        const delayDebounceFn = setTimeout(() => {
+            setFilters(prev => {
+                if (prev.subject === searchTerm) return prev;
+                return { ...prev, subject: searchTerm, page: 0 };
+            });
+        }, 400);
+
+        return () => clearTimeout(delayDebounceFn);
+    }, [searchTerm, isInitialized]);
 
 
     useEffect(() => {
@@ -146,14 +171,12 @@ const TaskPage = () => {
     };
 
     useEffect(() => {
-        if (isMounted) {
+        if (isInitialized) {
             sessionStorage.setItem('taskFilters', JSON.stringify(filters));
             fetchTasks();
         }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [filters, isMounted]);
+    }, [filters, isInitialized]);
 
-    // CÁC HÀM XỬ LÝ SỰ KIỆN (HANDLERS)
     const handleStatusChange = (newStatus: string) => {
         setFilters(prev => ({ ...prev, status: newStatus, page: 0 }));
     };
@@ -162,7 +185,7 @@ const TaskPage = () => {
         const value = e.target.value;
         setFilters(prev => ({ ...prev, subject: value, page: 0 }));
     };
-    const handleApplyDateFilter = () => {
+    const handleApplyDateFilter = (typeParam?: any) => {
         const formatLocalDate = (date: Date | null) => {
             if (!date) return "";
             const year = date.getFullYear();
@@ -171,20 +194,22 @@ const TaskPage = () => {
             return `${year}-${month}-${day}`;
         };
 
+        const currentType = (typeof typeParam === 'string') ? typeParam : dateFilterType;
+
         let finalFromDate = "";
         let finalToDate = "";
         const now = new Date();
 
-        if (dateFilterType === "OVERDUE") {
+        if (currentType === "OVERDUE") {
             const yesterday = new Date(now);
             yesterday.setDate(now.getDate() - 1);
             finalToDate = formatLocalDate(yesterday);
 
-        } else if (dateFilterType === "TODAY") {
+        } else if (currentType === "TODAY") {
             finalFromDate = formatLocalDate(now);
             finalToDate = formatLocalDate(now);
 
-        } else if (dateFilterType === "THIS_WEEK") {
+        } else if (currentType === "THIS_WEEK") {
             const day = now.getDay();
             const diffToMonday = now.getDate() - day + (day === 0 ? -6 : 1);
 
@@ -197,27 +222,26 @@ const TaskPage = () => {
             finalFromDate = formatLocalDate(monday);
             finalToDate = formatLocalDate(sunday);
 
-        } else if (dateFilterType === "THIS_MONTH") {
+        } else if (currentType === "THIS_MONTH") {
             const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
             const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0);
 
             finalFromDate = formatLocalDate(firstDay);
             finalToDate = formatLocalDate(lastDay);
 
-        } else if (dateFilterType === "CUSTOM") {
+        } else if (currentType === "CUSTOM") {
             if (fromDate && toDate && new Date(fromDate) > new Date(toDate)) {
                 alert("Từ ngày không được lớn hơn Đến ngày!");
                 return;
             }
-            finalFromDate = fromDate;
-            finalToDate = toDate;
+            finalFromDate = fromDate || "";
+            finalToDate = toDate || "";
         }
-
 
         setFilters(prev => ({
             ...prev,
-            fromDate: finalFromDate || '',
-            toDate: finalToDate || '',
+            fromDate: finalFromDate,
+            toDate: finalToDate,
             page: 0
         }));
     };
@@ -279,28 +303,34 @@ const TaskPage = () => {
         }
     };
 
-    const formatShortDate = (dateString: string | null) => {
+    const formatDateOnly = (dateString: string | null) => {
         if (!dateString) return '---';
-        const date = new Date(dateString);
-        return date.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+        return new Date(dateString).toLocaleDateString('vi-VN', {
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric'
+        });
     };
 
-    // 1. Hàm xử lý khi bấm vào Checkbox "Chọn tất cả" ở trên cùng
+    const formatTimeOnly = (dateString: string | null) => {
+        if (!dateString) return '';
+        return new Date(dateString).toLocaleTimeString('vi-VN', {
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+    };
+
     const handleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.checked) {
-            // Nếu tích vào thì lấy toàn bộ ID của các task hiện tại trên trang
             const allIds = tasks.map((task: any) => task.id);
             setSelectedTaskIds(allIds);
         } else {
-            // Bỏ tích thì xóa sạch mảng
             setSelectedTaskIds([]);
         }
     };
 
-    // 2. Hàm xử lý khi bấm vào từng Checkbox ở mỗi dòng
     const handleSelectOne = (taskId: number) => {
         setSelectedTaskIds((prev) => {
-            // Nếu ID đã có trong mảng thì gỡ ra, nếu chưa có thì thêm vào
             if (prev.includes(taskId)) {
                 return prev.filter((id) => id !== taskId);
             } else {
@@ -309,29 +339,34 @@ const TaskPage = () => {
         });
     };
 
-    // 3. Hàm xử lý khi bấm nút "Xóa" màu đỏ
-    const handleDeleteSelected = async () => {
-        if (!window.confirm(`Bạn có chắc chắn muốn xóa ${selectedTaskIds.length} công việc đã chọn không?`)) return;
 
+    const handleDeleteSelected = () => {
+        if (selectedTaskIds.length === 0) return;
+        setOpenBulkDeleteModal(true);
+    };
+
+    const confirmBulkDelete = async () => {
+        setIsBulkDeleting(true);
         try {
-            // Dùng Promise.all để gọi API xóa nhiều ID cùng lúc chạy song song
             await Promise.all(
                 selectedTaskIds.map((id) => httpClient.delete(`/api/v1/tasks/${id}`))
             );
 
-            alert("Đã xóa thành công!");
+            toast.success(`Đã xóa thành công ${selectedTaskIds.length} công việc!`);
 
-            // Cập nhật lại UI: Lọc bỏ những task đã xóa ra khỏi màn hình ngay lập tức
             setTasks((prevTasks: any[]) => prevTasks.filter((task) => !selectedTaskIds.includes(task.id)));
 
-            // Trả mảng chọn về rỗng để ẩn nút Xóa
             setSelectedTaskIds([]);
+            setOpenBulkDeleteModal(false);
 
         } catch (error) {
             console.error("Lỗi xóa nhiều task:", error);
-            alert("Có lỗi xảy ra khi xóa. Vui lòng thử lại!");
+            toast.error("Có lỗi xảy ra khi xóa. Vui lòng thử lại!");
+        } finally {
+            setIsBulkDeleting(false);
         }
     };
+
 
     return (
         <div className="container-fluid px-0 min-vh-100">
@@ -452,8 +487,8 @@ const TaskPage = () => {
                             <input
                                 type="text"
                                 className="form-control border-0 shadow-none bg-white"
-                                value={filters.subject}
-                                onChange={(e) => setFilters({ ...filters, subject: e.target.value, page: 0 })}
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
                                 placeholder="Tìm theo chủ đề..."
                             />
                         </div>
@@ -466,9 +501,11 @@ const TaskPage = () => {
                             className="form-select form-select-sm border border-white bg-white rounded-3 shadow-sm cursor-pointer"
                             value={dateFilterType}
                             onChange={(e) => {
-                                setDateFilterType(e.target.value);
-                                if (e.target.value !== "CUSTOM") {
-                                    setTimeout(() => handleApplyDateFilter(), 50);
+                                const targetValue = e.target.value
+                                setDateFilterType(targetValue);
+
+                                if (targetValue !== "CUSTOM") {
+                                    handleApplyDateFilter(targetValue);
                                 }
                             }}
                         >
@@ -483,18 +520,59 @@ const TaskPage = () => {
 
                     {/* 3. Tùy chỉnh khoảng ngày */}
                     {dateFilterType === "CUSTOM" && (
-                        <div className="d-flex align-items-center gap-2 animate-fade-in" style={{ minWidth: '320px' }}>
+                        <div className="d-flex align-items-end gap-2 animate-fade-in" style={{ minWidth: '360px' }}>
+
                             <div className="flex-grow-1">
-                                <label className="form-label small fw-semibold text-muted mb-1 ps-1">Từ ngày</label>
-                                <input type="date" className="form-control form-control-sm border border-white bg-white rounded-3 shadow-sm" value={fromDate} onChange={(e) => setFromDate(e.target.value)} />
+
+                                <DatePicker
+                                    selected={fromDate ? new Date(fromDate) : null}
+                                    dateFormat="dd/MM/yyyy"
+                                    placeholderText="Chọn ngày bắt đầu"
+                                    className="form-control form-control-sm border border-white bg-white rounded-3 shadow-sm py-1 cursor-pointer w-100"
+                                    onChange={(date: Date | null) => {
+                                        if (date) {
+                                            const yyyy = date.getFullYear();
+                                            const mm = String(date.getMonth() + 1).padStart(2, '0');
+                                            const dd = String(date.getDate()).padStart(2, '0');
+                                            setFromDate(`${yyyy}-${mm}-${dd}`);
+                                        } else {
+                                            setFromDate("");
+                                        }
+                                    }}
+                                />
                             </div>
+
                             <div className="flex-grow-1">
-                                <label className="form-label small fw-semibold text-muted mb-1 ps-1">Đến ngày</label>
-                                <input type="date" className="form-control form-control-sm border border-white bg-white rounded-3 shadow-sm" value={toDate} onChange={(e) => setToDate(e.target.value)} />
+
+                                <DatePicker
+                                    selected={toDate ? new Date(toDate) : null}
+                                    dateFormat="dd/MM/yyyy"
+                                    placeholderText="Chọn ngày kết thúc"
+                                    className="form-control form-control-sm border border-white bg-white rounded-3 shadow-sm py-1 cursor-pointer w-100"
+                                    onChange={(date: Date | null) => {
+                                        if (date) {
+                                            const yyyy = date.getFullYear();
+                                            const mm = String(date.getMonth() + 1).padStart(2, '0');
+                                            const dd = String(date.getDate()).padStart(2, '0');
+                                            setToDate(`${yyyy}-${mm}-${dd}`);
+                                        } else {
+                                            setToDate("");
+                                        }
+                                    }}
+                                />
                             </div>
-                            <div className="align-self-end">
-                                <button className="btn btn-sm btn-primary rounded-3 px-3 shadow-sm fw-medium" onClick={handleApplyDateFilter}>Lọc</button>
+
+                            <div>
+                                <button
+                                    type="button"
+                                    className="btn btn-sm btn-primary rounded-3 px-3 shadow-sm fw-bold d-flex align-items-center justify-content-center"
+                                    style={{ height: '31px', fontSize: '12.5px' }}
+                                    onClick={() => handleApplyDateFilter("CUSTOM")}
+                                >
+                                    <i className="fa-solid fa-filter me-1"></i> Lọc
+                                </button>
                             </div>
+
                         </div>
                     )}
 
@@ -525,6 +603,7 @@ const TaskPage = () => {
                                 setDateFilterType("ALL");
                                 setFromDate("");
                                 setToDate("");
+                                setSearchTerm("");
                                 setFilters({ subject: '', status: '', priority: '', page: 0, size: 10, fromDate: '', toDate: '' });
                             }}
                         >
@@ -632,19 +711,38 @@ const TaskPage = () => {
                                     <td>{getPriorityBadge(task.priority)}</td>
 
                                     {/* CỘT 6: THỜI HẠN */}
-                                    <td>
-                                        <div className="small text-muted mb-1"><span className="text-success"><i className="fa-solid fa-play me-1"></i></span> {formatShortDate(task.startDate)}</div>
-                                        <div className="small text-muted fw-medium"><span className="text-danger"><i className="fa-solid fa-flag-checkered me-1"></i></span> {formatShortDate(task.dueDate)}</div>
+                                    <td className="align-middle" style={{ fontSize: '12px', minWidth: '140px' }}>
+                                        {/* Khối Ngày Bắt Đầu */}
+                                        <div className="mb-1 d-flex align-items-center justify-content-between border-bottom border-light pb-1">
+                                            <span className="text-success me-1" title="Ngày bắt đầu">
+                                                <i className="fa-solid fa-play" style={{ fontSize: '10px' }}></i>
+                                            </span>
+                                            <span className="fw-medium text-dark">{formatDateOnly(task.startDate)}</span>
+                                            <span className="text-muted small ms-auto ps-2">
+                                                <i className="fa-regular fa-clock me-0.5"></i>{formatTimeOnly(task.startDate)}
+                                            </span>
+                                        </div>
+
+                                        {/* Khối Hạn Chót (Deadline) */}
+                                        <div className="d-flex align-items-center justify-content-between">
+                                            <span className="text-danger me-1" title="Hạn chót">
+                                                <i className="fa-solid fa-flag-checkered" style={{ fontSize: '10px' }}></i>
+                                            </span>
+                                            <span className="fw-bold text-secondary">{formatDateOnly(task.dueDate)}</span>
+                                            <span className="text-muted small ms-auto ps-2">
+                                                <i className="fa-regular fa-clock me-0.5"></i>{formatTimeOnly(task.dueDate)}
+                                            </span>
+                                        </div>
                                     </td>
                                     {/* CỘT 3: LIÊN HỆ (CONTACT) */}
                                     <td className="align-middle">
                                         {task.contactName ? (
                                             <div className="text-info fw-medium text-truncate" style={{ fontSize: '13px', maxWidth: '130px' }} title={task.contactName}>
-                                                <i className="fa-regular fa-address-book me-1"></i> {task.contactName}
+                                                <i className="fa-regular  me-1"></i> {task.contactName}
                                             </div>
                                         ) : task.contactId ? (
                                             <div className="text-info fw-medium" style={{ fontSize: '13px' }}>
-                                                <i className="fa-regular fa-address-book me-1"></i> ID: {task.contactId}
+                                                <i className="fa-regular  me-1"></i> ID: {task.contactId}
                                             </div>
                                         ) : (
                                             <span className="text-muted fst-italic small">---</span>
@@ -661,7 +759,7 @@ const TaskPage = () => {
                                         {task.assignee ? (
                                             <>
                                                 <div className="fw-medium text-primary small">
-                                                    <i className="fa-regular fa-circle-user me-1"></i> {task.assignee.name}
+                                                    <i className="fa-regular  me-1"></i> {task.assignee.name}
                                                 </div>
 
                                             </>
@@ -786,7 +884,6 @@ const TaskPage = () => {
 
                 </div>
             </div>
-            {/* Nhúng Modal Thêm Task */}
             <CreateTaskModal
                 show={showCreateModal}
                 onClose={() => setShowCreateModal(false)}
@@ -794,6 +891,16 @@ const TaskPage = () => {
 
                     setFilters({ ...filters, page: 0 });
                 }}
+            />
+            <ConfirmDeleteModal
+                open={openBulkDeleteModal}
+                onClose={() => setOpenBulkDeleteModal(false)}
+                onConfirm={confirmBulkDelete}
+                loading={isBulkDeleting}
+                title="Xóa công việc"
+                message={`Bạn có chắc chắn muốn xóa ${selectedTaskIds.length} công việc đã chọn không?`}
+                confirmLabel="Đồng ý xóa"
+                cancelLabel="Hủy bỏ"
             />
         </div >
     );

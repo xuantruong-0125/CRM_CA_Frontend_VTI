@@ -5,6 +5,8 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { activityApi } from '../api/activity.api';
 import httpClient from '@/core/http/httpClient';
+import DatePicker from 'react-datepicker';
+import 'react-datepicker/dist/react-datepicker.css';
 
 interface Props {
     id?: number;
@@ -106,18 +108,13 @@ const ActivityForm = ({ id }: Props) => {
         fetchRelatedOptions();
     }, [formData.relatedToType]);
 
-
-
-
     useEffect(() => {
         const fetchUsers = async () => {
             try {
-                const response = await httpClient.get('/api/users');
-                if (response.data && response.data.content) {
-                    setUsers(response.data.content);
-                } else {
-                    setUsers([]);
-                }
+                const response = await httpClient.get('/api/users/lookup');
+                const data = response.data;
+                const usersList = Array.isArray(data) ? data : (data?.content || []);
+                setUsers(usersList);
             } catch (error) {
                 console.error('Không thể tải danh sách nhân viên:', error);
             }
@@ -162,8 +159,7 @@ const ActivityForm = ({ id }: Props) => {
                     });
                     const formatDateTime = (dateString: string) => {
                         if (!dateString) return '';
-                        // Cắt chuỗi lấy phần yyyy-MM-ddTHH:mm
-                        return new Date(dateString).toISOString().slice(0, 16);
+                        return dateString.substring(0, 16);
                     };
                     setFormData({
                         subject: data.subject || '',
@@ -319,12 +315,64 @@ const ActivityForm = ({ id }: Props) => {
 
                                     <div className="row mb-4 g-3">
                                         <div className="col-md-6">
-                                            <label className="form-label text-muted small text-uppercase fw-bold">Bắt đầu lúc <span className="text-danger">*</span></label>
-                                            <input type="datetime-local" className="form-control focus-ring focus-ring-info shadow-sm" name="startDate" value={formData.startDate} onChange={handleChange} required />
+                                            <label className="form-label text-muted small text-uppercase fw-bold d-block mb-1">
+                                                Bắt đầu lúc <span className="text-danger">*</span>
+                                            </label>
+                                            <DatePicker
+                                                selected={formData.startDate ? new Date(formData.startDate) : null}
+                                                onChange={(date: Date | null) => {
+                                                    if (date) {
+                                                        const yyyy = date.getFullYear();
+                                                        const mm = String(date.getMonth() + 1).padStart(2, '0');
+                                                        const dd = String(date.getDate()).padStart(2, '0');
+                                                        const hh = String(date.getHours()).padStart(2, '0');
+                                                        const min = String(date.getMinutes()).padStart(2, '0');
+                                                        setFormData({ ...formData, startDate: `${yyyy}-${mm}-${dd}T${hh}:${min}` });
+                                                    } else {
+                                                        setFormData({ ...formData, startDate: "" });
+                                                    }
+                                                }}
+                                                showTimeSelect
+                                                timeFormat="HH:mm"
+                                                timeIntervals={15}
+                                                timeCaption="Thời gian"
+                                                dateFormat="dd/MM/yyyy HH:mm"
+                                                placeholderText="Chọn ngày giờ bắt đầu"
+                                                className="form-control focus-ring focus-ring-info shadow-sm cursor-pointer w-100"
+                                                wrapperClassName="w-100"
+                                                disabled={isLocked}
+                                            />
                                         </div>
+
                                         <div className="col-md-6">
-                                            <label className="form-label text-muted small text-uppercase fw-bold">Kết thúc lúc</label>
-                                            <input type="datetime-local" className="form-control focus-ring focus-ring-info shadow-sm" name="endDate" value={formData.endDate} onChange={handleChange} />
+                                            <label className="form-label text-muted small text-uppercase fw-bold d-block mb-1">
+                                                Kết thúc lúc
+                                            </label>
+                                            <DatePicker
+                                                selected={formData.endDate ? new Date(formData.endDate) : null}
+                                                onChange={(date: Date | null) => {
+                                                    if (date) {
+                                                        const yyyy = date.getFullYear();
+                                                        const mm = String(date.getMonth() + 1).padStart(2, '0');
+                                                        const dd = String(date.getDate()).padStart(2, '0');
+                                                        const hh = String(date.getHours()).padStart(2, '0');
+                                                        const min = String(date.getMinutes()).padStart(2, '0');
+                                                        setFormData({ ...formData, endDate: `${yyyy}-${mm}-${dd}T${hh}:${min}` });
+                                                    } else {
+                                                        setFormData({ ...formData, endDate: "" });
+                                                    }
+                                                }}
+                                                showTimeSelect
+                                                timeFormat="HH:mm"
+                                                timeIntervals={15}
+                                                timeCaption="Thời gian"
+                                                dateFormat="dd/MM/yyyy HH:mm"
+                                                minDate={formData.startDate ? new Date(formData.startDate) : undefined}
+                                                placeholderText="Chọn ngày giờ kết thúc"
+                                                className="form-control focus-ring focus-ring-info shadow-sm cursor-pointer w-100"
+                                                wrapperClassName="w-100"
+                                                disabled={isLocked}
+                                            />
                                         </div>
                                     </div>
 

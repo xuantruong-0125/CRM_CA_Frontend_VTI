@@ -1,6 +1,9 @@
 "use client";
 import React, { useState, useEffect } from 'react';
 import httpClient from '@/core/http/httpClient';
+import Select from 'react-select';
+import DatePicker from 'react-datepicker';
+import 'react-datepicker/dist/react-datepicker.css';
 
 interface CreateTaskModalProps {
     show: boolean;
@@ -34,8 +37,10 @@ const CreateTaskModal: React.FC<CreateTaskModalProps> = ({ show, onClose, onSucc
     useEffect(() => {
         const fetchUsers = async () => {
             try {
-                const response = await httpClient.get('/api/users');
-                setUsers(response.data.content || []);
+                const response = await httpClient.get('/api/users/lookup');
+                const data = response.data;
+                const usersList = Array.isArray(data) ? data : (data?.content || []);
+                setUsers(usersList);
             } catch (error) {
                 console.error('Không thể tải danh sách nhân viên:', error);
             }
@@ -82,8 +87,10 @@ const CreateTaskModal: React.FC<CreateTaskModalProps> = ({ show, onClose, onSucc
 
             if (formData.relatedToType === 'CUSTOMER' && formData.relatedToId) {
                 try {
-                    const response = await httpClient.get(`/api/v1/contacts/${formData.relatedToId}`);
-                    setCustomerContacts(response.data.content || response.data || []);
+                    const response = await httpClient.get(`/api/v1/contacts/customer/${formData.relatedToId}`);
+                    const data = response.data;
+                    const contactsList = Array.isArray(data) ? data : (data?.content || data?.data || []);
+                    setCustomerContacts(contactsList);
                 } catch (error) {
                     console.error("Lỗi lấy danh sách liên hệ:", error);
                     setCustomerContacts([]);
@@ -187,14 +194,60 @@ const CreateTaskModal: React.FC<CreateTaskModalProps> = ({ show, onClose, onSucc
                                 <label className="form-label small fw-semibold text-muted">Chủ đề công việc <span className="text-danger">*</span></label>
                                 <input type="text" className="form-control shadow-sm" name="subject" value={formData.subject} onChange={handleChange} placeholder="VD: Báo giá phần mềm CRM..." required />
                             </div>
-
-                            <div className="col-md-6">
-                                <label className="form-label small fw-semibold text-muted">Ngày bắt đầu</label>
-                                <input type="datetime-local" className="form-control shadow-sm" name="startDate" value={formData.startDate} onChange={handleChange} min={new Date().toISOString().slice(0, 16)} />
+                            <div className="col-6">
+                                <label className="form-label small fw-semibold text-muted d-block mb-1">Ngày bắt đầu</label>
+                                <DatePicker
+                                    selected={formData.startDate ? new Date(formData.startDate) : null}
+                                    onChange={(date: Date | null) => {
+                                        if (date) {
+                                            const yyyy = date.getFullYear();
+                                            const mm = String(date.getMonth() + 1).padStart(2, '0');
+                                            const dd = String(date.getDate()).padStart(2, '0');
+                                            const hh = String(date.getHours()).padStart(2, '0');
+                                            const min = String(date.getMinutes()).padStart(2, '0');
+                                            setFormData({ ...formData, startDate: `${yyyy}-${mm}-${dd}T${hh}:${min}` });
+                                        } else {
+                                            setFormData({ ...formData, startDate: "" });
+                                        }
+                                    }}
+                                    showTimeSelect
+                                    timeFormat="HH:mm"
+                                    timeIntervals={15}
+                                    timeCaption="Thời gian"
+                                    dateFormat="dd/MM/yyyy HH:mm"
+                                    minDate={new Date()}
+                                    placeholderText="Chọn ngày giờ"
+                                    className="form-control shadow-sm cursor-pointer w-100"
+                                    wrapperClassName="w-100"
+                                />
                             </div>
-                            <div className="col-md-6">
-                                <label className="form-label small fw-semibold text-muted">Hạn chót (Deadline)</label>
-                                <input type="datetime-local" className="form-control shadow-sm" name="dueDate" value={formData.dueDate} onChange={handleChange} min={formData.startDate ? formData.startDate : new Date().toISOString().slice(0, 16)} />
+
+                            <div className="col-6">
+                                <label className="form-label small fw-semibold text-muted d-block mb-1">Hạn chót (Deadline)</label>
+                                <DatePicker
+                                    selected={formData.dueDate ? new Date(formData.dueDate) : null}
+                                    onChange={(date: Date | null) => {
+                                        if (date) {
+                                            const yyyy = date.getFullYear();
+                                            const mm = String(date.getMonth() + 1).padStart(2, '0');
+                                            const dd = String(date.getDate()).padStart(2, '0');
+                                            const hh = String(date.getHours()).padStart(2, '0');
+                                            const min = String(date.getMinutes()).padStart(2, '0');
+                                            setFormData({ ...formData, dueDate: `${yyyy}-${mm}-${dd}T${hh}:${min}` });
+                                        } else {
+                                            setFormData({ ...formData, dueDate: "" });
+                                        }
+                                    }}
+                                    showTimeSelect
+                                    timeFormat="HH:mm"
+                                    timeIntervals={15}
+                                    timeCaption="Thời gian"
+                                    dateFormat="dd/MM/yyyy HH:mm"
+                                    minDate={formData.startDate ? new Date(formData.startDate) : new Date()}
+                                    placeholderText="Chọn hạn chót"
+                                    className="form-control shadow-sm cursor-pointer w-100"
+                                    wrapperClassName="w-100"
+                                />
                             </div>
 
                             <div className="col-md-6">
@@ -210,18 +263,44 @@ const CreateTaskModal: React.FC<CreateTaskModalProps> = ({ show, onClose, onSucc
 
                             <div className="col-md-6">
                                 <label className="form-label small fw-semibold text-muted">Giao cho</label>
-                                <select className="form-select shadow-sm cursor-pointer" name="assignedTo" value={formData.assignedTo} onChange={handleChange}>
-                                    <option value="">-- Chọn nhân viên --</option>
-                                    {users.length > 0 ? (
-                                        users.map(user => (
-                                            <option key={user.id} value={user.id}>
-                                                {user.fullName || user.username || user.name}
-                                            </option>
-                                        ))
-                                    ) : (
-                                        <option disabled>Đang tải danh sách...</option>
-                                    )}
-                                </select>
+                                {(() => {
+                                    const userOptions = users.map(user => ({
+                                        value: String(user.id),
+                                        label: `${user.fullName || user.username} (${user.email || 'No email'})`
+                                    }));
+
+                                    const currentSelected = userOptions.find(opt => opt.value === formData.assignedTo) || null;
+
+                                    return (
+                                        <Select
+                                            options={userOptions}
+                                            value={currentSelected}
+                                            onChange={(selectedOption) => {
+                                                setFormData({
+                                                    ...formData,
+                                                    assignedTo: selectedOption ? selectedOption.value : ""
+                                                });
+                                            }}
+                                            placeholder="-- Chọn hoặc gõ tìm nhân viên --"
+                                            isClearable={true}
+                                            noOptionsMessage={() => "❌ Không tìm thấy nhân sự phù hợp"}
+                                            className="react-select-container"
+                                            classNamePrefix="react-select"
+                                            styles={{
+                                                control: (baseStyles, state) => ({
+                                                    ...baseStyles,
+                                                    borderColor: state.isFocused ? '#86b7fe' : '#dee2e6',
+                                                    boxShadow: state.isFocused ? '0 0 0 0.25rem rgba(13, 110, 253, 0.25)' : 'none',
+                                                    '&:hover': { borderColor: '#86b7fe' },
+                                                    borderRadius: '0.375rem',
+                                                    fontSize: '14px',
+                                                    minHeight: '38px',
+                                                    cursor: 'pointer'
+                                                }),
+                                            }}
+                                        />
+                                    );
+                                })()}
                             </div>
 
                             <div className="col-md-6">

@@ -7,11 +7,14 @@ import { activityApi } from './api/activity.api';
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react';
 import { toast } from 'react-toastify';
+import Select from 'react-select';
+import DatePicker from 'react-datepicker';
+import 'react-datepicker/dist/react-datepicker.css';
+
 import ConfirmDeleteModal from '@/shared/components/ConfirmDeleteModal/ConfirmDeleteModal';
 
 
 const getActivityTypeLabel = (type: string | number) => {
-    // Ép kiểu về chuỗi để so sánh cho chuẩn xác
     const typeStr = String(type);
     switch (typeStr) {
         case '1': case 'CALL': return 'Cuộc gọi với khách';
@@ -70,7 +73,6 @@ const ActivityPage = () => {
     const [isManager, setIsManager] = useState(false);
 
 
-    //State tạm thời cho các ô nhập liệu trên thanh Filter
     const [localFilters, setLocalFilters] = useState({
         search: '',
         status: '',
@@ -89,12 +91,10 @@ const ActivityPage = () => {
     useEffect(() => {
         const fetchUsers = async () => {
             try {
-                const response = await httpClient.get('/api/users');
-                if (response.data && response.data.content) {
-                    setUsers(response.data.content);
-                } else {
-                    setUsers([]);
-                }
+                const response = await httpClient.get('/api/users/lookup');
+                const data = response.data;
+                const usersList = Array.isArray(data) ? data : (data?.content || []);
+                setUsers(usersList);
             } catch (error) {
                 console.error('Lỗi khi tải danh sách nhân viên:', error);
             }
@@ -201,6 +201,7 @@ const ActivityPage = () => {
         if (selectedIds.length === 0) return;
         setOpenBulkDeleteModal(true);
     };
+    
     const confirmBulkDelete = async () => {
         setIsBulkDeleting(true);
         try {
@@ -219,10 +220,8 @@ const ActivityPage = () => {
 
 
     useEffect(() => {
-        // 1. Lấy tất cả params từ URL
         const params = Object.fromEntries(searchParams.entries());
 
-        // 2. Ép các ô Input phải đi theo URL 
         setLocalFilters({
             search: params.search || '',
             status: params.status || '',
@@ -261,7 +260,7 @@ const ActivityPage = () => {
             handlePageChange(targetPage - 1);
         }
     };
-    // Hàm chuyển đổi trạng thái nhanh (Tự động gọi API luôn)
+    // Hàm chuyển đổi trạng thái nhanh 
     const handleStatusQuickFilter = (newStatus: string) => {
         setLocalFilters({ ...localFilters, status: newStatus });
 
@@ -273,7 +272,7 @@ const ActivityPage = () => {
             params.set('status', newStatus);
         }
 
-        params.set('page', '0'); // Bấm lọc mới thì luôn về trang đầu
+        params.set('page', '0');
         router.push(`${pathname}?${params.toString()}`);
     };
     const handleSort = (key: string) => {
@@ -296,7 +295,6 @@ const ActivityPage = () => {
         <div className="container-fluid px-0 min-vh-100">
             <div className="card shadow-sm border-0 rounded-3">
                 <div className="card-body p-0">
-
                     {/* HEADER TITLE & QUẢN LÝ TRẠNG THÁI */}
                     <div className="d-flex justify-content-between align-items-center mb-4">
                         <div className="w-100">
@@ -304,7 +302,7 @@ const ActivityPage = () => {
                                 className="mb-0 fw-bold text-white w-100"
                                 style={{
                                     backgroundColor: "rgb(21, 0, 211)",
-                                    padding: "10px 20px",
+                                    padding: "10px 20px", 
                                     borderRadius: "10px",
                                     textAlign: "left",
                                     fontSize: "larger"
@@ -362,11 +360,11 @@ const ActivityPage = () => {
                         </div>
                     </div>
 
-                    <div className="d-flex flex-wrap align-items-end gap-3 mb-4 p-3 bg-light border rounded">
+                    <div className="d-flex flex-wrap align-items-end gap-2 mb-4 p-2 bg-light border rounded-3 shadow-sm">
 
-                        {/* 1. Ô Tìm kiếm */}
-                        <div className="flex-grow-1" style={{ minWidth: '200px' }}>
-                            <label className="form-label small text-muted mb-1">Tìm kiếm</label>
+                        {/* 1. Ô Tìm kiếm (Cấp quyền co giãn nhưng không được ép người khác) */}
+                        <div className="flex-grow-1" style={{ minWidth: '150px' }}>
+                            <label className="form-label small fw-semibold text-muted mb-1">Tìm kiếm</label>
                             <input
                                 type="text"
                                 className="form-control"
@@ -377,8 +375,9 @@ const ActivityPage = () => {
                             />
                         </div>
 
-                        <div style={{ minWidth: '140px' }}>
-                            <label className="form-label small text-muted mb-1">Loại hoạt động</label>
+                        {/* 2. Loại hoạt động (Khóa cứng width vừa đủ) */}
+                        <div style={{ width: '140px' }}>
+                            <label className="form-label small fw-semibold text-muted mb-1">Loại hoạt động</label>
                             <select name="activityType" className="form-select" id="floatingType" value={localFilters.activityType} onChange={handleInputChange}>
                                 <option value="">- Tất cả -</option>
                                 <option value="CALL">Cuộc gọi với khách</option>
@@ -389,52 +388,113 @@ const ActivityPage = () => {
                                 </optgroup>
                             </select>
                         </div>
-                        <div style={{ minWidth: '160px' }}>
-                            <label className="form-label small text-muted mb-1">Người thực hiện</label>
-                            <select
-                                className="form-select"
-                                name="performedBy"
-                                value={localFilters.performedBy}
-                                onChange={handleInputChange}
-                            >
-                                <option value="">-- Tất cả nhân sự --</option>
 
-                                {users.map(user => (
-                                    <option key={user.id} value={user.id}>
-                                        {user.fullName || user.name || user.username}
-                                    </option>
-                                ))}
+                        {/* 3. Người thực hiện (Khóa cứng 180px, tên dài sẽ tự có dấu ...) */}
+                        <div style={{ width: '180px' }}>
+                            <label className="form-label small fw-semibold text-muted mb-1">Người thực hiện</label>
+                            {(() => {
+                                const userOptions = users.map(user => ({
+                                    value: String(user.id),
+                                    label: `${user.fullName || user.username} (${user.email || 'No email'})`
+                                }));
 
-                            </select>
+                                const currentSelected = userOptions.find(opt => opt.value === String(localFilters.performedBy)) || null;
+
+                                return (
+                                    <Select
+                                        options={userOptions}
+                                        value={currentSelected}
+                                        onChange={(selectedOption) => {
+                                            setLocalFilters({
+                                                ...localFilters,
+                                                performedBy: selectedOption ? selectedOption.value : ""
+                                            });
+                                        }}
+                                        placeholder="-- Tất cả nhân sự --"
+                                        isClearable={true}
+                                        noOptionsMessage={() => "❌ Không tìm thấy nhân sự"}
+                                        className="react-select-container"
+                                        classNamePrefix="react-select"
+                                        styles={{
+                                            control: (baseStyles, state) => ({
+                                                ...baseStyles,
+                                                borderColor: state.isFocused ? '#86b7fe' : '#dee2e6',
+                                                boxShadow: state.isFocused ? '0 0 0 0.25rem rgba(13, 110, 253, 0.25)' : 'none',
+                                                '&:hover': { borderColor: '#86b7fe' },
+                                                borderRadius: '0.375rem',
+                                                fontSize: '14px',
+                                                height: '38px',
+                                                minHeight: '38px',
+                                                cursor: 'pointer'
+                                            }),
+                                            valueContainer: (base) => ({ ...base, padding: '0 8px' }),
+                                            indicatorsContainer: (base) => ({ ...base, height: '36px' })
+                                        }}
+                                    />
+                                );
+                            })()}
                         </div>
 
-                        <div style={{ minWidth: '140px' }}>
-                            <label className="form-label small text-muted mb-1">Từ ngày</label>
-                            <input
-                                type="date"
-                                className="form-control"
-                                name="fromDate"
-                                value={localFilters.fromDate}
-                                onChange={handleInputChange}
+                        {/* 4. Từ ngày (Khóa cứng 130px, vừa vặn chữ dd/mm/yyyy) */}
+                        <div style={{ width: '130px' }}>
+                            <label className="form-label small fw-semibold text-muted mb-1">Từ ngày</label>
+                            <DatePicker
+                                selected={localFilters.fromDate ? new Date(localFilters.fromDate) : null}
+                                onChange={(date: Date | null) => {
+                                    if (date) {
+                                        const yyyy = date.getFullYear();
+                                        const mm = String(date.getMonth() + 1).padStart(2, '0');
+                                        const dd = String(date.getDate()).padStart(2, '0');
+                                        setLocalFilters({ ...localFilters, fromDate: `${yyyy}-${mm}-${dd}` });
+                                    } else {
+                                        setLocalFilters({ ...localFilters, fromDate: "" });
+                                    }
+                                }}
+                                dateFormat="dd/MM/yyyy"
+                                placeholderText="dd/mm/yyyy"
+                                className="form-control cursor-pointer w-100"
+                                wrapperClassName="w-100"
                             />
                         </div>
 
-                        <div style={{ minWidth: '140px' }}>
-                            <label className="form-label small text-muted mb-1">Đến ngày</label>
-                            <input
-                                type="date"
-                                className="form-control"
-                                name="toDate"
-                                value={localFilters.toDate}
-                                onChange={handleInputChange}
+                        {/* 5. Đến ngày (Khóa cứng 130px) */}
+                        <div style={{ width: '130px' }}>
+                            <label className="form-label small fw-semibold text-muted mb-1">Đến ngày</label>
+                            <DatePicker
+                                selected={localFilters.toDate ? new Date(localFilters.toDate) : null}
+                                onChange={(date: Date | null) => {
+                                    if (date) {
+                                        const yyyy = date.getFullYear();
+                                        const mm = String(date.getMonth() + 1).padStart(2, '0');
+                                        const dd = String(date.getDate()).padStart(2, '0');
+                                        setLocalFilters({ ...localFilters, toDate: `${yyyy}-${mm}-${dd}` });
+                                    } else {
+                                        setLocalFilters({ ...localFilters, toDate: "" });
+                                    }
+                                }}
+                                dateFormat="dd/MM/yyyy"
+                                placeholderText="dd/mm/yyyy"
+                                minDate={localFilters.fromDate ? new Date(localFilters.fromDate) : undefined}
+                                className="form-control cursor-pointer w-100"
+                                wrapperClassName="w-100"
                             />
                         </div>
 
+                        {/* 6. KHỐI NÚT BẤM (🚀 ĐÃ BỎ ms-auto để không bị ép rơi xuống dòng) */}
                         <div className="d-flex gap-2">
-                            <button className="btn btn-primary" onClick={handleApplyFilter}>
+                            <button
+                                className="btn btn-primary fw-medium text-nowrap d-flex align-items-center justify-content-center"
+                                onClick={handleApplyFilter}
+                                style={{ height: '38px' }}
+                            >
                                 <i className="fa-solid fa-filter me-1"></i> Lọc
                             </button>
-                            <button className="btn btn-outline-secondary" onClick={handleReset} title="Xóa bộ lọc">
+                            <button
+                                className="btn btn-outline-secondary d-flex align-items-center justify-content-center"
+                                onClick={handleReset}
+                                title="Xóa bộ lọc"
+                                style={{ width: '38px', height: '38px' }}
+                            >
                                 <i className="fa-solid fa-rotate-right"></i>
                             </button>
                         </div>

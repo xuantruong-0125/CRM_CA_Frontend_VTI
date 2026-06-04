@@ -4,27 +4,19 @@ import { useRouter, useParams, useSearchParams } from 'next/navigation';
 import httpClient from '@/core/http/httpClient';
 import { toast } from 'react-toastify';
 import ConfirmDeleteModal from '@/shared/components/ConfirmDeleteModal/ConfirmDeleteModal';
+import DatePicker from 'react-datepicker';
+import 'react-datepicker/dist/react-datepicker.css';
 
 interface INote {
     id: number;
     content: string;
-    createdDate?: string; // Có dấu ? để không bắt buộc
+    createdDate?: string;
     createdAt?: string;
     creatorName?: string;
     assignee?: {
         name: string;
     };
 }
-const MOCK_CONTACTS: Record<number, { id: number, name: string }[]> = {
-    2: [
-        { id: 1, name: "Anh Tú - Trợ lý chị Lan" },
-        { id: 2, name: "Chị Hoa - Kế toán" }
-    ],
-    8: [
-        { id: 3, name: "Nguyễn Văn Giám Đốc" },
-        { id: 4, name: "Trần Trưởng Phòng IT" }
-    ]
-};
 
 const TaskDetailPage = () => {
     const router = useRouter();
@@ -36,6 +28,8 @@ const TaskDetailPage = () => {
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [users, setUsers] = useState<any[]>([]);
+
+    const [customerContacts, setCustomerContacts] = useState<any[]>([]);
 
 
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -57,12 +51,11 @@ const TaskDetailPage = () => {
             window.history.replaceState({ path: newUrl }, '', newUrl);
         }
     }, [taskDetail, searchParams]);
+
     const handleOpenEditModal = () => {
-        // Ép kiểu thời gian 
         const formatDateTimeForInput = (dateString: string) => {
             if (!dateString) return "";
             const date = new Date(dateString);
-            // Trừ đi timezone offset để hiển thị đúng giờ local trên form
             const tzOffset = date.getTimezoneOffset() * 60000;
             const localISOTime = (new Date(date.getTime() - tzOffset)).toISOString().slice(0, 16);
             return localISOTime;
@@ -71,13 +64,13 @@ const TaskDetailPage = () => {
         setEditFormData({
             subject: taskDetail.subject || "",
             description: taskDetail.description || "",
-            assigneeId: taskDetail.assignee?.id.toString() || "",
-            contactId: taskDetail.contact?.id.toString() || "",
+            assigneeId: taskDetail.assignee?.id?.toString() || taskDetail.assigneeId?.toString() || taskDetail.assignedTo?.toString() || "",
+            contactId: taskDetail.contact?.id?.toString() || taskDetail.contactId?.toString() || "",
             startDate: formatDateTimeForInput(taskDetail.startDate),
             dueDate: formatDateTimeForInput(taskDetail.dueDate),
             priority: taskDetail.priority || "MEDIUM",
             relatedToType: taskDetail.relatedToType,
-            relatedToId: taskDetail.relatedToId || ""
+            relatedToId: taskDetail.relatedToId?.toString() || ""
         });
 
         setIsEditModalOpen(true);
@@ -85,15 +78,10 @@ const TaskDetailPage = () => {
     useEffect(() => {
         const fetchUsers = async () => {
             try {
-                const response = await httpClient.get('/api/users');
-
-                if (response.data && response.data.content) {
-                    setUsers(response.data.content);
-                } else if (Array.isArray(response.data)) {
-                    setUsers(response.data);
-                } else {
-                    setUsers([]);
-                }
+                const response = await httpClient.get('/api/users/lookup');
+                const data = response.data;
+                const usersList = Array.isArray(data) ? data : (data?.content || []);
+                setUsers(usersList);
             } catch (error) {
                 console.error('Không thể tải danh sách nhân viên:', error);
                 setUsers([]);
@@ -104,6 +92,28 @@ const TaskDetailPage = () => {
             fetchUsers();
         }
     }, [isEditModalOpen]);
+
+    useEffect(() => {
+        const fetchContacts = async () => {
+            if (editFormData.relatedToType === 'CUSTOMER' && editFormData.relatedToId) {
+                try {
+                    const response = await httpClient.get(`/api/v1/contacts/customer/${editFormData.relatedToId}`);
+                    const data = response.data;
+                    const contactsList = Array.isArray(data) ? data : (data?.content || data?.data || []);
+                    setCustomerContacts(contactsList);
+                } catch (error) {
+                    console.error("Lỗi lấy danh sách liên hệ:", error);
+                    setCustomerContacts([]);
+                }
+            } else {
+                setCustomerContacts([]);
+            }
+        };
+
+        if (isEditModalOpen) {
+            fetchContacts();
+        }
+    }, [isEditModalOpen, editFormData.relatedToType, editFormData.relatedToId]);
 
     //State chứa danh sách Ghi chú
     const [notes, setNotes] = useState<INote[]>([]);
@@ -346,10 +356,15 @@ const TaskDetailPage = () => {
                 alert("Vui lòng nhập chủ đề công việc!");
                 return;
             }
-            // Clone dữ liệu form để dọn dẹp trước khi gửi
-            const payloadToSend: any = { ...editFormData };
-            if (payloadToSend.assigneeId === "") payloadToSend.assigneeId = null;
-            if (payloadToSend.contactId === "") payloadToSend.contactId = null;
+
+            const payloadToSend: any = {
+                ...editFormData,
+                assignedTo: editFormData.assigneeId ? Number(editFormData.assigneeId) : null,
+                contactId: editFormData.contactId ? Number(editFormData.contactId) : null,
+                relatedToId: editFormData.relatedToId ? Number(editFormData.relatedToId) : null
+            };
+
+            delete payloadToSend.assigneeId;
 
             await httpClient.patch(`/api/v1/tasks/${id}`, payloadToSend);
 
@@ -406,8 +421,6 @@ const TaskDetailPage = () => {
                         >
                             <div className="modal-dialog modal-lg modal-dialog-centered">
                                 <div className="modal-content border-0 shadow-lg">
-
-                                    {/* Header Modal */}
                                     <div className="modal-header bg-light border-bottom-0 pb-0">
                                         <h5 className="modal-title fw-bold text-dark">
                                             <i className="fa-solid fa-pen-to-square text-primary me-2"></i>
@@ -419,12 +432,8 @@ const TaskDetailPage = () => {
                                             onClick={() => setIsEditModalOpen(false)}
                                         ></button>
                                     </div>
-
-                                    {/* Body Modal (Form nhập liệu) */}
                                     <div className="modal-body p-4">
                                         <div className="row g-3">
-
-                                            {/* Cột Trái: Thông tin chính */}
                                             <div className="col-md-12 mb-2">
                                                 <label className="form-label fw-semibold text-secondary small mb-1">
                                                     Chủ đề công việc <span className="text-danger">*</span>
@@ -437,15 +446,10 @@ const TaskDetailPage = () => {
                                                     onChange={(e) => setEditFormData({ ...editFormData, subject: e.target.value })}
                                                 />
                                             </div>
-
-                                            {/* Hàng 2: Người phụ trách & Khách hàng */}
                                             <div className="col-md-6 mb-2">
                                                 <label className="form-label fw-semibold text-secondary small mb-1">Người phụ trách</label>
                                                 {(() => {
-                                                    // 1. Kiểm tra môi trường web
                                                     const isClient = typeof window !== 'undefined';
-
-                                                    // 2. Mở đúng "tên tủ" là 'roles' dưới Local Storage
                                                     const rolesStorage = isClient ? localStorage.getItem('roles') : null;
 
                                                     let roles: string[] = [];
@@ -468,7 +472,7 @@ const TaskDetailPage = () => {
                                                         >
                                                             <option value="">-- Chọn nhân viên --</option>
                                                             {Array.isArray(users) && users.map((user: any) => (
-                                                                <option key={user.id} value={user.id}>
+                                                                <option key={user.id} value={user.id.toString()}>
                                                                     {user.name || user.fullName}
                                                                 </option>
                                                             ))}
@@ -476,6 +480,32 @@ const TaskDetailPage = () => {
                                                     );
                                                 })()}
                                             </div>
+                                            {editFormData.relatedToType && (
+                                                <>
+                                                    <div className="col-md-6 mb-2">
+                                                        <label className="form-label fw-semibold text-secondary small mb-1">
+                                                            Liên quan đến <i className="fa-solid fa-lock ms-1 text-muted"></i>
+                                                        </label>
+                                                        <input
+                                                            type="text"
+                                                            className="form-control form-control-sm border-secondary-subtle bg-light text-muted"
+                                                            value={editFormData.relatedToType === 'CUSTOMER' ? 'Khách hàng' : editFormData.relatedToType === 'LEAD' ? 'Khách hàng tiềm năng' : editFormData.relatedToType}
+                                                            disabled
+                                                        />
+                                                    </div>
+                                                    <div className="col-md-6 mb-2">
+                                                        <label className="form-label fw-semibold text-secondary small mb-1">
+                                                            Đối tượng cụ thể <i className="fa-solid fa-lock ms-1 text-muted"></i>
+                                                        </label>
+                                                        <input
+                                                            type="text"
+                                                            className="form-control form-control-sm border-secondary-subtle bg-light text-muted"
+                                                            value={taskDetail.relatedToName || `#${editFormData.relatedToId}`}
+                                                            disabled
+                                                        />
+                                                    </div>
+                                                </>
+                                            )}
 
                                             {editFormData.relatedToType === 'CUSTOMER' && editFormData.relatedToId && (
                                                 <div className="col-md-6 mb-2">
@@ -488,37 +518,70 @@ const TaskDetailPage = () => {
                                                         onChange={(e) => setEditFormData({ ...editFormData, contactId: e.target.value })}
                                                     >
                                                         <option value="">-- Chọn người liên hệ --</option>
-                                                        {(MOCK_CONTACTS[Number(editFormData.relatedToId)] || []).map(contact => (
-                                                            <option key={contact.id} value={contact.id}>
-                                                                {contact.name}
+                                                        {customerContacts.map(contact => (
+                                                            <option key={contact.id} value={contact.id.toString()}>
+                                                                {contact.fullName || contact.name || `Người liên hệ #${contact.id}`}
                                                             </option>
                                                         ))}
                                                     </select>
-                                                    <div className="form-text" style={{ fontSize: '11px' }}>
-                                                        Danh sách dựa trên Khách hàng #{editFormData.relatedToId}
-                                                    </div>
+                                                    
                                                 </div>
                                             )}
 
                                             <div className="col-12 mt-1">
                                                 <div className="row">
                                                     <div className="col-md-4 mb-2">
-                                                        <label className="form-label fw-semibold text-secondary small mb-1">Ngày bắt đầu</label>
-                                                        <input
-                                                            type="datetime-local"
-                                                            className="form-control form-control-sm border-secondary-subtle"
-                                                            value={editFormData.startDate}
-                                                            onChange={(e) => setEditFormData({ ...editFormData, startDate: e.target.value })}
+                                                        <label className="form-label fw-semibold text-secondary small mb-1 d-block">Ngày bắt đầu</label>
+                                                        <DatePicker
+                                                            selected={editFormData.startDate ? new Date(editFormData.startDate) : null}
+                                                            onChange={(date: Date | null) => {
+                                                                if (date) {
+                                                                    const yyyy = date.getFullYear();
+                                                                    const mm = String(date.getMonth() + 1).padStart(2, '0');
+                                                                    const dd = String(date.getDate()).padStart(2, '0');
+                                                                    const hh = String(date.getHours()).padStart(2, '0');
+                                                                    const min = String(date.getMinutes()).padStart(2, '0');
+                                                                    setEditFormData({ ...editFormData, startDate: `${yyyy}-${mm}-${dd}T${hh}:${min}` });
+                                                                } else {
+                                                                    setEditFormData({ ...editFormData, startDate: "" });
+                                                                }
+                                                            }}
+                                                            showTimeSelect
+                                                            timeFormat="HH:mm"
+                                                            timeIntervals={15}
+                                                            timeCaption="Thời gian"
+                                                            dateFormat="dd/MM/yyyy HH:mm"
+                                                            placeholderText="Chọn ngày giờ"
+                                                            className="form-control form-control-sm border-secondary-subtle cursor-pointer w-100"
+                                                            wrapperClassName="w-100"
                                                         />
                                                     </div>
 
                                                     <div className="col-md-4 mb-2">
-                                                        <label className="form-label fw-semibold text-secondary small mb-1">Hạn chót</label>
-                                                        <input
-                                                            type="datetime-local"
-                                                            className="form-control form-control-sm border-secondary-subtle"
-                                                            value={editFormData.dueDate}
-                                                            onChange={(e) => setEditFormData({ ...editFormData, dueDate: e.target.value })}
+                                                        <label className="form-label fw-semibold text-secondary small mb-1 d-block">Hạn chót</label>
+                                                        <DatePicker
+                                                            selected={editFormData.dueDate ? new Date(editFormData.dueDate) : null}
+                                                            onChange={(date: Date | null) => {
+                                                                if (date) {
+                                                                    const yyyy = date.getFullYear();
+                                                                    const mm = String(date.getMonth() + 1).padStart(2, '0');
+                                                                    const dd = String(date.getDate()).padStart(2, '0');
+                                                                    const hh = String(date.getHours()).padStart(2, '0');
+                                                                    const min = String(date.getMinutes()).padStart(2, '0');
+                                                                    setEditFormData({ ...editFormData, dueDate: `${yyyy}-${mm}-${dd}T${hh}:${min}` });
+                                                                } else {
+                                                                    setEditFormData({ ...editFormData, dueDate: "" });
+                                                                }
+                                                            }}
+                                                            showTimeSelect
+                                                            timeFormat="HH:mm"
+                                                            timeIntervals={15}
+                                                            timeCaption="Thời gian"
+                                                            dateFormat="dd/MM/yyyy HH:mm"
+                                                            minDate={editFormData.startDate ? new Date(editFormData.startDate) : undefined}
+                                                            placeholderText="Chọn hạn chót"
+                                                            className="form-control form-control-sm border-secondary-subtle cursor-pointer w-100"
+                                                            wrapperClassName="w-100"
                                                         />
                                                     </div>
 
