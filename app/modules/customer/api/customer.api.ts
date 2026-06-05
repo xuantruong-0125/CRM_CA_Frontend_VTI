@@ -34,6 +34,67 @@ type LeadAssigneesResponse =
   | LeadAssigneeResponseDTO[]
   | LeadAssigneeResponseDTO;
 
+function normalizePageResponse<T>(res: any): PageResponse<T> {
+  if (!res) {
+    return {
+      content: [],
+      pageable: { pageNumber: 0, pageSize: 20, offset: 0, paged: true, unpaged: false },
+      last: true,
+      totalPages: 1,
+      totalElements: 0,
+      size: 20,
+      number: 0,
+      sort: { empty: true, sorted: false, unsorted: true },
+      first: true,
+      numberOfElements: 0,
+      empty: true
+    };
+  }
+
+  let pageObj = res;
+  if (res.data && !Array.isArray(res.data) && (res.status !== undefined || res.message !== undefined)) {
+    pageObj = res.data;
+  }
+
+  let items: T[] = [];
+  if (Array.isArray(pageObj)) {
+    items = pageObj;
+  } else if (pageObj && Array.isArray(pageObj.content)) {
+    items = pageObj.content;
+  } else if (pageObj && Array.isArray(pageObj.data)) {
+    items = pageObj.data;
+  }
+
+  const totalPages = typeof pageObj?.totalPages === "number" ? pageObj.totalPages : 1;
+  const totalElements = typeof pageObj?.totalElements === "number" ? pageObj.totalElements : items.length;
+  const pageSize = typeof pageObj?.size === "number" ? pageObj.size : (typeof pageObj?.pageSize === "number" ? pageObj.pageSize : 20);
+  const pageNumber = typeof pageObj?.number === "number" ? pageObj.number : (typeof pageObj?.currentPage === "number" ? pageObj.currentPage - 1 : (typeof pageObj?.pageNumber === "number" ? pageObj.pageNumber : 0));
+
+  return {
+    content: items,
+    pageable: {
+      pageNumber,
+      pageSize,
+      offset: pageNumber * pageSize,
+      paged: true,
+      unpaged: false
+    },
+    last: typeof pageObj?.last === "boolean" ? pageObj.last : (typeof pageObj?.hasNext === "boolean" ? !pageObj.hasNext : true),
+    totalPages,
+    totalElements,
+    size: pageSize,
+    number: pageNumber,
+    sort: {
+      empty: true,
+      sorted: false,
+      unsorted: true
+    },
+    first: typeof pageObj?.first === "boolean" ? pageObj.first : (typeof pageObj?.hasPrevious === "boolean" ? !pageObj.hasPrevious : true),
+    numberOfElements: items.length,
+    empty: items.length === 0
+  };
+}
+
 export const customerApi = {
   getCustomers: async (query: CustomerListQuery): Promise<PageResponse<CustomerResponseDTO>> => {
     const STATUS_ID_MAP: Record<string, number> = {
@@ -82,11 +143,11 @@ export const customerApi = {
       params.keyword = normalizedQ;
     }
 
-    const response = await http.get<PageResponse<CustomerResponseDTO>>("/api/customers/search", {
+    const response = await http.get<any>("/api/customers/search", {
       params,
     });
 
-    return response.data;
+    return normalizePageResponse(response.data);
   },
 
   getCustomerById: async (id: number): Promise<CustomerResponseDTO> => {
@@ -204,19 +265,19 @@ export const customerApi = {
   getOpportunitiesByCustomerId: async (
     customerId: number
   ): Promise<PageResponse<OpportunityResponseDTO>> => {
-    const response = await http.get<PageResponse<OpportunityResponseDTO>>(
-      `/api/v1/opportunities`, { params: { customerId } }
+    const response = await http.get<any>(
+      `/api/opportunities`, { params: { customerId } }
     );
 
-    return response.data;
+    return normalizePageResponse(response.data);
   },
 
   getQuotesByCustomerId: async (customerId: number): Promise<PageResponse<QuoteResponseDTO>> => {
-    const response = await http.get<PageResponse<QuoteResponseDTO>>(
-      `/api/quotes/customer/${customerId}`
+    const response = await http.get<any>(
+      `/api/quotes`, { params: { customerId } }
     );
 
-    return response.data;
+    return normalizePageResponse(response.data);
   },
 
   getContractsByCustomerId: async (customerId: number): Promise<PageResponse<ContractResponseDTO>> => {
@@ -224,31 +285,31 @@ export const customerApi = {
       `/api/contracts`, { params: { customerId } }
     );
 
-    return response.data?.data ?? response.data;
+    return normalizePageResponse(response.data);
   },
 
   getInvoicesByCustomerId: async (customerId: number): Promise<PageResponse<InvoiceResponseDTO>> => {
-    const response = await http.get<PageResponse<InvoiceResponseDTO>>(
+    const response = await http.get<any>(
       `/api/invoices/customer/${customerId}`
     );
 
-    return response.data;
+    return normalizePageResponse(response.data);
   },
 
   getActivitiesByCustomerId: async (customerId: number): Promise<PageResponse<ActivityResponseDTO>> => {
-    const response = await http.get<PageResponse<ActivityResponseDTO>>(
+    const response = await http.get<any>(
       `/api/v1/activities`, { params: { relatedToId: customerId, relatedToType: "CUSTOMER" } }
     );
 
-    return response.data;
+    return normalizePageResponse(response.data);
   },
 
   getFeedbacksByCustomerId: async (customerId: number): Promise<PageResponse<FeedbackResponseDTO>> => {
-    const response = await http.get<PageResponse<FeedbackResponseDTO>>(
+    const response = await http.get<any>(
       `/api/feedbacks/customer/${customerId}`
     );
 
-    return response.data;
+    return normalizePageResponse(response.data);
   },
 
   getAttachmentsByCustomerId: async (
@@ -333,18 +394,18 @@ export const customerApi = {
         headers: { "Content-Type": "multipart/form-data" },
         onUploadProgress: onProgress
           ? (event) => {
-              if (typeof event.total !== "number" || event.total <= 0) {
-                return;
-              }
-
-              const progress = Math.min(100, Math.round((event.loaded * 100) / event.total));
-              onProgress(progress);
+            if (typeof event.total !== "number" || event.total <= 0) {
+              return;
             }
+
+            const progress = Math.min(100, Math.round((event.loaded * 100) / event.total));
+            onProgress(progress);
+          }
           : undefined,
       }
     );
 
-    const uploaded = uploadResponse.data?.data ?? uploadResponse.data;
+    const uploaded = (uploadResponse.data as any)?.data ?? uploadResponse.data;
 
     const createPayload: CreateAttachmentDTO = {
       ...uploaded,

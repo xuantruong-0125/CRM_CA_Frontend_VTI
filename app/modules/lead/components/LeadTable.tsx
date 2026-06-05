@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { Pencil, Trash2, ChevronsRight } from "lucide-react";
+import { Pencil, Trash2, ChevronsRight, ArrowUp, ArrowDown, ArrowUpDown } from "lucide-react";
 import type { LeadResponse } from "@/modules/lead/types/lead.types";
 import styles from "@/modules/lead/styles/lead.module.css";
 import { useCurrentUser } from "@/core/auth/useCurrentUser";
@@ -19,6 +19,9 @@ type LeadTableProps = {
   onDelete: (lead: LeadResponse) => void;
   onConvert: (lead: LeadResponse) => void;
   onStatusChange?: (lead: LeadResponse, newStatusId: number) => void;
+  sortBy?: string;
+  sortDir?: "asc" | "desc";
+  onSortChange?: (field: string, dir: "asc" | "desc") => void;
 };
 
 type ColumnKey =
@@ -137,6 +140,17 @@ function getStatusToneClass(statusName?: string) {
   return styles.statusToneDefault;
 }
 
+const mapLeadSortField = (key: ColumnKey): string => {
+  switch (key) {
+    case "province":
+      return "provinceId";
+    case "status":
+      return "statusId";
+    default:
+      return key;
+  }
+};
+
 export default function LeadTable({
   leads,
   loading,
@@ -149,6 +163,9 @@ export default function LeadTable({
   onDelete,
   onConvert,
   onStatusChange,
+  sortBy,
+  sortDir,
+  onSortChange,
 }: LeadTableProps) {
   const { mounted, isSale } = useCurrentUser();
   const [columnWidths, setColumnWidths] = useState<Record<ColumnKey, number>>(() => {
@@ -234,21 +251,52 @@ export default function LeadTable({
         </colgroup>
         <thead>
           <tr>
-            {COLUMN_CONFIG.map((column) => (
-              <th
-                key={column.key}
-                className={`${styles.headerCell} ${column.align === "right" ? styles.headerCellRight : ""}`}
-              >
-                <span className={styles.headerLabel}>{column.label}</span>
-                <button
-                  type="button"
-                  aria-label={`Resize ${column.label}`}
-                  onMouseDown={(event) => startColumnResize(column.key, event)}
-                  className={styles.resizeHandle}
+            {COLUMN_CONFIG.map((column) => {
+              const isSortable = column.key !== "actions";
+              const fieldName = mapLeadSortField(column.key);
+              const isSorted = sortBy === fieldName;
+              
+              const handleHeaderClick = () => {
+                if (!isSortable || !onSortChange) return;
+                const nextDir = isSorted && sortDir === "asc" ? "desc" : "asc";
+                onSortChange(fieldName, nextDir);
+              };
+
+              const getSortIcon = () => {
+                if (!isSortable) return null;
+                if (!isSorted) {
+                  return <ArrowUpDown size={12} className="opacity-40 ml-1 flex-shrink-0 align-middle" />;
+                }
+                return sortDir === "asc" ? (
+                  <ArrowUp size={12} className="text-sky-600 ml-1 flex-shrink-0 align-middle" />
+                ) : (
+                  <ArrowDown size={12} className="text-sky-600 ml-1 flex-shrink-0 align-middle" />
+                );
+              };
+
+              return (
+                <th
+                  key={column.key}
+                  className={`${styles.headerCell} ${column.align === "right" ? styles.headerCellRight : ""} ${
+                    isSortable ? "select-none" : ""
+                  }`}
                 >
-                </button>
-              </th>
-            ))}
+                  <div
+                    className={`flex items-center gap-1 ${isSortable ? "cursor-pointer" : ""}`}
+                    onClick={handleHeaderClick}
+                  >
+                    <span className={styles.headerLabel}>{column.label}</span>
+                    {getSortIcon()}
+                  </div>
+                  <button
+                    type="button"
+                    aria-label={`Resize ${column.label}`}
+                    onMouseDown={(event) => startColumnResize(column.key, event)}
+                    className={styles.resizeHandle}
+                  />
+                </th>
+              );
+            })}
           </tr>
         </thead>
         <tbody>

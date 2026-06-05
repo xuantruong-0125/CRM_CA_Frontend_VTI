@@ -111,7 +111,7 @@ export const leadSearchSchema = z.object({
   statusId: z.coerce.number().optional().transform((val) => (!val ? undefined : val)),
   q: z.string().trim().optional(), // Text search chung
   page: z.coerce.number().min(1).optional().default(1),
-  limit: z.coerce.number().min(1).optional().default(10),
+  limit: z.coerce.number().min(1).max(200).optional().default(50),
 });
 
 export type LeadSearchValues = z.infer<typeof leadSearchSchema>;

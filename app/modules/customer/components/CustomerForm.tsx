@@ -259,6 +259,33 @@ export default function CustomerForm({
     await onSubmit(values);
   };
 
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLFormElement>) => {
+    if (e.key === "Enter") {
+      const target = e.target as HTMLElement;
+      if (
+        target.tagName === "TEXTAREA" ||
+        target.tagName === "BUTTON" ||
+        target.getAttribute("type") === "submit"
+      ) {
+        return;
+      }
+      e.preventDefault();
+      const form = e.currentTarget;
+      const focusableElements = Array.from(
+        form.querySelectorAll(
+          "input:not([disabled]):not([type='hidden']), select:not([disabled]), textarea:not([disabled]), button[type='submit']:not([disabled])"
+        )
+      ).filter((el: any) => {
+        return el.offsetWidth > 0 || el.offsetHeight > 0 || el.getClientRects().length > 0;
+      }) as HTMLElement[];
+
+      const currentIndex = focusableElements.indexOf(target);
+      if (currentIndex > -1 && currentIndex < focusableElements.length - 1) {
+        focusableElements[currentIndex + 1].focus();
+      }
+    }
+  };
+
   const submitHandler = form.handleSubmit(mockSubmit);
 
   const statusError = form.formState.errors.statusId?.message;
@@ -306,7 +333,7 @@ export default function CustomerForm({
           </button>
         </div>
 
-        <form onSubmit={submitHandler} className="flex min-h-0 flex-1 flex-col">
+        <form onSubmit={submitHandler} onKeyDown={handleKeyDown} className="flex min-h-0 flex-1 flex-col">
           <div className="min-h-0 flex-1 overflow-y-auto px-5 py-4 sm:px-6">
             <div className="space-y-4">
               <section className="grid gap-4 lg:grid-cols-[320px_minmax(0,1fr)]">

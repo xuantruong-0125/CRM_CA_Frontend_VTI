@@ -65,8 +65,35 @@ export default function NoteForm({
     }
   };
 
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLFormElement>) => {
+    if (e.key === "Enter") {
+      const target = e.target as HTMLElement;
+      if (
+        target.tagName === "TEXTAREA" ||
+        target.tagName === "BUTTON" ||
+        target.getAttribute("type") === "submit"
+      ) {
+        return;
+      }
+      e.preventDefault();
+      const form = e.currentTarget;
+      const focusableElements = Array.from(
+        form.querySelectorAll(
+          "input:not([disabled]):not([type='hidden']), select:not([disabled]), textarea:not([disabled]), button[type='submit']:not([disabled])"
+        )
+      ).filter((el: any) => {
+        return el.offsetWidth > 0 || el.offsetHeight > 0 || el.getClientRects().length > 0;
+      }) as HTMLElement[];
+
+      const currentIndex = focusableElements.indexOf(target);
+      if (currentIndex > -1 && currentIndex < focusableElements.length - 1) {
+        focusableElements[currentIndex + 1].focus();
+      }
+    }
+  };
+
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+    <form onSubmit={handleSubmit} onKeyDown={handleKeyDown} className="flex flex-col gap-4">
       <div>
         <label htmlFor="content" className={labelClass}>
           Nội dung <span className="text-red-500">*</span>

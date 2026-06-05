@@ -206,17 +206,16 @@ export interface CreateQuoteDTO {
 
 export interface QuoteResponseDTO {
   id: number;
+  quoteNumber: string;
   customerId: number;
-  quoteCode?: string;
-  quoteName: string;
-  quoteDate?: string;
-  validUntil?: string;
-  subtotalAmount?: number;
-  discountAmount?: number;
+  customerName?: string;
+  statusId: number;
   totalAmount?: number;
-  status?: string;
+  currencyCode?: string;
+  validUntil?: string;
+  templateId?: number;
+  templateName?: string;
   createdAt?: ISODateTimeString;
-  updatedAt?: ISODateTimeString;
 }
 
 export interface CreateContractDTO {

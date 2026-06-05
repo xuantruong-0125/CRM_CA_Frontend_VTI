@@ -11,7 +11,10 @@ import {
   Search,
   Trash2,
   SlidersHorizontal,
-  Plus
+  Plus,
+  ArrowUp,
+  ArrowDown,
+  ArrowUpDown
 } from "lucide-react";
 import { toast } from "react-toastify";
 import ClassificationBadge from "@/modules/customer/components/ClassificationBadge";
@@ -122,7 +125,7 @@ export default function CustomerListPage() {
     }, {} as Record<ColumnKey, number>);
   });
   const [page, setPage] = useState(0);
-  const [size, setSize] = useState(10);
+  const [size, setSize] = useState(50);
   const [pageInput, setPageInput] = useState("1");
   const [searchTerm, setSearchTerm] = useState("");
   const [customerType, setCustomerType] = useState<"" | CustomerType>("");
@@ -132,12 +135,53 @@ export default function CustomerListPage() {
   const [editingCustomer, setEditingCustomer] = useState<CustomerResponseDTO | null>(null);
   const [showFilters, setShowFilters] = useState(false);
   const [deleteCustomerTarget, setDeleteCustomerTarget] = useState<CustomerResponseDTO | null>(null);
+  const [sortBy, setSortBy] = useState<string>("createdAt");
+  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
+
+  const mapCustomerSortField = (key: ColumnKey): string => {
+    switch (key) {
+      case "customerName":
+        return "name";
+      case "customerType":
+        return "type";
+      case "status":
+        return "statusId";
+      case "tier":
+        return "tierId";
+      default:
+        return key;
+    }
+  };
+
+  const handleSortToggle = (columnKey: ColumnKey) => {
+    if (columnKey === "actions") return;
+    const field = mapCustomerSortField(columnKey);
+    const isCurrent = sortBy === field;
+    const nextDir = isCurrent && sortDirection === "asc" ? "desc" : "asc";
+    setSortBy(field);
+    setSortDirection(nextDir);
+    setPage(0);
+    setPageInput("1");
+  };
+
+  const getSortIcon = (columnKey: ColumnKey) => {
+    if (columnKey === "actions") return null;
+    const field = mapCustomerSortField(columnKey);
+    if (sortBy !== field) {
+      return <ArrowUpDown size={12} className="opacity-40 ml-1 flex-shrink-0 align-middle" />;
+    }
+    return sortDirection === "asc" ? (
+      <ArrowUp size={12} className="text-sky-600 ml-1 flex-shrink-0 align-middle" />
+    ) : (
+      <ArrowDown size={12} className="text-sky-600 ml-1 flex-shrink-0 align-middle" />
+    );
+  };
 
   const customerQuery = useCustomers({
     page,
     size,
-    sortBy: "createdAt",
-    sortDirection: "desc",
+    sortBy,
+    sortDirection,
     q: searchTerm.trim() || undefined,
     customerType: customerType || undefined,
     status: status || undefined,
@@ -367,9 +411,9 @@ export default function CustomerListPage() {
                   }}
                   className={styles.perPageSelect}
                 >
-                  <option value={10}>10 / trang</option>
-                  <option value={20}>20 / trang</option>
                   <option value={50}>50 / trang</option>
+                  <option value={100}>100 / trang</option>
+                  <option value={200}>200 / trang</option>
                 </select>
               </div>
 
@@ -487,20 +531,31 @@ export default function CustomerListPage() {
                 </colgroup>
                 <thead>
                   <tr>
-                    {COLUMN_CONFIG.map((column) => (
-                      <th
-                        key={column.key}
-                        className={`${styles.headerCell} ${column.align === "right" ? styles.headerCellRight : ""}`}
-                      >
-                        <span className={styles.headerLabel}>{column.label}</span>
-                        <button
-                          type="button"
-                          aria-label={`Resize ${column.label}`}
-                          onMouseDown={(event) => startColumnResize(column.key, event)}
-                          className={styles.resizeHandle}
-                        />
-                      </th>
-                    ))}
+                    {COLUMN_CONFIG.map((column) => {
+                      const isSortable = column.key !== "actions";
+                      return (
+                        <th
+                          key={column.key}
+                          className={`${styles.headerCell} ${column.align === "right" ? styles.headerCellRight : ""} ${
+                            isSortable ? "select-none" : ""
+                          }`}
+                        >
+                          <div
+                            className={`flex items-center gap-1 ${isSortable ? "cursor-pointer" : ""}`}
+                            onClick={() => isSortable && handleSortToggle(column.key)}
+                          >
+                            <span className={styles.headerLabel}>{column.label}</span>
+                            {getSortIcon(column.key)}
+                          </div>
+                          <button
+                            type="button"
+                            aria-label={`Resize ${column.label}`}
+                            onMouseDown={(event) => startColumnResize(column.key, event)}
+                            className={styles.resizeHandle}
+                          />
+                        </th>
+                      );
+                    })}
                   </tr>
                 </thead>
                 <tbody>

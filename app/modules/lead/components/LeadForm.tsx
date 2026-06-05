@@ -51,7 +51,7 @@ const DS = {
 
 const getInputClassName = (hasError: boolean, isSelect: boolean = false) => {
   let baseClasses = `w-full ${DS.input.height} ${DS.input.padding} ${DS.input.borderRadius} bg-white text-[12px] text-slate-900 outline-none transition-all duration-200`;
-  
+
   // Custom arrow cho select với màu slate-300 (#cbd5e1)
   if (isSelect) {
     baseClasses += ` appearance-none pr-7 bg-[url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20fill='none'%20viewBox='0%200%2020%2020'%3E%3Cpath%20stroke='%23cbd5e1'%20stroke-linecap='round'%20stroke-linejoin='round'%20stroke-width='1.5'%20d='M6%208l4%204%204-4'/%3E%3C/svg%3E")] bg-no-repeat bg-[right_0.25rem_center] bg-[length:1.25rem_1.25rem]`;
@@ -98,14 +98,14 @@ const isConvertedStatus = (status: LeadReferenceOptionResponse) => {
   );
 };
 
-const FormField = ({ 
-  children, 
-  error, 
-  label, 
+const FormField = ({
+  children,
+  error,
+  label,
   required = false,
   className = ""
-}: { 
-  children: React.ReactNode; 
+}: {
+  children: React.ReactNode;
   error?: unknown;
   label?: React.ReactNode;
   required?: boolean;
@@ -139,7 +139,7 @@ function ProductSelectionModal({
 }) {
   const [search, setSearch] = useState("");
   const [selectedIds, setSelectedIds] = useState<number[]>(initialSelectedIds);
-  
+
   const [currentPage, setCurrentPage] = useState(0);
   const ITEMS_PER_PAGE = 50;
 
@@ -219,7 +219,7 @@ function ProductSelectionModal({
               className="h-8 w-full rounded-md border border-slate-300 bg-slate-50 pl-8 pr-3 text-[13px] text-slate-900 outline-none transition-all focus:border-blue-500 focus:bg-white focus:ring-1 focus:ring-blue-500"
             />
           </div>
-          
+
           <div className="flex items-center justify-between rounded-md border border-slate-200 bg-slate-50/70 px-2.5 py-1.5">
             <label className="flex cursor-pointer items-center gap-1 text-[12px] font-medium text-slate-700 transition-colors hover:text-blue-600">
               <input
@@ -243,11 +243,10 @@ function ProductSelectionModal({
               {displayedProducts.map((p) => (
                 <label
                   key={p.id}
-                  className={`group flex cursor-pointer items-center gap-1 rounded-md border px-2.5 py-2 transition-all ${
-                    selectedIds.includes(Number(p.id))
-                      ? "border-blue-300 bg-blue-50 shadow-sm"
-                      : "border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-100/70"
-                  }`}
+                  className={`group flex cursor-pointer items-center gap-1 rounded-md border px-2.5 py-2 transition-all ${selectedIds.includes(Number(p.id))
+                    ? "border-blue-300 bg-blue-50 shadow-sm"
+                    : "border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-100/70"
+                    }`}
                 >
                   <input
                     type="checkbox"
@@ -271,7 +270,7 @@ function ProductSelectionModal({
           <div>
             Hiển thị {filteredProducts.length === 0 ? 0 : currentPage * ITEMS_PER_PAGE + 1} - {Math.min((currentPage + 1) * ITEMS_PER_PAGE, filteredProducts.length)} / {filteredProducts.length}
           </div>
-          
+
           <div className="flex items-center gap-1.5">
             <button
               type="button"
@@ -289,7 +288,7 @@ function ProductSelectionModal({
             >
               ‹
             </button>
-              <span className="px-2 font-medium text-[13px]">
+            <span className="px-2 font-medium text-[13px]">
               Trang {currentPage + 1} / {totalPages}
             </span>
             <button
@@ -317,20 +316,20 @@ function ProductSelectionModal({
             Tổng sản phẩm đã chọn: <span className="font-semibold text-blue-700">{selectedIds.length}</span>
           </div>
           <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={onClose}
-            className="h-8 rounded-md border border-slate-300 bg-white px-4 text-[12px] font-medium text-slate-700 transition-colors hover:bg-slate-100"
-          >
-            Hủy
-          </button>
-          <button
-            type="button"
-            onClick={() => onConfirm(selectedIds)}
-            className="h-8 rounded-md bg-blue-600 px-5 text-[12px] font-medium text-white transition-colors shadow-sm hover:bg-blue-700"
-          >
-            Xác nhận
-          </button>
+            <button
+              type="button"
+              onClick={onClose}
+              className="h-8 rounded-md border border-slate-300 bg-white px-4 text-[12px] font-medium text-slate-700 transition-colors hover:bg-slate-100"
+            >
+              Hủy
+            </button>
+            <button
+              type="button"
+              onClick={() => onConfirm(selectedIds)}
+              className="h-8 rounded-md bg-blue-600 px-5 text-[12px] font-medium text-white transition-colors shadow-sm hover:bg-blue-700"
+            >
+              Xác nhận
+            </button>
           </div>
         </div>
       </div>
@@ -384,7 +383,7 @@ export default function LeadForm({
   useEffect(() => {
     if (initialValues && Object.keys(initialValues).length > 0) {
       const safeValues = { ...initialValues };
-      
+
       if (safeValues.productInterestIds) {
         if (Array.isArray(safeValues.productInterestIds)) {
           safeValues.productInterestIds = safeValues.productInterestIds
@@ -439,17 +438,27 @@ export default function LeadForm({
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, []);
 
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement | HTMLSelectElement>) => {
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLFormElement>) => {
     if (e.key === "Enter") {
+      const target = e.target as HTMLElement;
+      if (
+        target.tagName === "TEXTAREA" ||
+        target.tagName === "BUTTON" ||
+        target.getAttribute("type") === "submit"
+      ) {
+        return;
+      }
       e.preventDefault();
-      const form = e.currentTarget.form;
-      if (!form) return;
-      
+      const form = e.currentTarget;
       const focusableElements = Array.from(
-        form.querySelectorAll("input:not([type='hidden']), select, textarea, button[type='submit']")
-      ) as HTMLElement[];
-      
-      const currentIndex = focusableElements.indexOf(e.currentTarget);
+        form.querySelectorAll(
+          "input:not([disabled]):not([type='hidden']), select:not([disabled]), textarea:not([disabled]), button[type='submit']:not([disabled])"
+        )
+      ).filter((el: any) => {
+        return el.offsetWidth > 0 || el.offsetHeight > 0 || el.getClientRects().length > 0;
+      }) as HTMLElement[];
+
+      const currentIndex = focusableElements.indexOf(target);
       if (currentIndex > -1 && currentIndex < focusableElements.length - 1) {
         focusableElements[currentIndex + 1].focus();
       }
@@ -465,7 +474,7 @@ export default function LeadForm({
   };
 
   return (
-    <form onSubmit={handleSubmit(handleFormSubmit)} className={`${DS.formSpacing} text-[13px]`}>
+    <form onSubmit={handleSubmit(handleFormSubmit)} onKeyDown={handleKeyDown} className={`${DS.formSpacing} text-[13px]`}>
       {isFormLocked && (
         <div className="rounded-sm border border-amber-200 bg-amber-50 px-3 py-1.5 text-[14px] text-amber-700">
           Lead đang ở trạng thái &quot;Đã chuyển đổi&quot;, không thể chỉnh sửa thông tin.
@@ -473,311 +482,296 @@ export default function LeadForm({
       )}
 
       <fieldset disabled={isSubmitting || isFormLocked} className="min-w-0 space-y-0.5">
-      {/* SECTION 1: Contact & Classification (2 columns) */}
-      <div className={`grid grid-cols-1 md:grid-cols-2 ${DS.spacing.colGap}`}>
-        
-        {/* --- Left Column: Contact Info --- */}
-        <div className={DS.sectionSpacing}>
-          <SectionHeader title="Thông tin liên hệ" />
-          
-          <FormField label="Tên liên hệ" required error={errors.contactName}>
-            <input
-              type="text"
-              className={getInputClassName(!!errors.contactName)}
-              {...register("contactName")}
-              onKeyDown={handleKeyDown}
-            />
-          </FormField>
+        {/* SECTION 1: Contact & Classification (2 columns) */}
+        <div className={`grid grid-cols-1 md:grid-cols-2 ${DS.spacing.colGap}`}>
 
-          <FormField label="Tên công ty" error={errors.companyName}>
-            <input
-              type="text"
-              className={getInputClassName(!!errors.companyName)}
-              {...register("companyName")}
-              onKeyDown={handleKeyDown}
-            />
-          </FormField>
+          {/* --- Left Column: Contact Info --- */}
+          <div className={DS.sectionSpacing}>
+            <SectionHeader title="Thông tin liên hệ" />
 
-          <div className={`grid grid-cols-2 ${DS.spacing.innerGap}`}>
-            <FormField label="Điện thoại" error={errors.phone}>
+            <FormField label="Tên liên hệ" required error={errors.contactName}>
               <input
                 type="text"
-                className={getInputClassName(!!errors.phone)}
-                {...register("phone")}
-                onKeyDown={handleKeyDown}
+                className={getInputClassName(!!errors.contactName)}
+                {...register("contactName")}
               />
             </FormField>
-            
-            <FormField label="Email" error={errors.email}>
-              <input
-                type="email"
-                className={getInputClassName(!!errors.email)}
-                {...register("email")}
-                onKeyDown={handleKeyDown}
-              />
-            </FormField>
-          </div>
 
-          <div className={`grid grid-cols-2 ${DS.spacing.innerGap}`}>
-            <FormField label="CCCD / CMND" error={errors.citizenId}>
+            <FormField label="Tên công ty" error={errors.companyName}>
               <input
                 type="text"
-                className={getInputClassName(!!errors.citizenId)}
-                {...register("citizenId")}
-                onKeyDown={handleKeyDown}
+                className={getInputClassName(!!errors.companyName)}
+                {...register("companyName")}
               />
             </FormField>
-            
-            <FormField label="Mã số thuế" error={errors.taxCode}>
-              <input
-                type="text"
-                className={getInputClassName(!!errors.taxCode)}
-                {...register("taxCode")}
-                onKeyDown={handleKeyDown}
-              />
-            </FormField>
-          </div>
-        </div>
 
-        {/* --- Right Column: CRM Classification --- */}
-        <div className={DS.sectionSpacing}>
-          <SectionHeader title="Phân loại" />
-          
-          <div className={`grid grid-cols-2 ${DS.spacing.innerGap}`}>
-            <FormField label="Trạng thái" required error={errors.statusId}>
-              {isFormLocked ? (
+            <div className={`grid grid-cols-2 ${DS.spacing.innerGap}`}>
+              <FormField label="Điện thoại" error={errors.phone}>
                 <input
                   type="text"
-                  readOnly
-                  value="Đã chuyển đổi"
-                  className={getInputClassName(false)}
+                  className={getInputClassName(!!errors.phone)}
+                  {...register("phone")}
                 />
-              ) : (
-                <select
-                  className={getInputClassName(!!errors.statusId, true)}
-                  {...register("statusId")}
-                  onKeyDown={handleKeyDown}
-                >
-                  <option value=""></option>
-                  {selectableStatuses.map((item) => (
-                    <option key={item.id} value={item.id}>{item.name}</option>
-                  ))}
-                </select>
-              )}
-            </FormField>
-            
-            <FormField label="Nguồn Lead" error={errors.sourceId}>
-              <select
-                className={getInputClassName(!!errors.sourceId, true)}
-                {...register("sourceId")}
-                onKeyDown={handleKeyDown}
-              >
-                <option value=""></option>
-                {sources.map((item) => (
-                  <option key={item.id} value={item.id}>{item.name}</option>
-                ))}
-              </select>
-            </FormField>
+              </FormField>
+
+              <FormField label="Email" error={errors.email}>
+                <input
+                  type="email"
+                  className={getInputClassName(!!errors.email)}
+                  {...register("email")}
+                />
+              </FormField>
+            </div>
+
+            <div className={`grid grid-cols-2 ${DS.spacing.innerGap}`}>
+              <FormField label="CCCD / CMND" error={errors.citizenId}>
+                <input
+                  type="text"
+                  className={getInputClassName(!!errors.citizenId)}
+                  {...register("citizenId")}
+                />
+              </FormField>
+
+              <FormField label="Mã số thuế" error={errors.taxCode}>
+                <input
+                  type="text"
+                  className={getInputClassName(!!errors.taxCode)}
+                  {...register("taxCode")}
+                />
+              </FormField>
+            </div>
           </div>
 
-          <div className={`grid grid-cols-2 ${DS.spacing.innerGap}`}>
-            <FormField label="Chiến dịch" error={errors.campaignId}>
-              <select
-                className={getInputClassName(!!errors.campaignId, true)}
-                {...register("campaignId")}
-                onKeyDown={handleKeyDown}
-              >
-                <option value=""></option>
-                {campaigns.map((item) => (
-                  <option key={item.id} value={item.id}>{item.name}</option>
-                ))}
-              </select>
-            </FormField>
-            
-            <FormField label="Người phụ trách" error={errors.assignedTo}>
-              <select
-                className={getInputClassName(!!errors.assignedTo, true)}
-                {...register("assignedTo")}
-                disabled={lockAssignee}
-                onKeyDown={handleKeyDown}
-              >
-                <option value=""></option>
-                {assignees.map((item) => (
-                  <option key={item.id} value={item.id}>{item.name}</option>
-                ))}
-              </select>
-            </FormField>
-          </div>
+          {/* --- Right Column: CRM Classification --- */}
+          <div className={DS.sectionSpacing}>
+            <SectionHeader title="Phân loại" />
 
-          <FormField label="Doanh thu dự kiến" error={errors.expectedRevenue}>
-            <Controller
-              name="expectedRevenue"
-              control={control}
-              render={({ field: { onChange, value, ref } }) => {
-                const displayValue = value !== undefined && value !== null && !isNaN(Number(value))
-                  ? new Intl.NumberFormat('vi-VN').format(Number(value))
-                  : '';
-                return (
-                  <div className="relative">
-                    <input
-                      type="text"
-                      ref={ref}
-                      value={displayValue}
-                      onChange={(e) => {
-                        const rawValue = e.target.value.replace(/\D/g, '');
-                        onChange(rawValue ? Number(rawValue) : undefined);
-                      }}
-                      onKeyDown={handleKeyDown}
-                      className={`${getInputClassName(!!errors.expectedRevenue)} pr-14 text-right`}
-                    />
-                    <span className="pointer-events-none absolute inset-y-0 right-0 flex w-9 items-center justify-center rounded-r-[3px] border-l border-slate-200 bg-slate-50 text-[12px] font-medium text-slate-500">
-                      ₫
-                    </span>
-                  </div>
-                );
-              }}
-            />
-          </FormField>
-
-          <FormField label="Sản phẩm quan tâm" error={errors.productInterestIds as FieldError}>
-            <Controller
-              name="productInterestIds"
-              control={control}
-              render={({ field: { onChange, value } }) => {
-                let selectedIds: number[] = [];
-                if (Array.isArray(value)) {
-                  selectedIds = value.map(Number).filter(id => !isNaN(id));
-                }
-
-                const selectedProducts = products.filter((p) => selectedIds.includes(Number(p.id)));
-
-                const handleRemove = (id: number) => {
-                  const numId = Number(id);
-                  onChange(selectedIds.filter((v) => v !== numId));
-                };
-
-                return (
-                  <div className="flex items-start gap-2">
-                    <div className={`min-w-0 flex-1 rounded-md border border-slate-300 bg-white px-2 py-1.5`}>
-                      <div className="mb-1 flex items-center justify-between">
-                        <span className="text-[12px] font-medium text-slate-600">Danh sách đã chọn</span>
-                        <span className="rounded bg-blue-100 px-1.5 py-0.5 text-[10px] font-semibold text-blue-700">{selectedProducts.length}</span>
-                      </div>
-                      <div className="flex max-h-[60px] min-h-[26px] flex-wrap items-center gap-1 overflow-auto pr-0.5">
-                        {selectedProducts.length === 0 && (
-                          <span className="text-[11px] italic text-slate-400">Chưa chọn sản phẩm</span>
-                        )}
-                        {selectedProducts.map((p) => (
-                          <span
-                            key={p.id}
-                            className="inline-flex items-center gap-1 rounded-md border border-blue-200 bg-blue-50 px-1.5 py-0.5 text-[11px] font-medium text-blue-700"
-                          >
-                            {p.name}
-                            <button
-                              type="button"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleRemove(Number(p.id));
-                              }}
-                              className="flex h-3.5 w-3.5 items-center justify-center rounded hover:bg-blue-200 hover:text-red-500 transition-colors"
-                            >
-                              <svg className="h-2.5 w-2.5" fill="currentColor" viewBox="0 0 24 24">
-                                <path d="M6 18L18 6M6 6l12 12" stroke="currentColor" strokeWidth={2} strokeLinecap="round" />
-                              </svg>
-                            </button>
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-
-                    <button
-                      type="button"
-                      onClick={() => setIsProductModalOpen(true)}
-                      className="inline-flex h-[31px] flex-shrink-0 items-center gap-1 rounded-md border border-blue-600 border-dashed bg-white px-2.5 text-[12px] font-medium text-blue-600 transition-colors hover:bg-blue-50"
-                    >
-                      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <circle cx="11" cy="11" r="8"></circle>
-                        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-                      </svg>
-                      Chọn
-                    </button>
-
-                    {/* Render Modal có phân trang */}
-                    {isProductModalOpen && (
-                      <ProductSelectionModal
-                        products={products}
-                        initialSelectedIds={selectedIds}
-                        onConfirm={(newSelectedIds) => {
-                          onChange(newSelectedIds);
-                          setIsProductModalOpen(false);
-                        }}
-                        onClose={() => setIsProductModalOpen(false)}
-                      />
-                    )}
-                  </div>
-                );
-              }}
-            />
-          </FormField>
-        </div>
-      </div>
-
-      {/* SECTION 2: Address & Notes */}
-      <div className={DS.sectionSpacing}>
-        <SectionHeader title="Địa chỉ & Ghi chú" />
-        
-        <div className={`grid grid-cols-1 md:grid-cols-2 ${DS.spacing.colGap}`}>
-          <div className="flex flex-col gap-y-2">
-            <div className={`grid grid-cols-3 ${DS.spacing.innerGap}`}>
-              <div className="col-span-1">
-                <FormField label="Tỉnh / Thành phố" error={errors.provinceId}>
+            <div className={`grid grid-cols-2 ${DS.spacing.innerGap}`}>
+              <FormField label="Trạng thái" required error={errors.statusId}>
+                {isFormLocked ? (
+                  <input
+                    type="text"
+                    readOnly
+                    value="Đã chuyển đổi"
+                    className={getInputClassName(false)}
+                  />
+                ) : (
                   <select
-                    className={getInputClassName(!!errors.provinceId, true)}
-                    {...register("provinceId")}
-                    onKeyDown={handleKeyDown}
+                    className={getInputClassName(!!errors.statusId, true)}
+                    {...register("statusId")}
                   >
                     <option value=""></option>
-                    {provinces.map((item) => (
+                    {selectableStatuses.map((item) => (
                       <option key={item.id} value={item.id}>{item.name}</option>
                     ))}
                   </select>
-                </FormField>
-              </div>
-              <div className="col-span-2">
-                <FormField label="Địa chỉ cụ thể" error={errors.address}>
-                  <input
-                    type="text"
-                    className={getInputClassName(!!errors.address)}
-                    {...register("address")}
-                    onKeyDown={handleKeyDown}
-                  />
-                </FormField>
-              </div>
+                )}
+              </FormField>
+
+              <FormField label="Nguồn Lead" error={errors.sourceId}>
+                <select
+                  className={getInputClassName(!!errors.sourceId, true)}
+                  {...register("sourceId")}
+                >
+                  <option value=""></option>
+                  {sources.map((item) => (
+                    <option key={item.id} value={item.id}>{item.name}</option>
+                  ))}
+                </select>
+              </FormField>
             </div>
 
-            <FormField label="Website" error={errors.website}>
-              <input
-                type="url"
-                className={getInputClassName(!!errors.website)}
-                {...register("website")}
-                onKeyDown={handleKeyDown}
+            <div className={`grid grid-cols-2 ${DS.spacing.innerGap}`}>
+              <FormField label="Chiến dịch" error={errors.campaignId}>
+                <select
+                  className={getInputClassName(!!errors.campaignId, true)}
+                  {...register("campaignId")}
+                >
+                  <option value=""></option>
+                  {campaigns.map((item) => (
+                    <option key={item.id} value={item.id}>{item.name}</option>
+                  ))}
+                </select>
+              </FormField>
+
+              <FormField label="Người phụ trách" error={errors.assignedTo}>
+                <select
+                  className={getInputClassName(!!errors.assignedTo, true)}
+                  {...register("assignedTo")}
+                  disabled={lockAssignee}
+                >
+                  <option value=""></option>
+                  {assignees.map((item) => (
+                    <option key={item.id} value={item.id}>{item.name}</option>
+                  ))}
+                </select>
+              </FormField>
+            </div>
+
+            <FormField label="Doanh thu dự kiến" error={errors.expectedRevenue}>
+              <Controller
+                name="expectedRevenue"
+                control={control}
+                render={({ field: { onChange, value, ref } }) => {
+                  const displayValue = value !== undefined && value !== null && !isNaN(Number(value))
+                    ? new Intl.NumberFormat('vi-VN').format(Number(value))
+                    : '';
+                  return (
+                    <div className="flex items-center gap-1">
+                      <input
+                        type="text"
+                        ref={ref}
+                        value={displayValue}
+                        onChange={(e) => {
+                          const rawValue = e.target.value.replace(/\D/g, '');
+                          onChange(rawValue ? Number(rawValue) : undefined);
+                        }}
+                        className={`${getInputClassName(!!errors.expectedRevenue)} text-right flex-1 min-w-0`}
+                      />
+                      <span className="flex h-[27px] w-9 items-center justify-center rounded-[3px] border border-slate-300 bg-slate-50 text-[12px] font-medium text-slate-500 flex-shrink-0">
+                        ₫
+                      </span>
+                    </div>
+                  );
+                }}
               />
             </FormField>
-          </div>
 
-          <div className="flex flex-col gap-y-2 h-full">
-            <FormField label="Mô tả / Ghi chú" error={errors.description} className="h-full">
-              <textarea
-                rows={2}
-                className={`${getInputClassName(!!errors.description)} min-h-[56px] resize-none py-1`}
-                {...register("description")}
+            <FormField label="Sản phẩm quan tâm" error={errors.productInterestIds as FieldError}>
+              <Controller
+                name="productInterestIds"
+                control={control}
+                render={({ field: { onChange, value } }) => {
+                  let selectedIds: number[] = [];
+                  if (Array.isArray(value)) {
+                    selectedIds = value.map(Number).filter(id => !isNaN(id));
+                  }
+
+                  const selectedProducts = products.filter((p) => selectedIds.includes(Number(p.id)));
+
+                  const handleRemove = (id: number) => {
+                    const numId = Number(id);
+                    onChange(selectedIds.filter((v) => v !== numId));
+                  };
+
+                  return (
+                    <div className="flex items-start gap-2">
+                      <div className={`min-w-0 flex-1 rounded-md border border-slate-300 bg-white px-2 py-1.5`}>
+                        <div className="mb-1 flex items-center justify-between">
+                          <span className="text-[12px] font-medium text-slate-600">Danh sách đã chọn</span>
+                          <span className="rounded bg-blue-100 px-1.5 py-0.5 text-[10px] font-semibold text-blue-700">{selectedProducts.length}</span>
+                        </div>
+                        <div className="flex max-h-[60px] min-h-[26px] flex-wrap items-center gap-1 overflow-auto pr-0.5">
+                          {selectedProducts.length === 0 && (
+                            <span className="text-[11px] italic text-slate-400">Chưa chọn sản phẩm</span>
+                          )}
+                          {selectedProducts.map((p) => (
+                            <span
+                              key={p.id}
+                              className="inline-flex items-center gap-1 rounded-md border border-blue-200 bg-blue-50 px-1.5 py-0.5 text-[11px] font-medium text-blue-700"
+                            >
+                              {p.name}
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleRemove(Number(p.id));
+                                }}
+                                className="flex h-3.5 w-3.5 items-center justify-center rounded hover:bg-blue-200 hover:text-red-500 transition-colors"
+                              >
+                                <svg className="h-2.5 w-2.5" fill="currentColor" viewBox="0 0 24 24">
+                                  <path d="M6 18L18 6M6 6l12 12" stroke="currentColor" strokeWidth={2} strokeLinecap="round" />
+                                </svg>
+                              </button>
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => setIsProductModalOpen(true)}
+                        className="inline-flex h-[31px] flex-shrink-0 items-center gap-1 rounded-md border border-blue-600 border-dashed bg-white px-2.5 text-[12px] font-medium text-blue-600 transition-colors hover:bg-blue-50"
+                      >
+                        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <circle cx="11" cy="11" r="8"></circle>
+                          <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                        </svg>
+                        Chọn
+                      </button>
+
+                      {/* Render Modal có phân trang */}
+                      {isProductModalOpen && (
+                        <ProductSelectionModal
+                          products={products}
+                          initialSelectedIds={selectedIds}
+                          onConfirm={(newSelectedIds) => {
+                            onChange(newSelectedIds);
+                            setIsProductModalOpen(false);
+                          }}
+                          onClose={() => setIsProductModalOpen(false)}
+                        />
+                      )}
+                    </div>
+                  );
+                }}
               />
             </FormField>
           </div>
         </div>
-      </div>
+
+        {/* SECTION 2: Address & Notes */}
+        <div className={DS.sectionSpacing}>
+          <SectionHeader title="Địa chỉ & Ghi chú" />
+
+          <div className={`grid grid-cols-1 md:grid-cols-2 ${DS.spacing.colGap}`}>
+            <div className="flex flex-col gap-y-2">
+              <div className={`grid grid-cols-3 ${DS.spacing.innerGap}`}>
+                <div className="col-span-1">
+                  <FormField label="Tỉnh / Thành phố" error={errors.provinceId}>
+                    <select
+                      className={getInputClassName(!!errors.provinceId, true)}
+                      {...register("provinceId")}
+                    >
+                      <option value=""></option>
+                      {provinces.map((item) => (
+                        <option key={item.id} value={item.id}>{item.name}</option>
+                      ))}
+                    </select>
+                  </FormField>
+                </div>
+                <div className="col-span-2">
+                  <FormField label="Địa chỉ cụ thể" error={errors.address}>
+                    <input
+                      type="text"
+                      className={getInputClassName(!!errors.address)}
+                      {...register("address")}
+                    />
+                  </FormField>
+                </div>
+              </div>
+
+              <FormField label="Website" error={errors.website}>
+                <input
+                  className={getInputClassName(!!errors.website)}
+                  {...register("website")}
+                />
+              </FormField>
+            </div>
+
+            <div className="flex flex-col gap-y-2 h-full">
+              <FormField label="Mô tả / Ghi chú" error={errors.description} className="h-full">
+                <textarea
+                  rows={2}
+                  className={`${getInputClassName(!!errors.description)} min-h-[56px] resize-none py-1`}
+                  {...register("description")}
+                />
+              </FormField>
+            </div>
+          </div>
+        </div>
       </fieldset>
-      
+
       {/* ACTION BUTTONS */}
       <div className="mt-0.5 flex items-center justify-end gap-2 border-t border-slate-200 pt-1">
         <button
@@ -812,8 +806,8 @@ export default function LeadForm({
                 : "Lưu"}
           </span>
           {!isFormLocked && !isSubmitting && (
-            <KeyboardShortcutBadge 
-              shortcut={LEAD_SHORTCUTS.SAVE_FORM} 
+            <KeyboardShortcutBadge
+              shortcut={LEAD_SHORTCUTS.SAVE_FORM}
               className="ml-auto"
             />
           )}
@@ -823,7 +817,7 @@ export default function LeadForm({
       {/* REQUIRED FIELDS EXPLANATION */}
       <div className="mt-0.5 flex items-start gap-2 rounded-sm border border-blue-100 bg-blue-50/50 p-1.5">
         <svg className="h-3.5 w-3.5 text-blue-500 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 24 24">
-          <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm0-14c-3.31 0-6 2.69-6 6s2.69 6 6 6 6-2.69 6-6-2.69-6-6-6zm0 10c-2.21 0-4-1.79-4-4s1.79-4 4-4 4 1.79 4 4-1.79 4-4 4z"/>
+          <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm0-14c-3.31 0-6 2.69-6 6s2.69 6 6 6 6-2.69 6-6-2.69-6-6-6zm0 10c-2.21 0-4-1.79-4-4s1.79-4 4-4 4 1.79 4 4-1.79 4-4 4z" />
         </svg>
         <div className="flex flex-1 flex-col text-[11px] text-blue-700 md:flex-row md:gap-4">
           <span><span className="text-red-500 font-bold">*</span> <strong>Tên liên hệ:</strong> Dùng để xưng hô và định danh khách hàng.</span>

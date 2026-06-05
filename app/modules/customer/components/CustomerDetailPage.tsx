@@ -53,6 +53,7 @@ import {
   useDeleteNote,
 } from "@/modules/customer/hooks/useCustomerMutations";
 import { useLeadReferences } from "@/modules/lead/hooks/useLeadReferences";
+import { useCurrentUser } from "@/core/auth/useCurrentUser";
 import { customerApi } from "@/modules/customer/api/customer.api";
 import type {
   ActivityResponseDTO,
@@ -87,6 +88,16 @@ function formatCurrency(value?: number) {
   return typeof value === "number"
     ? new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(value)
     : "-";
+}
+
+function getQuoteStatusLabel(statusId?: number) {
+  const STATUS_MAP: Record<number, string> = {
+    1: "Bản nháp",
+    2: "Đã gửi",
+    3: "Khách chấp nhận",
+    4: "Đã hủy",
+  };
+  return typeof statusId === "number" ? STATUS_MAP[statusId] ?? `Trạng thái #${statusId}` : "-";
 }
 
 function resolveAttachmentUrl(filePath?: string) {
@@ -226,8 +237,8 @@ function DetailDialog({
 
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-950/55 p-4 backdrop-blur-sm">
-      <div className="w-full max-w-2xl max-h-[86vh] overflow-hidden rounded-3xl border border-slate-200 bg-white p-6 shadow-2xl">
-        <div className="flex items-start justify-between gap-4 border-b border-slate-200 pb-4">
+      <div className="w-full max-w-2xl max-h-[86vh] flex flex-col overflow-hidden rounded-3xl border border-slate-200 bg-white p-6 shadow-2xl">
+        <div className="flex items-start justify-between gap-4 border-b border-slate-200 pb-4 flex-shrink-0">
           <div>
             <h3 className="text-[16px] font-semibold text-slate-900">{title}</h3>
             {subtitle ? <p className="mt-1 text-[12px] text-slate-500">{subtitle}</p> : null}
@@ -236,7 +247,7 @@ function DetailDialog({
             Đóng
           </button>
         </div>
-        <div className="mt-4 overflow-y-auto max-h-[62vh] pr-2">
+        <div className="mt-4 overflow-y-auto flex-1 min-h-0 pr-2">
           <dl className="grid gap-4 sm:grid-cols-2">
             {fields.map((field) => (
               <div key={field.label} className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
@@ -247,7 +258,7 @@ function DetailDialog({
           </dl>
         </div>
 
-        <div className="mt-6 flex justify-end gap-3">
+        <div className="mt-6 flex justify-end gap-3 flex-shrink-0">
           {onEdit ? (
             <button type="button" onClick={onEdit} className="rounded-[5px] border border-sky-200 bg-sky-50 px-3 py-2 text-[12px] font-semibold text-sky-700">
               {editLabel}
@@ -359,66 +370,145 @@ function AddressEditorDialog({
     }
   };
 
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    if (e.key === "Enter") {
+      const target = e.target as HTMLElement;
+      if (
+        target.tagName === "TEXTAREA" ||
+        target.tagName === "BUTTON" ||
+        target.getAttribute("type") === "submit"
+      ) {
+        return;
+      }
+      e.preventDefault();
+      const container = e.currentTarget;
+      const focusableElements = Array.from(
+        container.querySelectorAll(
+          "input:not([disabled]):not([type='hidden']), select:not([disabled]), textarea:not([disabled]), button[type='submit']:not([disabled])"
+        )
+      ).filter((el: any) => {
+        return el.offsetWidth > 0 || el.offsetHeight > 0 || el.getClientRects().length > 0;
+      }) as HTMLElement[];
+
+      const currentIndex = focusableElements.indexOf(target);
+      if (currentIndex > -1 && currentIndex < focusableElements.length - 1) {
+        focusableElements[currentIndex + 1].focus();
+      }
+    }
+  };
+
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-950/55 p-4 backdrop-blur-sm">
-      <div className="w-full max-w-2xl rounded-3xl border border-slate-200 bg-white p-6 shadow-2xl">
-        <div className="flex items-start justify-between gap-4 border-b border-slate-200 pb-4">
+      <div
+        onKeyDown={handleKeyDown}
+        className="w-full max-w-xl overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-2xl transition-all"
+      >
+        {/* Header */}
+        <div className="flex items-start justify-between border-b border-slate-100 bg-gradient-to-r from-slate-50 to-sky-50/30 px-6 py-4">
           <div>
-            <h3 className="text-[16px] font-semibold text-slate-900">{initialValues?.id ? "Chỉnh sửa địa chỉ" : "Thêm địa chỉ"}</h3>
-            <p className="mt-1 text-[12px] text-slate-500">Thông tin địa chỉ khách hàng.</p>
+            <h3 className="text-[14px] font-bold text-slate-800">
+              {initialValues?.id ? "Chỉnh sửa địa chỉ" : "Thêm địa chỉ mới"}
+            </h3>
+            <p className="mt-0.5 text-[11px] text-slate-400">Cung cấp thông tin địa chỉ giao dịch hoặc vận chuyển của khách hàng.</p>
           </div>
-          <button type="button" onClick={onClose} className="rounded-[5px] border border-slate-300 px-3 py-2 text-[12px] text-slate-700">
-            Đóng
+          <button
+            type="button"
+            onClick={onClose}
+            className="inline-flex h-7 w-7 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-400 transition hover:bg-slate-50 hover:text-slate-600"
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
           </button>
         </div>
 
-        <div className="mt-4 grid gap-3 md:grid-cols-2">
-          <label className="flex flex-col gap-1">
-            <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-900">Loại địa chỉ</span>
-            <select
-              className="h-8 rounded-[6px] border border-slate-300 px-2.5 text-[11px] text-slate-900"
-              value={addressType}
-              onChange={(e) => setAddressType(e.target.value as AddressType)}
-            >
-              <option value="HQ">Văn phòng</option>
-              <option value="BILLING">Xuất hoá đơn</option>
-              <option value="SHIPPING">Giao hàng</option>
-            </select>
-          </label>
+        {/* Form Fields */}
+        <div className="p-6 space-y-4">
+          <div className="grid gap-4 sm:grid-cols-2">
+            {/* Address Type */}
+            <div className="block">
+              <span className="block text-[10px] font-bold uppercase tracking-[0.14em] text-slate-500 mb-1.5">Loại địa chỉ</span>
+              <div className="relative">
+                <select
+                  className="h-9 w-full rounded-lg border border-slate-200 bg-slate-50/30 px-3 text-[12px] text-slate-800 outline-none transition duration-150 appearance-none pr-8 bg-[url('data:image/svg+xml;charset=UTF-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%2364748b%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpolyline%20points%3D%226%209%2012%2015%2018%209%22%3E%3C%2Fpolyline%3E%3C%2Fsvg%3E')] bg-no-repeat bg-[right_0.5rem_center] bg-[length:1.25rem_1.25rem] focus:border-sky-500 focus:bg-white focus:ring-2 focus:ring-sky-500/15"
+                  value={addressType}
+                  onChange={(e) => setAddressType(e.target.value as AddressType)}
+                >
+                  <option value="HQ">Văn phòng chính</option>
+                  <option value="BILLING">Xuất hoá đơn</option>
+                  <option value="SHIPPING">Địa chỉ giao hàng</option>
+                </select>
+              </div>
+            </div>
 
-          <label className="flex flex-col gap-1">
-            <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-900">Tỉnh / Thành phố</span>
-            <select
-              className="h-8 rounded-[6px] border border-slate-300 px-2.5 text-[11px] text-slate-900"
-              value={provinceId}
-              onChange={(e) => setProvinceId(e.target.value)}
-            >
-              <option value="">Chọn tỉnh / thành phố</option>
-              {provinces.map((province) => (
-                <option key={province.id} value={province.id}>
-                  {province.name}
-                </option>
-              ))}
-            </select>
-          </label>
+            {/* Province / City */}
+            <div className="block">
+              <span className="block text-[10px] font-bold uppercase tracking-[0.14em] text-slate-500 mb-1.5">Tỉnh / Thành phố</span>
+              <div className="relative">
+                <select
+                  className="h-9 w-full rounded-lg border border-slate-200 bg-slate-50/30 px-3 text-[12px] text-slate-800 outline-none transition duration-150 appearance-none pr-8 bg-[url('data:image/svg+xml;charset=UTF-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%2364748b%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpolyline%20points%3D%226%209%2012%2015%2018%209%22%3E%3C%2Fpolyline%3E%3C%2Fsvg%3E')] bg-no-repeat bg-[right_0.5rem_center] bg-[length:1.25rem_1.25rem] focus:border-sky-500 focus:bg-white focus:ring-2 focus:ring-sky-500/15"
+                  value={provinceId}
+                  onChange={(e) => setProvinceId(e.target.value)}
+                >
+                  <option value="">Chọn tỉnh / thành phố...</option>
+                  {provinces.map((province) => (
+                    <option key={province.id} value={province.id}>
+                      {province.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
 
-          <label className="flex flex-col gap-1 md:col-span-2">
-            <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-900">Địa chỉ đầy đủ</span>
-            <textarea className="rounded-[6px] border border-slate-300 px-2.5 py-2 text-[11px] text-slate-900" rows={4} value={fullAddress} onChange={(e) => setFullAddress(e.target.value)} />
-          </label>
+            {/* Full Address */}
+            <div className="block sm:col-span-2">
+              <span className="block text-[10px] font-bold uppercase tracking-[0.14em] text-slate-500 mb-1.5">Địa chỉ cụ thể</span>
+              <textarea
+                className="w-full rounded-lg border border-slate-200 bg-slate-50/30 px-3 py-2 text-[12px] text-slate-800 outline-none transition duration-150 placeholder:text-slate-400 focus:border-sky-500 focus:bg-white focus:ring-2 focus:ring-sky-500/15 resize-none"
+                placeholder="Số nhà, tên đường, phường/xã, quận/huyện..."
+                rows={3}
+                value={fullAddress}
+                onChange={(e) => setFullAddress(e.target.value)}
+              />
+            </div>
 
-          <label className="inline-flex items-center gap-2 md:col-span-2">
-            <input type="checkbox" checked={isPrimary} onChange={(e) => setIsPrimary(e.target.checked)} className="self-center align-middle !mr-[5px] rounded-[5px]" />
-            <span className="text-[12px] text-slate-900">Đặt làm địa chỉ chính</span>
-          </label>
+            {/* Set as Primary */}
+            <label className="flex items-center gap-3 rounded-xl border border-slate-200 bg-slate-50/30 px-4 py-3 sm:col-span-2 cursor-pointer transition hover:bg-slate-50">
+              <input
+                type="checkbox"
+                checked={isPrimary}
+                onChange={(e) => setIsPrimary(e.target.checked)}
+                className="h-4.5 w-4.5 rounded border-slate-300 text-sky-600 focus:ring-sky-500"
+              />
+              <div className="flex items-center gap-2">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="text-amber-500">
+                  <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"></path>
+                </svg>
+                <div>
+                  <span className="block text-[12px] font-semibold text-slate-800">Đặt làm địa chỉ chính</span>
+                  <span className="block text-[11px] text-slate-500">Được dùng làm địa chỉ giao dịch, gửi hóa đơn hoặc giao nhận mặc định.</span>
+                </div>
+              </div>
+            </label>
+          </div>
         </div>
 
-        <div className="mt-6 flex justify-end gap-3">
-          <button type="button" onClick={onClose} className="rounded-[5px] border border-slate-300 px-3 py-2 text-[12px] text-slate-700">
+        {/* Footer */}
+        <div className="flex justify-end gap-3 border-t border-slate-100 bg-slate-50 px-6 py-4">
+          <button
+            type="button"
+            onClick={onClose}
+            className="inline-flex h-9 items-center justify-center rounded-lg border border-slate-200 bg-white px-4 text-[12px] font-semibold text-slate-600 transition hover:bg-slate-50 hover:text-slate-800"
+          >
             Hủy
           </button>
-          <button type="button" onClick={handleSubmit} className="rounded-[5px] bg-sky-600 px-3 py-2 text-[12px] font-semibold text-white">
-            {initialValues?.id ? "Cập nhật" : "Thêm mới"}
+          <button
+            type="button"
+            onClick={handleSubmit}
+            className="inline-flex h-9 items-center justify-center rounded-lg bg-sky-600 px-5 text-[12px] font-semibold text-white transition hover:bg-sky-700 shadow-sm shadow-sky-500/10"
+          >
+            {initialValues?.id ? "Cập nhật" : "Lưu địa chỉ"}
           </button>
         </div>
       </div>
@@ -451,6 +541,7 @@ export default function CustomerDetailPage({ id }: CustomerDetailPageProps) {
   const updateMutation = useUpdateCustomer();
   const salesUsersQuery = useAllUsers();
   const referencesQuery = useLeadReferences();
+  const { isSale } = useCurrentUser();
 
   // feedback/note mutation hooks for deletes (create/update are used inside forms)
   const deleteFeedback = useDeleteFeedback();
@@ -552,10 +643,16 @@ export default function CustomerDetailPage({ id }: CustomerDetailPageProps) {
         if (customer?.id) router.push(`/quotes/new?customerId=${customer.id}`);
         break;
       case "contracts":
-        setFeedbackFormState({ mode: "create" });
+        if (customer?.id) {
+          setActiveTab("overview");
+          router.push(`/customers/${customer.id}`);
+        }
         break;
       case "invoices":
-        setNoteFormState({ mode: "create" });
+        if (customer?.id) {
+          setActiveTab("overview");
+          router.push(`/customers/${customer.id}`);
+        }
         break;
       case "feedbacks":
         setFeedbackFormState({ mode: "create" });
@@ -904,14 +1001,14 @@ export default function CustomerDetailPage({ id }: CustomerDetailPageProps) {
       {renderPageItems(quotesQuery.data?.content ?? [], (item) => (
         <EntityCard
           key={item.id}
-          title={item.quoteName}
-          primary={item.status ?? "-"}
+          title={item.quoteNumber || "Không có số báo giá"}
+          primary={getQuoteStatusLabel(item.statusId)}
           onClick={() => openDetail({ kind: "quote", item })}
           meta={[
-            { label: "Mã báo giá", value: item.quoteCode },
-            { label: "Tổng tiền", value: formatCurrency(item.totalAmount) },
+            { label: "Mã báo giá", value: item.quoteNumber ?? "-" },
+            { label: "Tổng tiền", value: `${formatCurrency(item.totalAmount)} ${item.currencyCode ?? "VND"}` },
             { label: "Hiệu lực đến", value: item.validUntil ? formatDate(item.validUntil) : "-" },
-            { label: "Ngày báo giá", value: item.quoteDate ? formatDate(item.quoteDate) : "-" },
+            { label: "Ngày tạo", value: item.createdAt ? formatDate(item.createdAt) : "-" },
           ]}
         />
       ))}
@@ -929,7 +1026,12 @@ export default function CustomerDetailPage({ id }: CustomerDetailPageProps) {
         </div>
         <button
           type="button"
-          onClick={() => setFeedbackFormState({ mode: "create" })}
+          onClick={() => {
+            if (customer?.id) {
+              setActiveTab("overview");
+              router.push(`/customers/${customer.id}`);
+            }
+          }}
           className={styles.addButton}
           title={CUSTOMER_SHORTCUTS.ADD_NEW.label}
         >
@@ -966,7 +1068,12 @@ export default function CustomerDetailPage({ id }: CustomerDetailPageProps) {
         </div>
         <button
           type="button"
-          onClick={() => setNoteFormState({ mode: "create" })}
+          onClick={() => {
+            if (customer?.id) {
+              setActiveTab("overview");
+              router.push(`/customers/${customer.id}`);
+            }
+          }}
           className={styles.addButton}
           title={CUSTOMER_SHORTCUTS.ADD_NEW.label}
         >
@@ -1071,16 +1178,18 @@ export default function CustomerDetailPage({ id }: CustomerDetailPageProps) {
               >
                 Chỉnh sửa
               </button>
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setDeleteFeedbackTarget(item);
-                }}
-                className="rounded-[5px] border border-red-100 bg-red-50 px-2 py-1 text-[12px] text-red-600"
-              >
-                Xóa
-              </button>
+              {!isSale && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setDeleteFeedbackTarget(item);
+                  }}
+                  className="rounded-[5px] border border-red-100 bg-red-50 px-2 py-1 text-[12px] text-red-600"
+                >
+                  Xóa
+                </button>
+              )}
             </>
           }
         />
@@ -1296,11 +1405,13 @@ export default function CustomerDetailPage({ id }: CustomerDetailPageProps) {
           { label: "Ngày tạo", value: selectedDetail.item.createdAt ? formatDate(selectedDetail.item.createdAt) : "-" },
         ]} onClose={closeDetail} />;
       case "quote":
-        return <DetailDialog open title={selectedDetail.item.quoteName} subtitle={selectedDetail.item.status} fields={[
-          { label: "Mã báo giá", value: selectedDetail.item.quoteCode ?? "-" },
-          { label: "Tổng tiền", value: formatCurrency(selectedDetail.item.totalAmount) },
+        return <DetailDialog open title={selectedDetail.item.quoteNumber} subtitle={getQuoteStatusLabel(selectedDetail.item.statusId)} fields={[
+          { label: "Mã báo giá", value: selectedDetail.item.quoteNumber ?? "-" },
+          { label: "Khách hàng", value: selectedDetail.item.customerName ?? "-" },
+          { label: "Tổng tiền", value: `${formatCurrency(selectedDetail.item.totalAmount)} ${selectedDetail.item.currencyCode ?? "VND"}` },
+          { label: "Mẫu báo giá", value: selectedDetail.item.templateName ?? "-" },
           { label: "Hiệu lực đến", value: selectedDetail.item.validUntil ? formatDate(selectedDetail.item.validUntil) : "-" },
-          { label: "Ngày báo giá", value: selectedDetail.item.quoteDate ? formatDate(selectedDetail.item.quoteDate) : "-" },
+          { label: "Ngày tạo", value: selectedDetail.item.createdAt ? formatDateTime(selectedDetail.item.createdAt) : "-" },
         ]} onClose={closeDetail} />;
       case "contract":
         return <DetailDialog open title={selectedDetail.item.contractName} subtitle={selectedDetail.item.status} fields={[

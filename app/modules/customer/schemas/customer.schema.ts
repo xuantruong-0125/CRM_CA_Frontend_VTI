@@ -139,7 +139,7 @@ export const customerSearchSchema = z.object({
   status: z.enum(["CARING", "PAUSED", "BLACKLIST", "OTHER"]).optional(),
   tier: z.enum(["SILVER", "GOLD", "DIAMOND"]).optional(),
   page: z.coerce.number().min(0).optional().default(0),
-  size: z.coerce.number().min(1).optional().default(10),
+  size: z.coerce.number().min(1).max(200).optional().default(50),
   sortBy: z.string().optional().default("createdAt"),
   sortDirection: z.enum(["asc", "desc"]).optional().default("desc"),
 });

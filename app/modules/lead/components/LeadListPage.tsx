@@ -41,6 +41,7 @@ import { getApiErrorMessage } from "@/shared/utils/api-error";
 import { LEAD_SHORTCUTS, matchesShortcut } from "@/modules/lead/utils/keyboard-shortcuts";
 import { KeyboardShortcutBadge } from "@/modules/lead/components/KeyboardShortcutBadge";
 import ConfirmDeleteModal from "@/shared/components/ConfirmDeleteModal/ConfirmDeleteModal";
+import { useCurrentUser } from "@/core/auth/useCurrentUser";
 
 type FormMode = "hidden" | "create" | "edit";
 
@@ -93,9 +94,14 @@ function getUserIdFromStorage(): number | undefined {
 }
 
 export default function LeadListPage() {
+  const { mounted, currentUser } = useCurrentUser();
+  const isAdmin = mounted && (currentUser?.roles.includes("ADMIN") ?? false);
+
   const [page, setPage] = useState(0);
-  const [size, setSize] = useState(20);
+  const [size, setSize] = useState(50);
   const [pageInput, setPageInput] = useState("1");
+  const [sortBy, setSortBy] = useState<string>("createdAt");
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
   const [searchTerm, setSearchTerm] = useState("");
   const [maskPhoneEnabled, setMaskPhoneEnabled] = useState(true);
   const [maskEmailEnabled, setMaskEmailEnabled] = useState(true);
@@ -140,11 +146,11 @@ export default function LeadListPage() {
     () => ({
       page,
       size,
-      sortBy: "createdAt",
-      sortDir: "desc" as const,
+      sortBy,
+      sortDir,
       ...filters,
     }),
-    [filters, page, size]
+    [filters, page, size, sortBy, sortDir]
   );
 
   const referencesQuery = useLeadReferences();
@@ -530,18 +536,20 @@ export default function LeadListPage() {
                 Bộ lọc
               </button>
 
-              <button
-                type="button"
-                onClick={() => {
-                  setShowMaskFilterMenu((current) => !current);
-                  setShowPageSizeMenu(false);
-                }}
-                className={styles.btnOutline}
-                title={LEAD_SHORTCUTS.TOGGLE_SECURITY.label}
-              >
-                {maskPhoneEnabled || maskEmailEnabled ? <EyeOff size={14} /> : <Eye size={14} />}
-                Bảo mật
-              </button>
+              {isAdmin && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowMaskFilterMenu((current) => !current);
+                    setShowPageSizeMenu(false);
+                  }}
+                  className={styles.btnOutline}
+                  title={LEAD_SHORTCUTS.TOGGLE_SECURITY.label}
+                >
+                  {maskPhoneEnabled || maskEmailEnabled ? <EyeOff size={14} /> : <Eye size={14} />}
+                  Bảo mật
+                </button>
+              )}
 
               <div className="relative">
                 <button
@@ -558,7 +566,7 @@ export default function LeadListPage() {
 
                 {showPageSizeMenu && (
                   <div className={styles.dropdownMenu}>
-                    {[20, 50, 100].map((option) => (
+                    {[50, 100, 200].map((option) => (
                       <button
                         key={option}
                         type="button"
@@ -598,7 +606,7 @@ export default function LeadListPage() {
             </div>
           )}
 
-          {showMaskFilterMenu && (
+          {isAdmin && showMaskFilterMenu && (
             <div className={styles.maskFilterMenu}>
               <div className={styles.maskFilterOptions}>
                 <label className={styles.maskFilterCheckbox}>
@@ -631,6 +639,14 @@ export default function LeadListPage() {
             maskPhoneEnabled={maskPhoneEnabled}
             maskEmailEnabled={maskEmailEnabled}
             loadingEditLeadId={editingLeadId}
+            sortBy={sortBy}
+            sortDir={sortDir}
+            onSortChange={(field, dir) => {
+              setSortBy(field);
+              setSortDir(dir);
+              setPage(0);
+              setPageInput("1");
+            }}
             onEdit={async (lead) => {
               if (!lead.id) {
                 toast.error("Không tìm thấy ID lead để chỉnh sửa");
