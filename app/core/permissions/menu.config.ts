@@ -106,7 +106,7 @@ export const MENU_CONFIG: MenuItem[] = [
         label: "Báo cáo KPI",
         path: "/reports",
         icon: BarChart3,
-        roles: ["ADMIN", "MANAGER", "SALE","DIRECTOR"],
+        roles: ["ADMIN", "MANAGER","DIRECTOR"],
     },
     {
         key: "my-kpi",
@@ -120,7 +120,7 @@ export const MENU_CONFIG: MenuItem[] = [
         label: "Khách hàng tiềm năng",
         path: "/leads",
         icon: UserPlus,
-        roles: ["ADMIN", "SALE", "MANAGER"],
+        roles: ["ADMIN", "SALE"],
     },
     {
         key: "customer",
