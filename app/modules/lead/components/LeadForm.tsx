@@ -373,6 +373,7 @@ export default function LeadForm({
     setValue,
     formState: { errors, isValid },
     reset,
+    trigger,
   } = useForm({
     // @ts-expect-error - Zod schema type inference differs from react-hook-form strict types
     resolver: zodResolver(leadFormSchema),
@@ -410,8 +411,10 @@ export default function LeadForm({
       }
 
       reset(safeValues);
+      // Force re-validate sau reset để isValid = true ngay khi mở form edit
+      setTimeout(() => trigger(), 0);
     }
-  }, [initialValues, reset]);
+  }, [initialValues, reset, trigger]);
 
   useEffect(() => {
     if (lockAssignee && currentUser) {
